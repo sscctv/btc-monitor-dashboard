@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V1/V2/V3 虚拟账户监控</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, sans-serif; background: #0f0f1a; color: #fff; padding: 20px; }
+h1 { color: #00d4ff; text-align: center; margin-bottom: 20px; }
+.card { background: #1a1a2e; border-radius: 10px; padding: 15px; margin-bottom: 15px; }
+.label { color: #888; font-size: 0.75rem; margin-bottom: 5px; }
+.value { font-size: 1.2rem; font-weight: bold; }
+.green { color: #2ecc71; }
+.red { color: #e74c3c; }
+.yellow { color: #f1c40f; }
+.cyan { color: #00d4ff; }
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.account { border-left: 4px solid #00d4ff; padding-left: 15px; margin: 15px 0; }
+.account.long { border-left-color: #2ecc71; }
+.account.short { border-left-color: #e74c3c; }
+.status { font-size: 0.9rem; color: #888; }
+.pnl { font-size: 1.5rem; font-weight: bold; }
+.time { text-align: center; color: #555; font-size: 0.75rem; margin-top: 20px; }
+.loading { text-align: center; color: #888; padding: 40px; }
+.error { text-align: center; color: #e74c3c; padding: 40px; }
+</style>
+</head>
+<body>
+<h1>🎮 V1/V2/V3 虚拟账户</h1>
+<div id="content">
+  <div class="loading">加载中...</div>
+</div>
+<div class="time">最后更新: <span id="update">--</span></div>
+
+<script>
+const STORAGE_URL = 'https://lpcrnobolifrzwrkxoli.supabase.co/storage/v1/object/public/virt-data/virt_positions.json';
+
+function fmt(n, d=2) {
+  return n != null && !isNaN(n) ? n.toFixed(d) : '--';
+}
+
+function fmtP(n) {
+  return n != null && !isNaN(n) ? Math.round(n).toLocaleString() : '--';
+}
+
+async function load() {
+  try {
+    const res = await fetch(STORAGE_URL + '?t=' + Date.now());
+    const data = await res.json();
+    
+    let html = '';
+    
+    // Market status
+    const mkt = data.market || {};
+    html += '<div class="card">';
+    html += '<div class="label">市场状态</div>';
+    html += '<div class="grid">';
+    html += '<div><div class="label">BTC</div><div class="value cyan">$' + fmtP(mkt.price) + '</div></div>';
+    html += '<div><div class="label">RSI</div><div class="value ' + (mkt.rsi > 70 ? 'red' : mkt.rsi < 30 ? 'green' : 'yellow') + '">' + fmt(mkt.rsi, 1) + '</div></div>';
+    html += '<div><div class="label">ADX</div><div class="value ' + (mkt.adx > 25 ? 'green' : 'red') + '">' + fmt(mkt.adx, 1) + '</div></div>';
+    html += '<div><div class="label">信号</div><div class="value" style="color:' + (mkt.mode === 'long' ? '#2ecc71' : mkt.mode === 'short' ? '#e74c3c' : '#888') + '">' + (mkt.mode || 'wait') + '</div></div>';
+    html += '</div></div>';
+    
+    // Accounts
+    for (const a of data.accounts || []) {
+      const isLong = a.side === 'long';
+      const isShort = a.side === 'short';
+      const isEmpty = !a.side;
+      const pnl = a.unrealized_pnl || 0;
+      const pnlClass = pnl > 0 ? 'green' : pnl < 0 ? 'red' : 'yellow';
+      
+      html += '<div class="card account ' + (isLong ? 'long' : isShort ? 'short' : '') + '">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">';
+      html += '<div><div class="value">' + a.account + '</div><div class="status">100X动态</div></div>';
+      html += '<div style="text-align:right"><div class="pnl ' + pnlClass + '">' + (pnl >= 0 ? '+' : '') + fmt(pnl, 2) + 'U</div><div class="status">余额: ' + fmt(a.balance, 2) + 'U</div></div>';
+      html += '</div>';
+      
+      if (!isEmpty) {
+        html += '<div class="grid">';
+        html += '<div><div class="label">方向</div><div class="value ' + (isLong ? 'green' : 'red') + '">' + (isLong ? '🟢 做多' : '🔴 做空') + '</div></div>';
+        html += '<div><div class="label">入场价</div><div class="value">$' + fmtP(a.entry) + '</div></div>';
+        html += '<div><div class="label">当前价</div><div class="value cyan">$' + fmtP(a.current) + '</div></div>';
+        html += '<div><div class="label">偏离</div><div class="value ' + pnlClass + '">' + fmt(a.profit_pct, 3) + '%</div></div>';
+        html += '<div><div class="label">数量</div><div class="value">' + fmt(a.size, 6) + ' BTC</div></div>';
+        html += '<div><div class="label">杠杆</div><div class="value">' + (a.leverage || 100) + 'X</div></div>';
+        html += '</div>';
+      } else {
+        html += '<div class="status">空仓等待信号...</div>';
+      }
+      
+      html += '</div>';
+    }
+    
+    document.getElementById('content').innerHTML = html;
+    document.getElementById('update').textContent = data.updated_at || new Date().toLocaleString('zh-CN');
+  } catch(e) {
+    document.getElementById('content').innerHTML = '<div class="error">加载失败: ' + e.message + '</div>';
+    console.error('Load error:', e);
+  }
+}
+
+load();
+setInterval(load, 10000);
+</script>
+</body>
+</html>
