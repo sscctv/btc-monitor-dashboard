@@ -89,6 +89,7 @@ body { font-family: -apple-system, sans-serif; background: #0f0f1a; color: #fff;
 <div class="tab-bar">
   <button class="tab-btn active" id="btn-market" onclick="switchTab('market')">📊 行情</button>
   <button class="tab-btn" id="btn-accounts" onclick="switchTab('accounts')">📱 账号</button>
+  <button class="tab-btn" id="btn-virt" onclick="switchTab('virt')">🎮 虚拟</button>
 </div>
 
 <div id="tab-market" class="tab-content active">
@@ -140,6 +141,11 @@ body { font-family: -apple-system, sans-serif; background: #0f0f1a; color: #fff;
   <div class="time">最后更新: <span id="update">--</span></div>
 </div>
 
+<div id="tab-virt" class="tab-content">
+  <div id="virt-list"></div>
+  <div class="time">最后更新: <span id="virt-update">--</span></div>
+</div>
+
 <div id="tab-accounts" class="tab-content">
   <div id="acc-list"></div>
   <div class="time">最后更新: <span id="acc-update">--</span></div>
@@ -189,6 +195,7 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
   document.getElementById('btn-' + tab).classList.add('active');
+  if (tab === 'virt') loadVirt();
 }
 
 function fmt(n, d=1) { return n != null && !isNaN(n) ? n.toFixed(d) : '--'; }
@@ -375,8 +382,67 @@ async function load() {
   } catch(e) { console.log('Load error:', e); }
 }
 
+async function loadVirt() {
+  try {
+    const res = await fetch('https://lpcrnobolifrzwrkxoli.supabase.co/storage/v1/object/public/virt-data/virt_positions.json?t=' + Date.now());
+    const data = await res.json();
+    
+    var html = '';
+    var mkt = data.market || {};
+    
+    // Market summary
+    html += '<div class="card">';
+    html += '<div class="label">虚拟账户市场状态</div>';
+    html += '<div style="display:flex;justify-content:space-around;margin-top:8px">';
+    html += '<div style="text-align:center"><div class="label">BTC</div><div class="cyan">$' + fmtP(mkt.price) + '</div></div>';
+    html += '<div style="text-align:center"><div class="label">RSI</div><div class="' + (mkt.rsi > 70 ? 'red' : mkt.rsi < 30 ? 'green' : 'yellow') + '">' + fmt(mkt.rsi) + '</div></div>';
+    html += '<div style="text-align:center"><div class="label">ADX</div><div class="' + (mkt.adx > 25 ? 'green' : 'red') + '">' + fmt(mkt.adx) + '</div></div>';
+    html += '<div style="text-align:center"><div class="label">信号</div><div style="color:' + (mkt.mode === 'long' ? '#2ecc71' : mkt.mode === 'short' ? '#e74c3c' : '#888') + '">' + (mkt.mode || 'wait') + '</div></div>';
+    html += '</div></div>';
+    
+    // Accounts
+    for (var a of data.accounts || []) {
+      var isLong = a.side === 'long';
+      var isShort = a.side === 'short';
+      var isEmpty = !a.side;
+      var pnl = a.unrealized_pnl || 0;
+      var pnlClass = pnl > 0.005 ? 'pos' : pnl < -0.005 ? 'neg' : 'zero';
+      
+      html += '<div class="acc-group">';
+      html += '<div class="acc-header">';
+      html += '<div class="acc-name">' + a.account + ' <span>100X动态</span></div>';
+      html += '<div><div class="acc-total ' + pnlClass + '">' + (a.balance >= 0 ? '+' : '') + fmt(a.balance, 2) + 'U</div>';
+      html += '<div class="acc-sub">浮动 <span class="' + pnlClass + '">' + (pnl >= 0 ? '+' : '') + fmt(pnl, 2) + '</span></div></div></div>';
+      
+      if (!isEmpty) {
+        html += '<div class="pos-table">';
+        html += '<div class="pos-dir ' + a.side + '">';
+        html += '<div class="pos-dir-label ' + a.side + '">' + (isLong ? '做多' : '做空') + ' ×' + (a.leverage || 100) + ' ' + (a.size || 0) + '张</div>';
+        html += '<div class="pos-pnl ' + pnlClass + '">' + (pnl >= 0 ? '+' : '') + fmt(pnl, 2) + 'U</div>';
+        html += '</div>';
+        
+        html += '<div class="pos-grid">';
+        html += '<div class="pos-cell"><div class="pos-cell-label">开仓均价</div><div class="pos-cell-value">$' + fmtP(a.entry) + '</div></div>';
+        html += '<div class="pos-cell"><div class="pos-cell-label">当前价</div><div class="pos-cell-value cyan">$' + fmtP(a.current) + '</div></div>';
+        html += '<div class="pos-cell"><div class="pos-cell-label">偏离</div><div class="pos-cell-value ' + pnlClass + '">' + fmt(a.profit_pct, 3) + '%</div></div>';
+        html += '<div class="pos-cell"><div class="pos-cell-label">状态</div><div class="pos-cell-value">' + a.status + '</div></div>';
+        html += '</div></div>';
+      } else {
+        html += '<div class="acc-idle">空仓 · 本金 <span>' + fmt(a.balance, 2) + 'U</span></div>';
+      }
+      
+      html += '</div>';
+    }
+    
+    if (!html) html = '<div class="no-data">暂无虚拟账号数据</div>';
+    document.getElementById('virt-list').innerHTML = html;
+    document.getElementById('virt-update').textContent = data.updated_at || '--';
+  } catch(e) { console.log('Virt load error:', e); }
+}
+
 load();
 setInterval(load, 15000);
+setInterval(loadVirt, 10000);
 </script>
 </body>
 </html>
