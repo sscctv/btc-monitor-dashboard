@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BTC 交易监控</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, sans-serif; background: #0f0f1a; color: #fff; }
+.green { color: #2ecc71; }
+.red { color: #e74c3c; }
+.yellow { color: #f1c40f; }
+.cyan { color: #00d4ff; }
+
+/* Tab Bar */
+.tab-bar { display: flex; background: #1a1a2e; border-bottom: 2px solid #333; }
+.tab-btn { flex: 1; padding: 16px 0; text-align: center; font-size: 1.05rem; font-weight: bold; color: #555; cursor: pointer; border: none; background: none; border-bottom: 3px solid transparent; }
+.tab-btn.active { color: #00d4ff; border-bottom-color: #00d4ff; }
+.tab-content { display: none; padding: 10px; }
+.tab-content.active { display: block; }
+
+/* Market */
+.card { background: #1a1a2e; border-radius: 10px; padding: 12px; margin-bottom: 8px; }
+.price { font-size: 2.2rem; color: #00d4ff; text-align: center; }
+.label { color: #888; font-size: 0.75rem; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; }
+.b-wait { background: #333; color: #888; }
+.b-long { background: rgba(39,174,96,0.3); color: #2ecc71; }
+.b-short { background: rgba(231,76,60,0.3); color: #e74c3c; }
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; }
+.cell { background: #16213e; border-radius: 6px; padding: 8px; text-align: center; cursor: pointer; }
+.cell:hover { background: #1e3050; }
+.cell-label { font-size: 0.55rem; color: #666; }
+.cell-value { font-size: 0.9rem; font-weight: bold; margin-top: 2px; }
+.time { text-align: center; color: #555; font-size: 0.65rem; margin-top: 8px; }
+
+/* Account Header */
+.acc-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #1a1a2e; border-radius: 10px; margin-bottom: 6px; }
+.acc-header.real { border: 1px solid #c9920b; border-left: 4px solid #f39c12; }
+.acc-name { font-size: 1rem; font-weight: bold; }
+.acc-name span { font-size: 0.7rem; color: #666; margin-left: 6px; }
+.acc-total { font-size: 1rem; font-weight: bold; text-align: right; }
+.acc-total.pos { color: #2ecc71; }
+.acc-total.neg { color: #e74c3c; }
+.acc-total.zero { color: #555; }
+.acc-sub { font-size: 0.65rem; color: #666; margin-top: 2px; text-align: right; }
+.acc-sub span { color: #fff; }
+
+/* Position Table */
+.pos-table { background: #16213e; border-radius: 8px; overflow: hidden; margin-bottom: 6px; }
+.pos-dir { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: #1e2a3a; }
+.pos-dir.long { border-left: 3px solid #2ecc71; }
+.pos-dir.short { border-left: 3px solid #e74c3c; }
+.pos-dir-label { font-size: 0.82rem; font-weight: bold; }
+.pos-dir-label.long { color: #2ecc71; }
+.pos-dir-label.short { color: #e74c3c; }
+.pos-pnl { font-size: 0.9rem; font-weight: bold; }
+.pos-pnl.pos { color: #2ecc71; }
+.pos-pnl.neg { color: #e74c3c; }
+.pos-pnl.zero { color: #555; }
+
+.pos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; background: #111; }
+.pos-cell { background: #16213e; padding: 7px 10px; border-bottom: 1px solid #222; display: flex; flex-direction: column; gap: 2px; }
+.pos-cell:last-child { border-bottom: none; }
+.pos-cell-label { font-size: 0.58rem; color: #555; }
+.pos-cell-value { font-size: 0.82rem; color: #fff; font-weight: 500; }
+.pos-cell-value.pos { color: #2ecc71; }
+.pos-cell-value.neg { color: #e74c3c; }
+.pos-cell-value.cyan { color: #00d4ff; }
+.pos-cell-value.yellow { color: #f1c40f; }
+
+.acc-idle { color: #555; font-size: 0.85rem; padding: 8px 12px; background: #16213e; border-radius: 8px; text-align: center; }
+.acc-idle span { color: #fff; font-weight: bold; }
+.no-data { text-align: center; color: #444; font-size: 0.8rem; padding: 20px; }
+
+/* Modal */
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.modal-overlay.hide { display: none; }
+.modal-box { background: #1a1a2e; border-radius: 14px; max-width: 340px; width: 100%; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: #16213e; border-bottom: 1px solid #333; }
+.modal-title { font-size: 1rem; font-weight: bold; color: #00d4ff; }
+.modal-close { background: none; border: none; color: #666; font-size: 1.4rem; cursor: pointer; }
+.modal-body { padding: 14px 16px; font-size: 0.82rem; line-height: 1.6; color: #aaa; }
+.modal-footer { padding: 10px 16px; border-top: 1px solid #333; font-size: 0.7rem; color: #555; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="tab-bar">
+  <button class="tab-btn active" id="btn-market" onclick="switchTab('market')">📊 行情</button>
+  <button class="tab-btn" id="btn-accounts" onclick="switchTab('accounts')">📱 账号</button>
+</div>
+
+<div id="tab-market" class="tab-content active">
+  <div class="card">
+    <div class="label">BTC-USD-SWAP</div>
+    <div class="price" id="price">--</div>
+    <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:#888;margin-top:4px">
+      <span>24h低 <span id="low24">--</span></span>
+      <span>24h高 <span id="high24">--</span></span>
+    </div>
+  </div>
+
+  <div class="card" style="display:flex;justify-content:space-between;align-items:center">
+    <span id="signal">等待信号</span>
+    <span class="badge b-wait" id="badge">等待</span>
+  </div>
+
+  <div class="card">
+    <div class="label">多空偏向</div>
+    <div id="biasText" style="text-align:center;font-size:0.85rem;margin-top:4px">中性 50%</div>
+    <div style="height:8px;background:#333;border-radius:4px;margin-top:6px;overflow:hidden">
+      <div id="biasBar" style="width:50%;height:100%;background:linear-gradient(90deg,#27ae60,#2ecc71);transition:width 0.3s"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">技术指标</div>
+    <div class="grid">
+      <div class="cell" onclick="showModal('rsi')"><div class="cell-label">RSI</div><div class="cell-value" id="rsi">--</div></div>
+      <div class="cell" onclick="showModal('adx')"><div class="cell-label">ADX</div><div class="cell-value" id="adx">--</div></div>
+      <div class="cell" onclick="showModal('macd')"><div class="cell-label">MACD</div><div class="cell-value" id="macd">--</div></div>
+      <div class="cell" onclick="showModal('cvd')"><div class="cell-label">CVD</div><div class="cell-value" id="cvd">--</div></div>
+      <div class="cell" onclick="showModal('funding')"><div class="cell-label">资金费率</div><div class="cell-value" id="funding">--</div></div>
+      <div class="cell" onclick="showModal('atr')"><div class="cell-label">ATR</div><div class="cell-value" id="atr">--</div></div>
+      <div class="cell" onclick="showModal('book')"><div class="cell-label">买卖盘</div><div class="cell-value" id="book">--</div></div>
+      <div class="cell" onclick="showModal('spread')"><div class="cell-label">价差</div><div class="cell-value" id="spread">--</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">市场状态</div>
+    <div style="display:flex;justify-content:space-around;margin-top:8px">
+      <div style="text-align:center"><div class="label">状态</div><div id="state" style="color:#3498db">--</div></div>
+      <div style="text-align:center"><div class="label">方向</div><div id="dir">--</div></div>
+      <div style="text-align:center"><div class="label">趋势</div><div id="trend">--</div></div>
+    </div>
+  </div>
+
+  <div class="time">最后更新: <span id="update">--</span></div>
+</div>
+
+<div id="tab-accounts" class="tab-content">
+  <div id="acc-list"></div>
+  <div class="time">最后更新: <span id="acc-update">--</span></div>
+</div>
+
+<div id="modal" class="modal-overlay hide" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">--</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer">点击外部区域关闭</div>
+  </div>
+</div>
+
+<script>
+const SB_URL = 'https://lpcrnobolifrzwrkxoli.supabase.co';
+const SB_KEY = 'sb_publishable_8gEsCRNRc7py6BmypYuRIw_sNtKooug';
+
+var INDICATOR_INFO = {
+  rsi: { name: 'RSI 相对强弱指数', desc: '衡量价格变动的速度与幅度，判断是否超买或超卖。', details: ['<strong>0-30</strong>：超卖，可能止跌反弹','<strong>30-50</strong>：偏弱，趋势向下','<strong>50-70</strong>：偏强，趋势向上','<strong>70-100</strong>：超买，可能回落'], tip: 'RSI > 70 超买（可能下跌），RSI < 30 超卖（可能上涨）' },
+  adx: { name: 'ADX 趋势强度指数', desc: '衡量趋势强度（无论多空），不判断方向。', details: ['<strong>0-20</strong>：趋势极弱，震荡整理','<strong>20-25</strong>：有趋势形成','<strong>25-50</strong>：趋势明确','<strong>> 50</strong>：趋势极强'], tip: 'ADX 上升 = 趋势在加速（无论是多头还是空头）' },
+  macd: { name: 'MACD', desc: '由快线、慢线和柱状图组成，判断趋势方向与动能。', details: ['<strong>↑ DIF在DEA上方</strong>：多头信号','<strong>↓ DIF在DEA下方</strong>：空头信号','<strong>柱状图放大</strong>：动能增强','<strong>柱状图缩小</strong>：动能减弱'], tip: '只看快线方向和柱状图颜色即可判断多空' },
+  cvd: { name: 'CVD 累积成交量差', desc: '多空成交量累积量差，跟踪主力资金倾向。', details: ['<strong>CVD 上升</strong>：多头占优','<strong>CVD 下降</strong>：空头占优','<strong>CVD 背离价格</strong>：重要预警','价格创新高但CVD未跟上 → 可能见顶'], tip: 'CVD 比价格先行，是判断顶底的重要指标' },
+  funding: { name: '资金费率', desc: '永续合约多空双方定期交换的费用，正值多头付空头。', details: ['<strong>> 0</strong>：多头资金费率','<strong>< 0</strong>：空头资金费率','<strong>> 0.5%/8h</strong>：极端费率预警','<strong>接近0</strong>：多空平衡'], tip: '资金费率持续偏高，往往是顶部预警信号' },
+  atr: { name: 'ATR 平均真实波幅', desc: '衡量价格波动剧烈程度，辅助设置止损。', details: ['<strong>ATR 越大</strong>：市场波动越剧烈','<strong>ATR 越小</strong>：市场越平静','止损建议：可设 1-2 倍 ATR','波动加剧往往伴随趋势行情启动'], tip: '用 ATR 的倍数来设置止损，避免被正常波动扫出' },
+  book: { name: '买卖盘', desc: '盘口买卖盘深度对比，反映即时多空力量。', details: ['<strong>买盘 > 卖盘</strong>：买方更积极','<strong>卖盘 > 买盘</strong>：卖方更积极','差值越大，多空分歧越激烈','仅反映挂单量，不反映真实成交意愿'], tip: '作为辅助参考，不建议单独作为交易依据' },
+  spread: { name: '价差', desc: '盘口最优卖价与买价的差值，反映流动性成本。', details: ['<strong>$0.1 以下</strong>：流动性好','<strong>$0.1-$0.5</strong>：正常范围','<strong>> $1</strong>：流动性差，滑点风险大','极端价差往往在市场剧烈波动时出现'], tip: '价差突然扩大 = 市场流动性紧张，谨慎开仓' }
+};
+
+function showModal(key) {
+  var info = INDICATOR_INFO[key];
+  if (!info) return;
+  document.getElementById('modal-title').textContent = info.name;
+  var body = document.getElementById('modal-body');
+  var html = '<p style="color:#888;margin-bottom:10px">' + info.desc + '</p>';
+  html += '<div style="margin:8px 0">' + info.details.map(d => '<div style="margin-bottom:4px">' + d + '</div>').join('') + '</div>';
+  html += '<div style="background:#16213e;border-radius:8px;padding:10px;margin-top:10px;font-size:0.78rem;color:#00d4ff">💡 ' + info.tip + '</div>';
+  body.innerHTML = html;
+  document.getElementById('modal').classList.remove('hide');
+}
+function closeModal() { document.getElementById('modal').classList.add('hide'); }
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('btn-' + tab).classList.add('active');
+}
+
+function fmt(n, d=1) { return n != null && !isNaN(n) ? n.toFixed(d) : '--'; }
+function fmtP(n) { return n != null && !isNaN(n) ? Math.round(n).toLocaleString() : '--'; }
+
+function calcSignal(rsi, adx, trend, market_state, macd, signal, cvd) {
+  var isTrending = (market_state === 'trend' || market_state === 'strong_trend');
+  
+  // 强趋势做多: ADX>=25 + MACD金叉 + RSI 60-75 + CVD正
+  if (isTrending && trend === 'bullish' && adx >= 25) {
+    if (macd > signal && rsi >= 60 && rsi < 75 && cvd > 0) {
+      return { signal: '做多信号 🟢', badge: 'b-long', color: '#2ecc71' };
+    }
+    if (rsi >= 75 && cvd < 0) {
+      return { signal: '超买警告 ⚠️', badge: 'b-short', color: '#e74c3c' };
+    }
+  }
+  
+  // 强趋势做空: ADX>=25 + MACD死叉 + RSI 25-40 + CVD负
+  if (isTrending && trend === 'bearish' && adx >= 25) {
+    if (macd < signal && rsi <= 40 && rsi > 25 && cvd < 0) {
+      return { signal: '做空信号 🔴', badge: 'b-short', color: '#e74c3c' };
+    }
+    if (rsi <= 25 && cvd > 0) {
+      return { signal: '超卖警告 ⚠️', badge: 'b-long', color: '#2ecc71' };
+    }
+  }
+  
+  // 震荡行情（ADX < 25）: 无趋势信号
+  if (adx < 25) {
+    if (rsi < 35) return { signal: '超卖观察 🔵', badge: 'b-long', color: '#3498db' };
+    if (rsi > 65) return { signal: '超买观察 🔴', badge: 'b-short', color: '#e74c3c' };
+    return { signal: '等待信号 ⏸️', badge: 'b-wait', color: '#888' };
+  }
+  
+  // 有趋势但无确认
+  if (trend === 'bearish') return { signal: '等待做空 ⏸️', badge: 'b-wait', color: '#888' };
+  if (trend === 'bullish') return { signal: '等待做多 ⏸️', badge: 'b-wait', color: '#888' };
+  
+  return { signal: '等待信号 ⏸️', badge: 'b-wait', color: '#888' };
+}
+
+async function load() {
+  try {
+    const [mRes, tradesRes, accRes] = await Promise.all([
+      fetch(`${SB_URL}/rest/v1/btcmarketdata?order=created_at.desc&limit=1`, { headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` } }),
+      fetch(`${SB_URL}/rest/v1/btc_trades?status=eq.open&order=created_at.desc`, { headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` } }),
+      fetch(`${SB_URL}/rest/v1/btc_accounts?select=*&order=account_id.asc`, { headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` } })
+    ]);
+
+    const mData = await mRes.json();
+    const tradesData = await tradesRes.json();
+    const accData = await accRes.json();
+
+    if (!mData || mData.length === 0) return;
+    const m = mData[0];
+    const now = new Date(m.created_at).toLocaleString('zh-CN', {timeZone:'Asia/Shanghai'});
+    const price = m.price;
+    const rsi = m.rsi || 50;
+    const adx = m.adx || 0;
+    const trend = m.trend || 'neutral';
+    const marketState = m.market_state || 'oscillation';
+    const cvdVal = m.cvd || 0;
+    const fr = m.funding_rate || 0;
+    const bidS = m.bid_size || 0, askS = m.ask_size || 0;
+    const diff = bidS - askS;
+    const bookPct = Math.abs((diff / Math.max(bidS, askS, 1) * 100)).toFixed(0);
+    const spr = m.spread || 0;
+    const sigInfo = calcSignal(rsi, adx, trend, marketState, m.macd || 0, m.signal || 0, cvdVal);
+    const pct = Math.max(10, Math.min(90, trend === 'bullish' ? 75 : trend === 'bearish' ? 25 : Math.round(50 + (rsi - 50) * 1.5)));
+
+    document.getElementById('price').textContent = fmtP(price);
+    document.getElementById('low24').textContent = fmtP(m.low24h);
+    document.getElementById('high24').textContent = fmtP(m.high24h);
+    document.getElementById('signal').textContent = sigInfo.signal;
+    document.getElementById('badge').textContent = sigInfo.signal;
+    document.getElementById('badge').className = 'badge ' + sigInfo.badge;
+    document.getElementById('biasBar').style.width = pct + '%';
+    document.getElementById('biasText').textContent = (trend === 'bullish' ? '偏多' : trend === 'bearish' ? '偏空' : '中性') + ' ' + pct + '%';
+    document.getElementById('rsi').textContent = fmt(rsi);
+    document.getElementById('rsi').className = 'cell-value ' + (rsi < 40 ? 'green' : rsi > 70 ? 'red' : rsi < 50 ? 'yellow' : 'cyan');
+    document.getElementById('adx').textContent = fmt(adx);
+    document.getElementById('adx').className = 'cell-value ' + (adx > 25 ? 'green' : 'red');
+    var macd = m.macd || 0;
+    document.getElementById('macd').textContent = macd > 0 ? '↑' : '↓';
+    document.getElementById('macd').className = 'cell-value ' + (macd > 0 ? 'green' : 'red');
+    document.getElementById('cvd').textContent = (cvdVal >= 0 ? '+' : '') + (cvdVal / 1000).toFixed(1) + 'k';
+    document.getElementById('cvd').className = 'cell-value ' + (cvdVal > 0 ? 'green' : 'red');
+    document.getElementById('funding').textContent = fmt(fr * 100, 3) + '%';
+    document.getElementById('funding').className = 'cell-value ' + (fr > 0 ? 'red' : 'green');
+    document.getElementById('atr').textContent = '$' + fmt(m.atr, 0);
+    document.getElementById('book').textContent = diff > 0 ? '买+' + bookPct + '%' : '卖+' + bookPct + '%';
+    document.getElementById('book').className = 'cell-value ' + (diff > 0 ? 'green' : 'red');
+    document.getElementById('spread').textContent = spr > 0 ? '$' + fmt(spr, 1) : '--';
+    document.getElementById('spread').className = 'cell-value ' + (spr > 1 ? 'red' : spr > 0.5 ? 'yellow' : 'green');
+    var stateMap = {'oscillation':'震荡','trend':'趋势','strong_trend':'强趋势','extreme':'极端'};
+    document.getElementById('state').textContent = stateMap[marketState] || '--';
+    document.getElementById('dir').textContent = sigInfo.signal;
+    document.getElementById('dir').style.color = sigInfo.color;
+    document.getElementById('trend').textContent = trend === 'bullish' ? '多头' : trend === 'bearish' ? '空头' : '中性';
+    document.getElementById('trend').className = trend === 'bullish' ? 'green' : trend === 'bearish' ? 'red' : 'yellow';
+    document.getElementById('update').textContent = now;
+
+    // Accounts
+    var accMap = {};
+    for (var a of accData) accMap[a.account_id] = a;
+    var tradesByAcc = {};
+    for (var t of tradesData) {
+      if (!tradesByAcc[t.account_id]) tradesByAcc[t.account_id] = [];
+      tradesByAcc[t.account_id].push(t);
+    }
+
+    var displayOrder = ['账号1','账号2','账号3','账号4','账号5','真实账户'];
+    var html = '';
+
+    for (var accName of displayOrder) {
+      var acc = accMap[accName];
+      if (!acc) continue;
+      var isReal = accName === '真实账户';
+      var isIdle = acc.status === 'idle';
+      var trades = tradesByAcc[accName] || [];
+
+      // Total PnL
+      var totalPnl = 0;
+      for (var t of trades) {
+        totalPnl += (t.unrealizedpnl || 0);
+      }
+      var totalAssets = (acc.capital || 0) + totalPnl;
+      var pnlClass = totalPnl > 0.005 ? 'pos' : totalPnl < -0.005 ? 'neg' : 'zero';
+
+      html += '<div class="acc-group">';
+      html += '<div class="acc-header' + (isReal ? ' real' : '') + '">';
+      html += '<div class="acc-name"' + (isReal ? ' style="color:#f39c12"' : '') + '>' + accName + ' <span>' + (acc.strategy || '') + '</span></div>';
+      html += '<div><div class="acc-total ' + pnlClass + '">' + (totalAssets >= 0 ? '+' : '') + fmt(totalAssets, 2) + 'U</div>';
+      html += '<div class="acc-sub">余额 <span>' + fmt(acc.capital, 2) + '</span> + 浮动 <span class="' + pnlClass + '">' + (totalPnl >= 0 ? '+' : '') + fmt(totalPnl, 2) + '</span></div></div></div>';
+
+      // Positions
+      for (var t of trades) {
+        var sideLabel = t.side === 'long' ? '做多' : '做空';
+        var pnlVal = t.unrealizedpnl || 0;
+        var pnlClass2 = pnlVal > 0.005 ? 'pos' : pnlVal < -0.005 ? 'neg' : 'zero';
+
+        // Estimate margin for sim accounts: entry * size * 0.01 / lev
+        var margin = t.margin || null;
+        if (!margin && t.entry_price && t.size && t.leverage) {
+          margin = (t.entry_price * t.size * 0.01) / t.leverage;
+        }
+
+        // Estimate liq for sim: long=entry*(1+1/lev), short=entry*(1-1/lev)
+        var liq = t.liqprice || t.liq_price || null;
+        if (!liq && t.entry_price && t.leverage) {
+          liq = t.side === 'long' ? t.entry_price * (1 + 1 / t.leverage) : t.entry_price * (1 - 1 / t.leverage);
+        }
+
+        html += '<div class="pos-table">';
+        html += '<div class="pos-dir ' + t.side + '">';
+        html += '<div class="pos-dir-label ' + t.side + '">' + sideLabel + ' ×' + (t.leverage || '--') + ' ' + (t.size || 0) + '张</div>';
+        html += '<div class="pos-pnl ' + pnlClass2 + '">' + (pnlVal >= 0 ? '+' : '') + fmt(pnlVal, 2) + 'U</div>';
+        html += '</div>';
+
+        html += '<div class="pos-grid">';
+        html += '<div class="pos-cell"><div class="pos-cell-label">开仓均价</div><div class="pos-cell-value">$' + fmtP(t.entry_price) + '</div></div>';
+        html += '<div class="pos-cell"><div class="pos-cell-label">当前价</div><div class="pos-cell-value cyan">$' + fmtP(price) + '</div></div>';
+        html += '<div class="pos-cell"><div class="pos-cell-label">预估强平价</div><div class="pos-cell-value yellow">' + (liq ? '$' + fmtP(liq) : '--') + '</div></div>';
+        html += '<div class="pos-cell"><div class="pos-cell-label">保证金(USDT)</div><div class="pos-cell-value">' + (margin ? fmt(margin, 2) : '--') + '</div></div>';
+        html += '<div class="pos-cell"><div class="pos-cell-label">止盈</div><div class="pos-cell-value pos">$' + fmtP(t.tp) + '</div></div>';
+        html += '<div class="pos-cell"><div class="pos-cell-label">止损</div><div class="pos-cell-value neg">$' + fmtP(t.sl) + '</div></div>';
+        html += '<div class="pos-cell"><div class="pos-cell-label">可平量</div><div class="pos-cell-value">' + ((t.size || 0) > 0 ? t.size + ' 张' : '--') + '</div></div>';
+        html += '<div class="pos-cell"><div class="pos-cell-label">浮动盈亏(USD)</div><div class="pos-cell-value ' + pnlClass2 + '">' + (pnlVal >= 0 ? '+' : '') + fmt(pnlVal, 2) + '</div></div>';
+        html += '</div></div>';
+      }
+
+      if (isIdle && trades.length === 0) {
+        html += '<div class="acc-idle">空闲 · 本金 <span>' + fmt(acc.capital, 2) + 'U</span></div>';
+      }
+
+      html += '</div>';
+    }
+
+    if (!html) html = '<div class="no-data">暂无账号数据</div>';
+    document.getElementById('acc-list').innerHTML = html;
+    document.getElementById('acc-update').textContent = now;
+
+  } catch(e) { console.log('Load error:', e); }
+}
+
+load();
+setInterval(load, 15000);
+</script>
+</body>
+</html>
