@@ -126,10 +126,6 @@ body { font-family: -apple-system, sans-serif; background: #0f0f1a; color: #fff;
       <div class="cell" onclick="showModal('atr')"><div class="cell-label">ATR</div><div class="cell-value" id="atr">--</div></div>
       <div class="cell" onclick="showModal('book')"><div class="cell-label">买卖盘</div><div class="cell-value" id="book">--</div></div>
       <div class="cell" onclick="showModal('spread')"><div class="cell-label">价差</div><div class="cell-value" id="spread">--</div></div>
-      <div class="cell" onclick="showModal('sentiment')"><div class="cell-label">情绪</div><div class="cell-value" id="sentiment">--</div></div>
-      <div class="cell" onclick="showModal('harvest')"><div class="cell-label">收割预警</div><div class="cell-value" id="harvest">--</div></div>
-      <div class="cell" onclick="showModal('oi')"><div class="cell-label">OI持仓量</div><div class="cell-value" id="oi">--</div></div>
-      <div class="cell" onclick="showModal('nextfunding')"><div class="cell-label">下次结算</div><div class="cell-value" id="nextfunding">--</div></div>
     </div>
   </div>
 
@@ -178,11 +174,7 @@ var INDICATOR_INFO = {
   funding: { name: '资金费率', desc: '永续合约多空双方定期交换的费用，正值多头付空头。', details: ['<strong>> 0</strong>：多头资金费率','<strong>< 0</strong>：空头资金费率','<strong>> 0.5%/8h</strong>：极端费率预警','<strong>接近0</strong>：多空平衡'], tip: '资金费率持续偏高，往往是顶部预警信号' },
   atr: { name: 'ATR 平均真实波幅', desc: '衡量价格波动剧烈程度，辅助设置止损。', details: ['<strong>ATR 越大</strong>：市场波动越剧烈','<strong>ATR 越小</strong>：市场越平静','止损建议：可设 1-2 倍 ATR','波动加剧往往伴随趋势行情启动'], tip: '用 ATR 的倍数来设置止损，避免被正常波动扫出' },
   book: { name: '买卖盘', desc: '盘口买卖盘深度对比，反映即时多空力量。', details: ['<strong>买盘 > 卖盘</strong>：买方更积极','<strong>卖盘 > 买盘</strong>：卖方更积极','差值越大，多空分歧越激烈','仅反映挂单量，不反映真实成交意愿'], tip: '作为辅助参考，不建议单独作为交易依据' },
-  spread: { name: '价差', desc: '盘口最优卖价与买价的差值，反映流动性成本。', details: ['<strong>$0.1 以下</strong>：流动性好','<strong>$0.1-$0.5</strong>：正常范围','<strong>> $1</strong>：流动性差，滑点风险大','极端价差往往在市场剧烈波动时出现'], tip: '价差突然扩大 = 市场流动性紧张，谨慎开仓' },
-  sentiment: { name: '新闻情绪', desc: 'AI分析新闻情绪对BTC影响，正值利多，负值利空。', details: ['<strong>利多</strong>：新闻偏利好','<strong>利空</strong>：新闻偏利空','<strong>中性</strong>：无明显倾向','由GROQ AI每6分钟分析一次'], tip: '情绪分析仅供参考，不作为交易依据' },
-  harvest: { name: '收割预警', desc: '资金费率异常预警，极端费率往往伴随趋势顶底。', details: ['<strong>正常</strong>：|费率| < 0.2%/8h','<strong>警告</strong>：|费率| 0.2-0.5%/8h','<strong>危险</strong>：|费率| > 0.5%/8h','极端费率往往是行情即将反转的信号'], tip: '高资金费率预警 = 警惕顶部风险，低费率可作为做多参考' },
-  oi: { name: 'OI 持仓量', desc: '合约市场总持仓量，OI增加代表资金涌入，OI减少代表资金撤离。', details: ['<strong>OI 上升</strong>：多空双方加仓，趋势可能延续','<strong>OI 下降</strong>：多空双方减仓，趋势可能结束','<strong>OI 背离价格</strong>：重要预警信号','OI 大幅下降往往伴随趋势反转'], tip: 'OI 与价格背离 = 多空一方正在撤退，可能是趋势反转信号' },
-  nextfunding: { name: '下次结算', desc: '下次资金费率结算时间，每次结算时交换费用。', details: ['<strong>OKX永续</strong>：每8小时结算一次','<strong>北京时区</strong>：00:00 / 08:00 / 16:00','<strong>资金费率</strong>：结算时自动交换','了解结算时间有助于把握费率变化的节奏点'], tip: '结算前后市场往往波动加剧，注意风险控制' }
+  spread: { name: '价差', desc: '盘口最优卖价与买价的差值，反映流动性成本。', details: ['<strong>$0.1 以下</strong>：流动性好','<strong>$0.1-$0.5</strong>：正常范围','<strong>> $1</strong>：流动性差，滑点风险大','极端价差往往在市场剧烈波动时出现'], tip: '价差突然扩大 = 市场流动性紧张，谨慎开仓' }
 };
 
 function showModal(key) {
@@ -299,40 +291,6 @@ async function load() {
     document.getElementById('book').className = 'cell-value ' + (diff > 0 ? 'green' : 'red');
     document.getElementById('spread').textContent = spr > 0 ? '$' + fmt(spr, 1) : '--';
     document.getElementById('spread').className = 'cell-value ' + (spr > 1 ? 'red' : spr > 0.5 ? 'yellow' : 'green');
-    
-    // 情绪 (sentiment - 暂从 funding_rate 计算，实际应从 sentiment API 获取)
-    var sentimentVal = m.sentiment || {};
-    var mood = sentimentVal['情绪'] || '中性';
-    document.getElementById('sentiment').textContent = mood;
-    document.getElementById('sentiment').className = 'cell-value ' + (mood === '利多' ? 'green' : mood === '利空' ? 'red' : 'yellow');
-    
-    // 收割预警
-    var harvestAlerts = m.harvest_warnings || [];
-    var harvestText = harvestAlerts.length > 0 ? '⚠️ ' + harvestAlerts.length + '条' : '正常';
-    document.getElementById('harvest').textContent = harvestText;
-    document.getElementById('harvest').className = 'cell-value ' + (harvestAlerts.length > 0 ? 'red' : 'green');
-    
-    // OI持仓量
-    var oiVal = m.oi || 0;
-    document.getElementById('oi').textContent = oiVal > 0 ? (oiVal / 1e6).toFixed(2) + 'M' : '--';
-    document.getElementById('oi').className = 'cell-value ' + (oiVal > 0 ? 'cyan' : 'yellow');
-    
-    // 下次结算时间
-    var nextFund = m.next_funding_time;
-    var fundText = '--';
-    if (nextFund) {
-      var fundDate = new Date(nextFund * 1000);
-      fundText = fundDate.toLocaleString('zh-CN', {timeZone:'Asia/Shanghai', hour:'2-digit', minute:'2-digit'});
-    } else {
-      // 计算下次结算：OKX 每8小时结算，北京时区 00:00/08:00/16:00
-      var nowBeijing = new Date(new Date().toLocaleString('en-US', {timeZone:'Asia/Shanghai'}));
-      var h = nowBeijing.getHours();
-      var nextH = h < 8 ? 8 : h < 16 ? 16 : 24;
-      fundText = String(nextH).padStart(2,'0') + ':00';
-    }
-    document.getElementById('nextfunding').textContent = fundText;
-    document.getElementById('nextfunding').className = 'cell-value cyan';
-    
     var stateMap = {'oscillation':'震荡','trend':'趋势','strong_trend':'强趋势','extreme':'极端'};
     document.getElementById('state').textContent = stateMap[marketState] || '--';
     document.getElementById('dir').textContent = sigInfo.signal;
