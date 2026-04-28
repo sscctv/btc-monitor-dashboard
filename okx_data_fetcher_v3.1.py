@@ -15,6 +15,8 @@ import hmac
 import base64
 import warnings
 import subprocess
+import urllib.request
+import urllib.error
 from datetime import datetime, timezone, timedelta
 
 # 北京时区 (UTC+8)
@@ -681,6 +683,7 @@ def save_market(market):
     conn.commit()
     conn.close()
     market['last_update'] = beijing_time
+    sync_market_to_supabase(market)
 
 def get_oi_history():
     """获取OI历史数据"""
@@ -764,6 +767,47 @@ def export_json(bid_price=0, ask_price=0, bid_size=0, ask_size=0, spread=0):
     
     with open('/tmp/market_data.json', 'w') as f:
         json.dump(data, f, ensure_ascii=False)
+
+
+
+def sync_market_to_supabase(market):
+    """同步行情数据到 Supabase btcmarketdata 表"""
+    try:
+        sb = 'YOUR_SUPABASE_SECRET_HERE'
+        BASE = 'https://lpcrnobolifrzwrkxoli.supabase.co/rest/v1'
+        headers = {'apikey': sb, 'Authorization': f'Bearer {sb}', 'Content-Type': 'application/json', 'Prefer': 'return=representation'}
+        
+        record = {
+            'price': market.get('price', 0),
+            'rsi': market.get('rsi', 0),
+            'macd': market.get('macd', 0),
+            'signal_line': market.get('signal', 0),
+            'atr': market.get('atr', 0),
+            'cvd': market.get('cvd', 0),
+            'adx': market.get('adx', 0),
+            'trend': market.get('trend', ''),
+            'market_state': market.get('market_state', ''),
+            'high24h': market.get('high24h', 0),
+            'low24h': market.get('low24h', 0),
+            'funding_rate': market.get('funding_rate', 0),
+            'bid_price': market.get('bid_price', 0),
+            'ask_price': market.get('ask_price', 0),
+            'bid_size': market.get('bid_size', 0),
+            'ask_size': market.get('ask_size', 0),
+            'spread': market.get('spread', 0),
+        }
+        
+        req = urllib.request.Request(
+            f'{BASE}/btcmarketdata',
+            data=json.dumps(record).encode(),
+            headers=headers,
+            method='POST'
+        )
+        with urllib.request.urlopen(req, timeout=5):
+            pass  # 静默写入，不阻塞主流程
+    except Exception as e:
+        print(f"Supabase sync error (non-blocking): {e}")
+
 
 if __name__ == '__main__':
     init_db()
