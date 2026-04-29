@@ -3,260 +3,298 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>BTC 智能交易监控</title>
+<title>BTC 交易监控面板</title>
 <style>
-:root {
-  --bg: #0a0a14;
-  --card: #111827;
-  --border: #1f2937;
-  --text: #e5e7eb;
-  --dim: #6b7280;
-  --green: #10b981;
-  --red: #ef4444;
-  --yellow: #f59e0b;
-  --blue: #3b82f6;
-  --cyan: #06b6d4;
-}
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; min-height: 100vh; }
-
-.header { text-align: center; padding: 16px 12px 8px; border-bottom: 1px solid var(--border); }
-.header h1 { color: var(--cyan); font-size: 1.1rem; font-weight: 600; }
-.header .sub { color: var(--dim); font-size: 0.65rem; margin-top: 4px; }
-
-/* 价格卡片 */
-.price-card { margin: 12px 10px; background: var(--card); border-radius: 16px; padding: 16px; text-align: center; }
-.price-card .price { font-size: 2rem; font-weight: 700; color: var(--cyan); font-family: 'SF Mono', monospace; }
-.price-card .signal-row { display: flex; justify-content: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-.badge { display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
-.bg-green { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid var(--green); }
-.bg-red { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid var(--red); }
-.bg-yellow { background: rgba(245,158,11,0.15); color: var(--yellow); border: 1px solid var(--yellow); }
-.bg-gray { background: rgba(107,114,128,0.15); color: var(--dim); border: 1px solid var(--dim); }
-
-/* 指标网格 */
-.metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 0 10px 10px; }
-.metric { background: var(--card); border-radius: 12px; padding: 10px 6px; text-align: center; }
-.metric .label { color: var(--dim); font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-.metric .val { font-size: 0.95rem; font-weight: 700; }
-.metric .sub { font-size: 0.6rem; color: var(--dim); margin-top: 2px; }
-
-/* 信号详情 */
-.detail-card { margin: 0 10px 10px; background: var(--card); border-radius: 12px; padding: 12px; }
-.detail-card .title { color: var(--cyan); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-.detail-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 0.8rem; }
-.detail-row:last-child { border-bottom: none; }
-.detail-row .label { color: var(--dim); }
-.detail-row .val { font-weight: 600; }
-.detail-desc { margin-top: 8px; padding: 8px; background: var(--bg); border-radius: 8px; font-size: 0.7rem; color: var(--dim); line-height: 1.5; }
-
-/* 账户 */
-.section-title { color: var(--cyan); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; margin: 14px 10px 6px; }
-.acc-card { margin: 0 10px 8px; background: var(--card); border-radius: 12px; padding: 12px; border-left: 3px solid var(--cyan); }
-.acc-card.long { border-color: var(--green); }
-.acc-card.short { border-color: var(--red); }
+body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #0f0f1a; color: #e0e0e0; font-size: 14px; min-height: 100vh; }
+.tab-bar { display: flex; background: #1a1a2e; padding: 4px; gap: 4px; }
+.tab-btn { flex: 1; padding: 8px; background: none; border: none; color: #666; font-size: 0.8rem; cursor: pointer; border-radius: 8px; transition: all 0.2s; }
+.tab-btn.active { background: #2a2a4e; color: #00d4ff; font-weight: bold; }
+.tab-content { display: none; padding: 8px; }
+.tab-content.active { display: block; }
+.card { background: #1a1a2e; border-radius: 12px; padding: 12px; margin-bottom: 8px; }
+.price { font-size: 2.2rem; color: #00d4ff; text-align: center; font-weight: 700; font-family: 'SF Mono', monospace; }
+.label { color: #666; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; }
+.b-long { background: rgba(46,204,113,0.2); color: #2ecc71; }
+.b-short { background: rgba(231,76,60,0.2); color: #e74c3c; }
+.b-wait { background: rgba(100,100,100,0.2); color: #888; }
+.b-pending { background: rgba(243,156,18,0.2); color: #f39c12; }
+.green { color: #2ecc71; }
+.red { color: #e74c3c; }
+.yellow { color: #f1c40f; }
+.cyan { color: #00d4ff; }
+.gray { color: #888; }
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.cell { background: #0f0f1a; border-radius: 8px; padding: 8px 4px; text-align: center; cursor: pointer; }
+.cell:active { background: #2a2a4e; }
+.cell-label { font-size: 0.55rem; color: #555; text-transform: uppercase; margin-bottom: 2px; }
+.cell-value { font-size: 0.85rem; font-weight: 700; margin-top: 2px; }
+.account-card { background: #1a1a2e; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; border-left: 3px solid #00d4ff; }
+.account-card.long { border-color: #2ecc71; }
+.account-card.short { border-color: #e74c3c; }
 .acc-header { display: flex; justify-content: space-between; align-items: center; }
-.acc-name { font-weight: 700; font-size: 0.95rem; }
-.acc-strategy { font-size: 0.65rem; color: var(--dim); margin-top: 2px; }
-.acc-pnl { font-size: 1.1rem; font-weight: 700; }
-.acc-balance { font-size: 0.65rem; color: var(--dim); text-align: right; margin-top: 2px; }
-.acc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px; }
-.acc-stat { background: var(--bg); border-radius: 8px; padding: 6px; text-align: center; }
-.acc-stat .l { color: var(--dim); font-size: 0.55rem; text-transform: uppercase; }
-.acc-stat .v { font-size: 0.8rem; font-weight: 700; margin-top: 2px; }
-.acc-status-badge { display: inline-block; font-size: 0.6rem; padding: 2px 8px; border-radius: 10px; margin-top: 4px; }
-
-/* 预警 */
-.alert-card { margin: 0 10px 8px; background: var(--card); border-radius: 12px; padding: 10px 12px; border-left: 3px solid; }
-.alert-card.critical { border-color: var(--red); }
-.alert-card.warning { border-color: var(--yellow); }
-.alert-card.info { border-color: var(--blue); }
-.alert-time { font-size: 0.6rem; color: var(--dim); }
-.alert-msg { font-size: 0.8rem; margin-top: 2px; }
-
-/* 底部 */
-.footer { text-align: center; color: var(--dim); font-size: 0.6rem; padding: 16px; }
-.live-dot { display: inline-block; width: 6px; height: 6px; background: var(--green); border-radius: 50%; animation: pulse 2s infinite; margin-right: 4px; }
-@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-.status-bar { display: flex; justify-content: center; align-items: center; gap: 6px; font-size: 0.65rem; color: var(--dim); margin-top: 4px; }
-
-/* 加载 */
-.loading { text-align: center; color: var(--dim); padding: 40px; font-size: 0.8rem; }
-
-/* 移动适配 */
-@media (max-width: 400px) {
-  .metrics { grid-template-columns: repeat(2, 1fr); gap: 6px; }
-  .metric .val { font-size: 0.85rem; }
-  .price-card .price { font-size: 1.7rem; }
-}
-@media (min-width: 600px) {
-  body { max-width: 600px; margin: 0 auto; }
-  .header { padding: 20px 16px 12px; }
-  .header h1 { font-size: 1.3rem; }
-}
+.acc-name { font-size: 0.9rem; font-weight: 700; }
+.acc-pnl { font-size: 1rem; font-weight: 700; }
+.acc-balance { font-size: 0.65rem; color: #555; }
+.acc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 6px; }
+.acc-stat { background: #0f0f1a; border-radius: 6px; padding: 4px; text-align: center; }
+.acc-stat .l { font-size: 0.5rem; color: #444; text-transform: uppercase; }
+.acc-stat .v { font-size: 0.75rem; font-weight: 700; margin-top: 1px; }
+.time { text-align: center; color: #444; font-size: 0.65rem; padding: 6px; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.modal-overlay.hide { display: none; }
+.modal-box { background: #1a1a2e; border-radius: 16px; max-width: 360px; width: 100%; padding: 16px; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.modal-title { color: #00d4ff; font-size: 0.9rem; font-weight: 700; }
+.modal-close { background: none; border: none; color: #888; font-size: 1.2rem; cursor: pointer; }
+.modal-body { color: #aaa; font-size: 0.8rem; line-height: 1.6; }
+.modal-body li { margin-bottom: 4px; }
+.modal-footer { color: #444; font-size: 0.65rem; text-align: center; margin-top: 12px; }
+.loading { text-align: center; color: #444; padding: 30px; }
+@media (max-width: 400px) { .grid { grid-template-columns: repeat(3, 1fr); } }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h1>📊 BTC 智能交易监控</h1>
-  <div class="status-bar"><span class="live-dot"></span>实时 · 5秒刷新</div>
+<div class="tab-bar">
+  <button class="tab-btn active" id="btn-market" onclick="switchTab('market')">📊 行情</button>
+  <button class="tab-btn" id="btn-accounts" onclick="switchTab('accounts')">💼 账号</button>
+  <button class="tab-btn" id="btn-virt" onclick="switchTab('virt')">🎮 虚拟</button>
 </div>
 
-<div class="price-card">
-  <div class="price" id="price">--</div>
-  <div class="signal-row" id="signal-row">
-    <span class="badge bg-gray">等待信号</span>
+<div id="tab-market" class="tab-content active">
+  <div class="card">
+    <div class="label">BTC-USD-SWAP</div>
+    <div class="price" id="price">--</div>
+    <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:#666;margin-top:4px">
+      <span>24h低 <span id="low24">--</span></span>
+      <span>24h高 <span id="high24">--</span></span>
+    </div>
   </div>
+
+  <div class="card" style="display:flex;justify-content:space-between;align-items:center">
+    <span id="signal">等待信号</span>
+    <span class="badge b-wait" id="badge">等待</span>
+  </div>
+
+  <div class="card">
+    <div class="label">多空偏向</div>
+    <div id="biasText" style="text-align:center;font-size:0.85rem;margin-top:4px">--</div>
+    <div style="height:8px;background:#333;border-radius:4px;margin-top:6px;overflow:hidden">
+      <div id="biasBar" style="width:50%;height:100%;background:linear-gradient(90deg,#27ae60,#2ecc71);transition:width 0.3s"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="label">技术指标</div>
+    <div class="grid">
+      <div class="cell" onclick="showModal('rsi')"><div class="cell-label">RSI</div><div class="cell-value" id="rsi">--</div></div>
+      <div class="cell" onclick="showModal('adx')"><div class="cell-label">ADX</div><div class="cell-value" id="adx">--</div></div>
+      <div class="cell" onclick="showModal('score')"><div class="cell-label">综合评分</div><div class="cell-value" id="score">--</div></div>
+      <div class="cell" onclick="showModal('depth')"><div class="cell-label">深度比</div><div class="cell-value" id="depth">--</div></div>
+      <div class="cell" onclick="showModal('bigtrade')"><div class="cell-label">大单净流</div><div class="cell-value" id="bigtrade">--</div></div>
+      <div class="cell" onclick="showModal('bigbuysell')"><div class="cell-label">大单买/卖</div><div class="cell-value" id="bigbuysell">--</div></div>
+      <div class="cell" onclick="showModal('funding')"><div class="cell-label">资金费率</div><div class="cell-value" id="funding">--</div></div>
+      <div class="cell" onclick="showModal('atr')"><div class="cell-label">ATR</div><div class="cell-value" id="atr">--</div></div>
+      <div class="cell" onclick="showModal('cvd')"><div class="cell-label">CVD</div><div class="cell-value" id="cvd">--</div></div>
+      <div class="cell" onclick="showModal('spread')"><div class="cell-label">价差</div><div class="cell-value" id="spread">--</div></div>
+      <div class="cell" onclick="showModal('sentiment')"><div class="cell-label">市场情绪</div><div class="cell-value" id="sentiment">--</div></div>
+      <div class="cell" onclick="showModal('state')"><div class="cell-label">市场状态</div><div class="cell-value" id="state">--</div></div>
+    </div>
+  </div>
+
+  <div class="time">最后更新: <span id="update">--</span></div>
 </div>
 
-<div class="metrics">
-  <div class="metric">
-    <div class="label">评分</div>
-    <div class="val" id="score">--</div>
-  </div>
-  <div class="metric">
-    <div class="label">RSI</div>
-    <div class="val" id="rsi">--</div>
-    <div class="sub" id="rsi-hint"></div>
-  </div>
-  <div class="metric">
-    <div class="label">ADX</div>
-    <div class="val" id="adx">--</div>
-    <div class="sub" id="adx-hint"></div>
-  </div>
-  <div class="metric">
-    <div class="label">深度比</div>
-    <div class="val" id="depth">--</div>
-  </div>
+<div id="tab-virt" class="tab-content">
+  <div id="virt-list"><div class="loading">加载中...</div></div>
+  <div class="time">最后更新: <span id="virt-update">--</span></div>
 </div>
 
-<div class="detail-card">
-  <div class="title">📈 综合信号</div>
-  <div class="detail-row"><span class="label">大单净流向</span><span class="val" id="big-net">--</span></div>
-  <div class="detail-row"><span class="label">资金费率</span><span class="val" id="funding-rate">--</span></div>
-  <div class="detail-row"><span class="label">24h 高</span><span class="val" id="high24h">--</span></div>
-  <div class="detail-row"><span class="label">24h 低</span><span class="val" id="low24h">--</span></div>
-  <div class="detail-row"><span class="label">市场情绪</span><span class="val" id="sentiment">--</span></div>
-  <div class="detail-desc" id="sig-desc">加载中...</div>
+<div id="tab-accounts" class="tab-content">
+  <div id="acc-list"><div class="loading">加载中...</div></div>
+  <div class="time">最后更新: <span id="acc-update">--</span></div>
 </div>
 
-<div class="section-title">💼 账户</div>
-<div id="acc-container"><div class="loading">加载中...</div></div>
-
-<div class="footer">
-  <div>最后更新: <span id="last-update">--</span></div>
+<div id="modal" class="modal-overlay hide" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">--</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer">点击外部区域关闭</div>
+  </div>
 </div>
 
 <script>
 const STORAGE_URL = 'https://lpcrnobolifrzwrkxoli.supabase.co/storage/v1/object/public/virt-data/market_data.json';
-
 const $ = id => document.getElementById(id);
 
-function f(n, d=2) { return n != null && !isNaN(n) ? Number(n).toFixed(d) : '--'; }
-function fp(n) { return n != null && !isNaN(n) ? Number(n).toLocaleString() : '--'; }
-function cl(val, gt, lt) { return val > gt ? 'green' : val < lt ? 'red' : 'dim'; }
-function clv(val) { return val > 0 ? 'green' : val < 0 ? 'red' : 'dim'; }
+var INDICATOR_INFO = {
+  rsi: { name: 'RSI 相对强弱指数', desc: '衡量价格变动的速度与幅度，判断是否超买或超卖。', details: ['<strong>0-30</strong>：超卖，可能止跌反弹','<strong>30-50</strong>：偏弱，趋势向下','<strong>50-70</strong>：偏强，趋势向上','<strong>70-100</strong>：超买，可能回落'], tip: 'RSI > 70 超买（可能下跌），RSI < 30 超卖（可能上涨）' },
+  adx: { name: 'ADX 趋势强度指数', desc: '衡量趋势强度（无论多空），不判断方向。', details: ['<strong>0-20</strong>：趋势极弱，震荡整理','<strong>20-25</strong>：有趋势形成','<strong>25-50</strong>：趋势明确','<strong>> 50</strong>：趋势极强'], tip: 'ADX 上升 = 趋势在加速（无论是多头还是空头）' },
+  score: { name: '综合评分', desc: '融合盘口深度(30%) + 大单流向(30%) + 资金费率(15%) + RSI/ADX(25%)的加权评分。', details: ['<strong>+0.65 以上</strong>：强做多信号','<strong>-0.65 以下</strong>：强做空信号','<strong>+0.35 ~ +0.65</strong>：等待做多确认','<strong>-0.35 ~ -0.65</strong>：等待做空确认','<strong>-0.35 ~ +0.35</strong>：观望'], tip: '评分从 -1 到 +1，越接近 +1 做多信号越强' },
+  depth: { name: '盘口深度比', desc: '买卖盘深度对比，买方深度/卖方深度。反映多空力量对比。', details: ['<strong>> 2.0</strong>：买方主导，极度偏多','<strong>< 0.5</strong>：卖方主导，极度偏空','<strong>0.8-1.2</strong>：多空基本均衡','深度突然放大往往伴随变盘'], tip: '深度比 > 2 配合大单买入 = 强做多信号' },
+  bigtrade: { name: '大单净流向', desc: '5分钟内 ≥1BTC 的大单买入笔数减去卖出笔数，反映主力资金意图。', details: ['<strong>+50 以上</strong>：主力强势买入','<strong>-50 以下</strong>：主力强势卖出','<strong>±10 以内</strong>：多空拉锯','连续同向大单 = 趋势确认信号'], tip: '大单比价格先行，是跟踪主力的核心指标' },
+  bigbuysell: { name: '大单买卖明细', desc: '显示最近5分钟内大单买入和卖出的笔数。', details: ['<strong>买入 > 卖出</strong>：多头占优','<strong>卖出 > 买入</strong>：空头占优','大单笔数突然增加 = 主力异动','需结合净流向判断方向'], tip: '关注净流向，正数看多，负数看空' },
+  funding: { name: '资金费率', desc: '永续合约多空双方定期交换的费用，正值多头付空头。', details: ['<strong>> 0</strong>：多头资金费率','<strong>< 0</strong>：空头资金费率','<strong>> 0.01%/8h</strong>：费率偏高预警','<strong>接近0</strong>：多空平衡'], tip: '资金费率持续偏高，往往是顶部预警信号' },
+  atr: { name: 'ATR 平均真实波幅', desc: '衡量价格波动剧烈程度，辅助设置止损。', details: ['<strong>ATR 越大</strong>：市场波动越剧烈','<strong>ATR 越小</strong>：市场越平静','止损建议：可设 1-2 倍 ATR','波动加剧往往伴随趋势行情启动'], tip: '用 ATR 的倍数来设置止损，避免被正常波动扫出' },
+  cvd: { name: 'CVD 累积成交量差', desc: '多空成交量累积量差，跟踪主力资金倾向。', details: ['<strong>CVD 上升</strong>：多头占优','<strong>CVD 下降</strong>：空头占优','<strong>CVD 背离价格</strong>：重要预警','价格创新高但CVD未跟上 → 可能见顶'], tip: 'CVD 比价格先行，是判断顶底的重要指标' },
+  spread: { name: '盘口价差', desc: '买一价和卖一价的差额，反映市场流动性。', details: ['<strong>价差小</strong>：流动性好','<strong>价差突然放大</strong>：流动性枯竭预警','价差大时容易出现滑点','变盘前往往伴随价差放大'], tip: '价差持续放大是变盘的前兆信号' },
+  sentiment: { name: '市场情绪', desc: '综合多维度数据计算的市场情绪指标。', details: ['<strong>强势看多</strong>：综合信号强劲','<strong>强势看空</strong>：综合信号偏弱','<strong>中性</strong>：信号不明','情绪是滞后指标，需结合信号评分使用'], tip: '情绪极端时往往是反向指标' },
+  state: { name: '市场状态', desc: '根据 ADX 划分市场状态。', details: ['<strong>震荡</strong>：ADX < 25，趋势不明确','<strong>趋势</strong>：ADX >= 25，趋势明确','震荡市适合高抛低吸','趋势市适合顺势而为'], tip: 'ADX < 20 时避免追趋势，是震荡行情' }
+};
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  $('tab-' + tab).classList.add('active');
+  $('btn-' + tab).classList.add('active');
+}
+
+function showModal(key) {
+  var info = INDICATOR_INFO[key];
+  if (!info) return;
+  $('modal-title').textContent = info.name;
+  var html = '<p style="margin-bottom:8px">' + info.desc + '</p><ul>';
+  for (var i = 0; i < info.details.length; i++) html += '<li>' + info.details[i] + '</li>';
+  html += '</ul><p style="margin-top:8px;color:#00d4ff;font-size:0.75rem">' + info.tip + '</p>';
+  $('modal-body').innerHTML = html;
+  $('modal').classList.remove('hide');
+}
+
+function closeModal() { $('modal').classList.add('hide'); }
+
+function fmt(n, d) { return n != null && !isNaN(n) ? Number(n).toFixed(d != null ? d : 2) : '--'; }
+function fmtP(n) { return n != null && !isNaN(n) ? Number(n).toLocaleString() : '--'; }
+function cl(val, gt, lt) { return val > gt ? 'green' : val < lt ? 'red' : 'yellow'; }
 
 function badge(mode) {
-  if (mode === 'long') return '<span class="badge bg-green">做多 🟢</span>';
-  if (mode === 'short') return '<span class="badge bg-red">做空 🔴</span>';
-  if (mode === 'long_pending') return '<span class="badge bg-yellow">等待做多 🟡</span>';
-  if (mode === 'short_pending') return '<span class="badge bg-yellow">等待做空 🟡</span>';
-  return '<span class="badge bg-gray">等待 ⏸️</span>';
+  if (mode === 'long') return '<span class="badge b-long">做多 🟢</span>';
+  if (mode === 'short') return '<span class="badge b-short">做空 🔴</span>';
+  if (mode === 'long_pending') return '<span class="badge b-pending">等待做多 🟡</span>';
+  if (mode === 'short_pending') return '<span class="badge b-pending">等待做空 🟡</span>';
+  return '<span class="badge b-wait">等待 ⏸️</span>';
 }
 
-function accBadge(side) {
-  if (side === 'long') return '<span class="badge bg-green" style="font-size:0.55rem">多单</span>';
-  if (side === 'short') return '<span class="badge bg-red" style="font-size:0.55rem">空单</span>';
-  return '<span class="badge bg-gray" style="font-size:0.55rem">空仓</span>';
-}
-
-async function loadData() {
+async function load() {
   let data = null;
   try {
     const res = await fetch(STORAGE_URL + '?t=' + Date.now());
     if (res.ok) data = await res.json();
-  } catch(e) { console.log('fetch error', e); }
-  
+  } catch (e) {}
   if (!data || !data.market) {
     $('price').textContent = '加载失败';
     return;
   }
-  
-  const m = data.market;
-  const sc = Number(m.signal_score || 0);
-  const rsi = Number(m.rsi || 50);
-  const adx = Number(m.adx || 25);
-  const dr = Number(m.depth_ratio_5 || 1);
-  const bn = Number(m.big_trade_net || 0);
-  const fr = Number(m.funding_rate || 0);
-  
-  $('price').textContent = '$' + fp(m.price);
-  $('signal-row').innerHTML = badge(m.mode);
-  $('score').textContent = (sc >= 0 ? '+' : '') + f(sc, 2);
-  $('score').className = 'val ' + clv(sc);
-  
-  $('rsi').textContent = f(rsi, 1);
-  $('rsi').className = 'val ' + cl(rsi, 65, 35);
-  $('rsi-hint').textContent = rsi > 65 ? '超买' : rsi < 35 ? '超卖' : '';
-  
-  $('adx').textContent = f(adx, 1);
-  $('adx').className = 'val ' + (adx >= 25 ? 'green' : 'dim');
-  $('adx-hint').textContent = adx >= 25 ? '趋势' : '震荡';
-  
-  $('depth').textContent = f(dr, 2);
-  $('depth').className = 'val ' + cl(dr, 2, 0.5);
-  
-  $('big-net').textContent = (bn >= 0 ? '+' : '') + bn + ' 笔';
-  $('big-net').className = 'val ' + clv(bn > 0 ? 1 : bn < 0 ? -1 : 0);
-  
-  $('funding-rate').textContent = (fr * 100).toFixed(4) + '%';
-  
-  const h = Number(m.high24h || 0), l = Number(m.low24h || 0);
-  $('high24h').textContent = h ? '$' + fp(h) : '--';
-  $('low24h').textContent = l ? '$' + fp(l) : '--';
-  
-  let sent = m.sentiment;
+
+  var m = data.market;
+  var sc = Number(m.signal_score || 0);
+  var rsi = Number(m.rsi || 50);
+  var adx = Number(m.adx || 25);
+  var dr = Number(m.depth_ratio_5 || 1);
+  var bn = Number(m.big_trade_net || 0);
+  var bb = Number(m.big_trade_buy || 0);
+  var bs = Number(m.big_trade_sell || 0);
+  var fr = Number(m.funding_rate || 0);
+  var cvd = Number(m.cvd || 0);
+  var spr = Number(m.spread || 0);
+  var trend = m.trend || 'neutral';
+  var marketState = m.market_state || 'oscillation';
+
+  $('price').textContent = '$' + fmtP(m.price);
+  $('low24').textContent = '$' + fmtP(m.low24h);
+  $('high24').textContent = '$' + fmtP(m.high24h);
+  $('signal').innerHTML = badge(m.mode);
+  $('badge').outerHTML = '<span class="badge ' + (m.mode === 'long' ? 'b-long' : m.mode === 'short' ? 'b-short' : m.mode.includes('pending') ? 'b-pending' : 'b-wait') + '" id="badge">' + (m.mode === 'long' ? '做多' : m.mode === 'short' ? '做空' : m.mode.includes('pending') ? '等待' : '等待') + '</span>';
+
+  var pct = Math.max(10, Math.min(90, 50 + sc * 35));
+  $('biasBar').style.width = pct + '%';
+  $('biasBar').style.background = sc > 0.3 ? 'linear-gradient(90deg,#27ae60,#2ecc71)' : sc < -0.3 ? 'linear-gradient(90deg,#c0392b,#e74c3c)' : 'linear-gradient(90deg,#666,#888)';
+  $('biasText').textContent = (sc > 0.3 ? '偏多 ' : sc < -0.3 ? '偏空 ' : '中性 ') + Math.round(pct) + '%';
+
+  $('rsi').textContent = fmt(rsi, 0);
+  $('rsi').className = 'cell-value ' + cl(rsi, 70, 30);
+  $('adx').textContent = fmt(adx, 0);
+  $('adx').className = 'cell-value ' + (adx >= 25 ? 'green' : 'red');
+  $('score').textContent = (sc >= 0 ? '+' : '') + fmt(sc, 2);
+  $('score').className = 'cell-value ' + (sc > 0.3 ? 'green' : sc < -0.3 ? 'red' : 'yellow');
+  $('depth').textContent = fmt(dr, 2);
+  $('depth').className = 'cell-value ' + cl(dr, 2, 0.5);
+  $('bigtrade').textContent = (bn >= 0 ? '+' : '') + bn;
+  $('bigtrade').className = 'cell-value ' + (bn > 10 ? 'green' : bn < -10 ? 'red' : 'yellow');
+  $('bigbuysell').innerHTML = '<span style="color:#2ecc71">' + bb + '</span>/<span style="color:#e74c3c">' + bs + '</span>';
+  $('funding').textContent = (fr * 100).toFixed(4) + '%';
+  $('funding').className = 'cell-value ' + (fr > 0 ? 'red' : 'green');
+  $('atr').textContent = '$' + fmt(m.atr || 200, 0);
+  $('cvd').textContent = (cvd >= 0 ? '+' : '') + (cvd / 1000).toFixed(1) + 'k';
+  $('cvd').className = 'cell-value ' + (cvd > 0 ? 'green' : 'red');
+  $('spread').textContent = spr > 0 ? '$' + fmt(spr, 1) : '--';
+  $('spread').className = 'cell-value ' + (spr > 1 ? 'red' : spr > 0.5 ? 'yellow' : 'green');
+
+  var sent = m.sentiment;
   if (sent && typeof sent === 'object') sent = sent['情绪'];
   $('sentiment').textContent = sent || '--';
-  
-  $('sig-desc').innerHTML = `<b>${m.mode}</b> · 评分 <b>${(sc>=0?'+':'') + f(sc,2)}</b> · ${sent || ''} · ${m.last_update || ''}`;
-  
-  // 账户
-  const accs = data.accounts || [];
-  if (accs.length > 0) {
-    let html = '';
-    for (const a of accs) {
-      const pnl = Number(a.unrealized_pnl || 0);
-      const bal = Number(a.balance || 0);
-      const side = a.side;
-      const hasPos = side && a.size > 0;
-      const cardClass = side === 'long' ? 'long' : side === 'short' ? 'short' : '';
-      html += `<div class="acc-card ${cardClass}">`;
-      html += `<div class="acc-header">`;
-      html += `<div><div class="acc-name">${a.account || ''}</div><div class="acc-strategy">${a.strategy || ''}</div>${accBadge(side)}</div>`;
-      html += `<div style="text-align:right"><div class="acc-pnl ${pnl>=0?'green':'red'}">${pnl>=0?'+':''}${f(pnl,2)}U</div><div class="acc-balance">余额 ${f(bal,2)}U</div></div>`;
-      html += `</div>`;
-      if (hasPos) {
-        html += `<div class="acc-grid">`;
-        html += `<div class="acc-stat"><div class="l">持仓</div><div class="v">${f(a.size,4)}</div></div>`;
-        html += `<div class="acc-stat"><div class="l">均价</div><div class="v">$${fp(a.entry)}</div></div>`;
-        html += `<div class="acc-stat"><div class="l">强平</div><div class="v">${a.sl?'$'+fp(a.sl):'--'}</div></div>`;
-        html += `</div>`;
+  $('sentiment').className = 'cell-value ' + (sent === '强势看多' ? 'green' : sent === '强势看空' ? 'red' : 'yellow');
+
+  var stateMap = {'oscillation':'震荡 📊','trend':'趋势 📈','strong_trend':'强趋势','extreme':'极端'};
+  $('state').textContent = marketState === 'oscillation' ? '震荡' : marketState === 'trend' ? '趋势' : marketState;
+  $('state').className = 'cell-value ' + (marketState === 'trend' ? 'green' : 'yellow');
+
+  $('update').textContent = m.last_update || '--';
+
+  // 虚拟账户
+  var accs = data.accounts || [];
+  var virtAccs = accs.filter(function(a) { return a.account && a.account.startsWith('V'); });
+  var realAccs = accs.filter(function(a) { return !a.account.startsWith('V'); });
+
+  if (virtAccs.length > 0) {
+    var vhtml = '';
+    for (var vi = 0; vi < virtAccs.length; vi++) {
+      var va = virtAccs[vi];
+      var vpnl = Number(va.unrealized_pnl || 0);
+      var vbal = Number(va.balance || 0);
+      var vside = va.side;
+      var vhasPos = vside && va.size > 0;
+      var vcardClass = vside === 'long' ? 'long' : vside === 'short' ? 'short' : '';
+      vhtml += '<div class="account-card ' + vcardClass + '"><div class="acc-header"><div><div class="acc-name">' + (va.account || '') + '</div><div class="acc-balance">' + (va.strategy || '') + '</div></div><div style="text-align:right"><div class="acc-pnl ' + (vpnl >= 0 ? 'green' : 'red') + '">' + (vpnl >= 0 ? '+' : '') + fmt(vpnl) + 'U</div><div class="acc-balance">余额 ' + fmt(vbal) + 'U</div></div></div>';
+      if (vhasPos) {
+        vhtml += '<div class="acc-grid"><div class="acc-stat"><div class="l">方向</div><div class="v" style="color:' + (vside === 'long' ? '#2ecc71' : '#e74c3c') + '">' + (vside === 'long' ? '多' : '空') + '</div></div><div class="acc-stat"><div class="l">持仓</div><div class="v">' + fmt(va.size, 4) + '</div></div><div class="acc-stat"><div class="l">强平</div><div class="v">' + (va.sl ? '$' + fmtP(va.sl) : '--') + '</div></div></div>';
       }
-      html += `</div>`;
+      vhtml += '</div>';
     }
-    $('acc-container').innerHTML = html;
+    $('virt-list').innerHTML = vhtml;
   } else {
-    $('acc-container').innerHTML = '<div class="loading" style="padding:20px;text-align:center;color:var(--dim)">暂无账户数据</div>';
+    $('virt-list').innerHTML = '<div class="loading">暂无虚拟账户数据</div>';
   }
-  
-  $('last-update').textContent = m.last_update || '--';
+  $('virt-update').textContent = m.last_update || '--';
+
+  // 真实账户
+  if (realAccs.length > 0) {
+    var ahtml = '';
+    for (var ai = 0; ai < realAccs.length; ai++) {
+      var a = realAccs[ai];
+      var apnl = Number(a.unrealized_pnl || 0);
+      var abal = Number(a.balance || 0);
+      var aside = a.side;
+      var ahasPos = aside && a.size > 0;
+      ahtml += '<div class="account-card ' + (aside === 'long' ? 'long' : aside === 'short' ? 'short' : '') + '"><div class="acc-header"><div><div class="acc-name">' + (a.account || 'Real') + '</div><div class="acc-balance">' + (a.strategy || '真实账户') + '</div></div><div style="text-align:right"><div class="acc-pnl ' + (apnl >= 0 ? 'green' : 'red') + '">' + (apnl >= 0 ? '+' : '') + fmt(apnl) + 'U</div><div class="acc-balance">余额 ' + fmt(abal) + 'U</div></div></div>';
+      if (ahasPos) {
+        ahtml += '<div class="acc-grid"><div class="acc-stat"><div class="l">方向</div><div class="v" style="color:' + (aside === 'long' ? '#2ecc71' : '#e74c3c') + '">' + (aside === 'long' ? '多' : '空') + '</div></div><div class="acc-stat"><div class="l">持仓</div><div class="v">' + fmt(a.size, 4) + '</div></div><div class="acc-stat"><div class="l">强平</div><div class="v">' + (a.sl ? '$' + fmtP(a.sl) : '--') + '</div></div></div>';
+      }
+      ahtml += '</div>';
+    }
+    $('acc-list').innerHTML = ahtml;
+  } else {
+    $('acc-list').innerHTML = '<div class="loading">暂无真实账户数据</div>';
+  }
+  $('acc-update').textContent = m.last_update || '--';
 }
 
-loadData();
-setInterval(loadData, 5000);
+load();
+setInterval(load, 5000);
 </script>
 </body>
 </html>
