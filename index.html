@@ -435,8 +435,8 @@ async function load() {
     var ob = fullData.order_book || {};
     var bids = ob.bids || [];
     var asks = ob.asks || [];
-    var spr = m.spread || 0;
-    document.getElementById('ob-spread').textContent = '价差 $' + (spr > 0 ? spr.toFixed(2) : '--');
+    var obSpr = m.spread || 0;
+    document.getElementById('ob-spread').textContent = '价差 $' + (obSpr > 0 ? obSpr.toFixed(2) : '--');
 
     function obRow(px, sz, side) {
       var pct = 0;
