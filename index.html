@@ -389,8 +389,9 @@ async function load() {
       var badges = hist.map(function(h){
         if (h.mode === 'long') return '多';
         if (h.mode === 'short') return '空';
-        if (h.mode.includes('pending')) return '等';
-        return '观';
+        if (h.mode === 'long_pending') return '待多';
+        if (h.mode === 'short_pending') return '待空';
+        return '中性';
       });
 
       // 迷你柱状图
