@@ -374,19 +374,57 @@ async function load() {
     document.getElementById('update').textContent = now;
 
     // 信号历史
-    var hist = fullData.signal_history || [];
-    var histHtml = '';
+    // 信号历史（趋势视图，最多20条）
+    var hist = (fullData.signal_history || []).slice(-20);
     if (hist.length > 0) {
-      histHtml = '<table style="width:100%;border-collapse:collapse;font-size:0.7rem">';
-      histHtml += '<tr style="color:#555"><td style="padding:2px 4px">时间</td><td style="padding:2px 4px">方向</td><td style="padding:2px 4px">评分</td><td style="padding:2px 4px">价格</td></tr>';
+      var maxS = Math.max.apply(null, hist.map(function(h){return Math.abs(h.score)}));
+      var scores = hist.map(function(h){return h.score});
+      var colors = hist.map(function(h){
+        if (h.mode === 'long') return '#2ecc71';
+        if (h.mode === 'short') return '#e74c3c';
+        if (h.mode.includes('pending')) return '#f39c12';
+        return '#888';
+      });
+      var labels = hist.map(function(h){ return h.dt ? h.dt.substring(11,16) : '--'; });
+      var badges = hist.map(function(h){
+        if (h.mode === 'long') return '多';
+        if (h.mode === 'short') return '空';
+        if (h.mode.includes('pending')) return '等';
+        return '观';
+      });
+
+      // 迷你柱状图
+      var barW = Math.floor(100 / hist.length) - 1;
+      var barHtml = '<div style="display:flex;align-items:flex-end;height:40px;gap:1px;margin:6px 0">';
+      for (var i = 0; i < hist.length; i++) {
+        var h = hist[i];
+        var ht = maxS > 0 ? Math.abs(h.score) / maxS * 100 : 0;
+        var barH = Math.max(ht * 0.4, 2);  // scale down for visibility
+        var col = colors[i];
+        var title = labels[i] + ' ' + badges[i] + ' ' + (h.score >= 0 ? '+' : '') + h.score.toFixed(2) + ' $' + (h.price || 0).toLocaleString();
+        barHtml += '<div style="width:' + barW + '%;min-width:4px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%" title="' + title + '">';
+        barHtml += '<div style="width:100%;height:' + barH + '%;background:' + col + ';opacity:0.7;border-radius:1px 1px 0 0;min-height:2px"></div></div>';
+      }
+      barHtml += '</div>';
+
+      // 详细记录
+      var recHtml = '<div style="max-height:120px;overflow-y:auto">';
+      recHtml += '<table style="width:100%;border-collapse:collapse;font-size:0.65rem">';
+      recHtml += '<tr style="color:#555;border-bottom:1px solid #eee"><td style="padding:1px 3px">时间</td><td style="padding:1px 3px">方向</td><td style="padding:1px 3px;text-align:right">评分</td><td style="padding:1px 3px;text-align:right">价格</td></tr>';
       for (var i = hist.length - 1; i >= 0; i--) {
         var h = hist[i];
-        var mc = h.mode === 'long' ? '#2ecc71' : h.mode === 'short' ? '#e74c3c' : h.mode.includes('pending') ? '#f39c12' : '#888';
-        var ml = h.mode === 'long' ? '多' : h.mode === 'short' ? '空' : h.mode.includes('pending') ? '等' : '观';
-        var dt = h.dt ? h.dt.substring(11, 16) : '--';
-        histHtml += '<tr><td style="padding:2px 4px;color:#555">' + dt + '</td><td style="padding:2px 4px;color:' + mc + ';font-weight:700">' + ml + '</td><td style="padding:2px 4px">' + (h.score >= 0 ? '+' : '') + h.score.toFixed(2) + '</td><td style="padding:2px 4px">$' + (h.price || 0).toLocaleString() + '</td></tr>';
+        var mc = colors[i];
+        var ml = badges[i];
+        var dt = labels[i];
+        recHtml += '<tr style="border-bottom:1px solid #f5f5f5">';
+        recHtml += '<td style="padding:1px 3px;color:#555">' + dt + '</td>';
+        recHtml += '<td style="padding:1px 3px;color:' + mc + ';font-weight:700">' + ml + '</td>';
+        recHtml += '<td style="padding:1px 3px;text-align:right;color:' + mc + '">' + (h.score >= 0 ? '+' : '') + h.score.toFixed(2) + '</td>';
+        recHtml += '<td style="padding:1px 3px;text-align:right;color:#555">$' + (h.price || 0).toLocaleString() + '</td></tr>';
       }
-      histHtml += '</table>';
+      recHtml += '</table></div>';
+
+      histHtml = barHtml + recHtml;
     } else {
       histHtml = '<div style="color:#555;text-align:center;padding:8px">暂无记录</div>';
     }
