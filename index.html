@@ -9,178 +9,155 @@
 body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #0a0a14; color: #e0e0e0; font-size: 14px; }
 h1 { color: #00d4ff; text-align: center; padding: 16px 0 8px; font-size: 1.3rem; }
 .subtitle { text-align: center; color: #555; font-size: 0.75rem; margin-bottom: 12px; }
-
 .top-bar { display: flex; justify-content: space-around; background: #111122; border-radius: 12px; padding: 12px; margin: 0 10px 12px; gap: 10px; }
 .top-stat { text-align: center; flex: 1; }
-.top-stat .label { color: #555; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; }
+.top-stat .label { color: #555; font-size: 0.65rem; text-transform: uppercase; }
 .top-stat .value { font-size: 1.2rem; font-weight: 700; margin-top: 2px; }
 .green { color: #2ecc71; }
 .red { color: #e74c3c; }
 .yellow { color: #f1c40f; }
 .cyan { color: #00d4ff; }
-.orange { color: #e67e22; }
-.grey { color: #888; }
-
 .card { background: #111122; border-radius: 12px; padding: 12px; margin: 0 10px 10px; }
-.card-title { color: #00d4ff; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
-.row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid #1a1a2e; }
+.card-title { color: #00d4ff; font-size: 0.75rem; font-weight: 600; margin-bottom: 10px; }
+.row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #1a1a2e; font-size: 0.8rem; }
 .row:last-child { border-bottom: none; }
-.row .label { color: #555; font-size: 0.75rem; }
-.row .val { font-weight: 600; font-size: 0.85rem; }
-.signal-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; }
-.b-long { background: rgba(46,204,113,0.2); color: #2ecc71; border: 1px solid #2ecc71; }
-.b-short { background: rgba(231,76,60,0.2); color: #e74c3c; border: 1px solid #e74c3c; }
-.b-wait { background: rgba(100,100,100,0.2); color: #888; border: 1px solid #555; }
-.b-pending { background: rgba(243,156,18,0.2); color: #f39c12; border: 1px solid #f39c12; }
-
-.section-title { color: #00d4ff; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; margin: 12px 10px 6px; }
-
-.account-card { background: #111122; border-radius: 12px; padding: 12px; margin: 0 10px 8px; }
-.acc-header { display: flex; justify-content: space-between; align-items: center; }
-.acc-name { font-size: 1rem; font-weight: 700; }
-.acc-balance { font-size: 1.1rem; font-weight: 700; }
-.acc-status { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; display: inline-block; margin-top: 4px; }
-.status-long { background: rgba(46,204,113,0.2); color: #2ecc71; }
-.status-short { background: rgba(231,76,60,0.2); color: #e74c3c; }
-.status-idle { background: rgba(100,100,100,0.2); color: #888; }
-.acc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
-.acc-stat { text-align: center; background: #0a0a14; border-radius: 8px; padding: 6px; }
-.acc-stat .l { color: #444; font-size: 0.6rem; text-transform: uppercase; }
-.acc-stat .v { font-size: 0.85rem; font-weight: 700; margin-top: 2px; }
-
-.trade-item { background: #111122; border-radius: 10px; padding: 10px; margin: 0 10px 6px; display: flex; justify-content: space-between; align-items: center; }
-.trade-side { font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
-.trade-long { background: rgba(46,204,113,0.2); color: #2ecc71; }
-.trade-short { background: rgba(231,76,60,0.2); color: #e74c3c; }
-.trade-pnl { font-size: 1rem; font-weight: 700; }
-.trade-info { flex: 1; margin-left: 10px; font-size: 0.7rem; color: #555; }
-
-.signal-detail { font-size: 0.75rem; color: #555; margin-top: 6px; padding: 6px 8px; background: #0a0a14; border-radius: 6px; line-height: 1.6; }
-
-.alert-item { background: #111122; border-radius: 10px; padding: 10px; margin: 0 10px 6px; border-left: 3px solid; }
-.alert-critical { border-color: #e74c3c; }
-.alert-warning { border-color: #f39c12; }
-.alert-info { border-color: #3498db; }
-.alert-time { font-size: 0.6rem; color: #444; }
-.alert-msg { font-size: 0.8rem; margin-top: 2px; }
-
+.sb { background: rgba(46,204,113,0.2); color: #2ecc71; border: 1px solid #2ecc71; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; }
+.ss { background: rgba(231,76,60,0.2); color: #e74c3c; border: 1px solid #e74c3c; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; }
+.sw { background: rgba(100,100,100,0.2); color: #888; border: 1px solid #555; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; }
+.sp { background: rgba(243,156,18,0.2); color: #f39c12; border: 1px solid #f39c12; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; }
+.sig-detail { font-size: 0.7rem; color: #555; margin-top: 8px; padding: 6px 8px; background: #0a0a14; border-radius: 6px; line-height: 1.6; }
+.acard { background: #111122; border-radius: 12px; padding: 12px; margin: 0 10px 8px; border-left: 3px solid #00d4ff; }
+.agrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+.astat { text-align: center; background: #0a0a14; border-radius: 8px; padding: 6px; }
+.astat .l { color: #444; font-size: 0.6rem; text-transform: uppercase; }
+.astat .v { font-size: 0.85rem; font-weight: 700; margin-top: 2px; }
 .footer { text-align: center; color: #333; font-size: 0.65rem; padding: 16px; }
-.loading { text-align: center; color: #444; padding: 30px; }
-
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
-.live-dot { width: 8px; height: 8px; background: #2ecc71; border-radius: 50%; display: inline-block; animation: pulse 2s infinite; margin-right: 4px; }
+.live { width: 8px; height: 8px; background: #2ecc71; border-radius: 50%; display: inline-block; animation: pulse 2s infinite; margin-right: 4px; }
 </style>
 </head>
 <body>
 
 <h1>📊 BTC 智能交易监控</h1>
-<div class="subtitle"><span class="live-dot"></span>实时 · 数据每5秒更新</div>
+<div class="subtitle"><span class="live"></span>实时 · 数据每5秒更新</div>
 
-<!-- 顶部行情 -->
 <div class="top-bar">
-  <div class="top-stat">
-    <div class="label">BTC 价格</div>
-    <div class="value cyan" id="price">--</div>
-  </div>
-  <div class="top-stat">
-    <div class="label">信号</div>
-    <div class="value" id="signal-mode">--</div>
-  </div>
-  <div class="top-stat">
-    <div class="label">评分</div>
-    <div class="value" id="score">--</div>
-  </div>
-  <div class="top-stat">
-    <div class="label">RSI</div>
-    <div class="value" id="rsi">--</div>
-  </div>
-  <div class="top-stat">
-    <div class="label">ADX</div>
-    <div class="value" id="adx">--</div>
-  </div>
+  <div class="top-stat"><div class="label">BTC价格</div><div class="value cyan" id="price">--</div></div>
+  <div class="top-stat"><div class="label">信号</div><div class="value" id="signal-mode">--</div></div>
+  <div class="top-stat"><div class="label">评分</div><div class="value" id="score">--</div></div>
+  <div class="top-stat"><div class="label">RSI</div><div class="value" id="rsi">--</div></div>
+  <div class="top-stat"><div class="label">ADX</div><div class="value" id="adx">--</div></div>
 </div>
 
-<!-- 信号卡片 -->
 <div class="card">
   <div class="card-title">📈 综合信号分析</div>
-  <div class="row">
-    <span class="label">信号模式</span>
-    <span id="signal-badge"><span class="signal-badge b-wait">等待信号</span></span>
-  </div>
-  <div class="row">
-    <span class="label">盘口深度比</span>
-    <span class="val" id="depth-ratio">--</span>
-  </div>
-  <div class="row">
-    <span class="label">大单净流向</span>
-    <span class="val" id="big-net">--</span>
-  </div>
-  <div class="row">
-    <span class="label">资金费率</span>
-    <span class="val" id="funding-rate">--</span>
-  </div>
-  <div class="row">
-    <span class="label">24h 高/低</span>
-    <span class="val" id="high24h">-- / --</span>
-  </div>
-  <div class="row">
-    <span class="label">市场情绪</span>
-    <span class="val" id="sentiment">--</span>
-  </div>
-  <div class="signal-detail" id="signal-desc">加载中...</div>
+  <div class="row"><span style="color:#555">信号模式</span><span id="sbadge"><span class="sw">等待信号</span></span></div>
+  <div class="row"><span style="color:#555">盘口深度比</span><span class="value" id="depth-ratio">--</span></div>
+  <div class="row"><span style="color:#555">大单净流向</span><span class="value" id="big-net">--</span></div>
+  <div class="row"><span style="color:#555">资金费率</span><span class="value" id="funding-rate">--</span></div>
+  <div class="row"><span style="color:#555">24h高/低</span><span class="value" id="high24h">-- / --</span></div>
+  <div class="row"><span style="color:#555">市场情绪</span><span class="value" id="sentiment">--</span></div>
+  <div class="sig-detail" id="sig-desc">加载中...</div>
 </div>
 
-<!-- 账户卡片 -->
-<div class="section-title">💼 账户概览</div>
-<div id="accounts-container">
-  <div class="loading">加载账户...</div>
-</div>
-
-<!-- 最近交易 -->
-<div class="section-title">📋 最近交易记录</div>
-<div id="trades-container">
-  <div class="loading">加载交易记录...</div>
-</div>
-
-<!-- 预警 -->
-<div class="section-title">🚨 预警记录</div>
-<div id="alerts-container">
-  <div class="loading">加载预警...</div>
-</div>
+<div style="color:#00d4ff;font-size:0.7rem;margin:12px 10px 6px;text-transform:uppercase">💼 账户</div>
+<div id="acc-container"><div style="text-align:center;color:#444;padding:30px">加载中...</div></div>
 
 <div class="footer">最后更新: <span id="last-update">--</span></div>
 
 <script>
-// 所有键都通过 GitHub Pages 环境变量注入，代码中不包含任何密钥
-// 从 Supabase Storage 读取市场数据
 const STORAGE_URL = 'https://lpcrnobolifrzwrkxoli.supabase.co/storage/v1/object/public/virt-data/market_data.json';
 
-// 备用：从本地 market_data.json 读取（开发测试用）
-const LOCAL_URL = '/market_data.json';
+function f(n, d=2) { return n != null && !isNaN(n) ? Number(n).toFixed(d) : '--'; }
+function fp(n) { return n != null && !isNaN(n) ? Number(n).toLocaleString() : '--'; }
+function badge(m) {
+  if (m === 'long') return '<span class="sb">做多 🟢</span>';
+  if (m === 'short') return '<span class="ss">做空 🔴</span>';
+  if (m === 'long_pending') return '<span class="sp">等待做多 🟡</span>';
+  if (m === 'short_pending') return '<span class="sp">等待做空 🟡</span>';
+  return '<span class="sw">等待 ⏸️</span>';
+}
+function cl(v, gt, lt) { return v > gt ? 'green' : v < lt ? 'red' : ''; }
 
 async function loadData() {
   let data = null;
-  
-  // 尝试从 Supabase Storage 读取
   try {
     const res = await fetch(STORAGE_URL + '?t=' + Date.now());
     if (res.ok) data = await res.json();
-  } catch (e) {}
+  } catch(e) {}
   
-  // 备用：从本地读取
-  if (!data) {
-    try {
-      const res = await fetch(LOCAL_URL + '?t=' + Date.now());
-      if (res.ok) data = await res.json();
-    } catch (e) {}
-  }
-  
-  if (!data) {
-    document.getElementById('content').innerHTML = '<div class="loading">数据加载失败，请检查网络连接</div>';
+  if (!data || !data.market) {
+    document.getElementById('price').textContent = '加载失败';
     return;
   }
   
-  // ... rest of the rendering code
+  const m = data.market;
+  
+  document.getElementById('price').textContent = '$' + fp(m.price);
+  document.getElementById('signal-mode').innerHTML = badge(m.mode);
+  const sc = Number(m.signal_score || 0);
+  document.getElementById('score').textContent = (sc >= 0 ? '+' : '') + f(sc, 2);
+  document.getElementById('score').className = 'value ' + (sc > 0 ? 'green' : sc < 0 ? 'red' : '');
+  const rsi = Number(m.rsi || 50);
+  document.getElementById('rsi').textContent = f(rsi, 1);
+  document.getElementById('rsi').className = 'value ' + cl(rsi, 65, 35);
+  const adx = Number(m.adx || 25);
+  document.getElementById('adx').textContent = f(adx, 1);
+  document.getElementById('adx').className = 'value ' + (adx >= 25 ? 'green' : 'red');
+  document.getElementById('sbadge').innerHTML = badge(m.mode);
+  
+  const dr = Number(m.depth_ratio_5 || 1);
+  document.getElementById('depth-ratio').textContent = f(dr, 2);
+  document.getElementById('depth-ratio').className = 'value ' + (dr > 2 ? 'green' : dr < 0.5 ? 'red' : '');
+  const bn = Number(m.big_trade_net || 0);
+  document.getElementById('big-net').textContent = (bn >= 0 ? '+' : '') + bn + '笔';
+  document.getElementById('big-net').className = 'value ' + (bn > 10 ? 'green' : bn < -10 ? 'red' : '');
+  const fr = Number(m.funding_rate || 0);
+  document.getElementById('funding-rate').textContent = (fr * 100).toFixed(4) + '%';
+  const h = Number(m.high24h || 0), l = Number(m.low24h || 0);
+  document.getElementById('high24h').textContent = (h ? '$' + fp(h) : '--') + ' / ' + (l ? '$' + fp(l) : '--');
+  const sent = m.sentiment;
+  if (sent && typeof sent === 'object') {
+    document.getElementById('sentiment').textContent = sent['情绪'] || '--';
+  } else {
+    document.getElementById('sentiment').textContent = sent || '--';
+  }
+  document.getElementById('sig-desc').innerHTML = '评分: <b>' + (sc >= 0 ? '+' : '') + f(sc,2) + '</b> | ' + (sent && typeof sent === 'object' ? sent['情绪'] : '') + ' | ' + (m.last_update || '');
+
+  // 账户
+  const accs = data.accounts || [];
+  if (accs.length > 0) {
+    let html = '';
+    for (const a of accs) {
+      const pnl = Number(a.unrealized_pnl || 0);
+      const bal = Number(a.balance || 0);
+      const side = a.side;
+      const hasPos = side && a.size > 0;
+      const sideClass = side === 'long' ? '#2ecc71' : side === 'short' ? '#e74c3c' : '#555';
+      const sideLabel = side === 'long' ? '多单' : side === 'short' ? '空单' : '空仓';
+      html += '<div class="acard" style="border-color:' + sideClass + '">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center">';
+      html += '<div><div style="font-size:1rem;font-weight:700">' + (a.account || '') + '</div>';
+      html += '<div style="font-size:0.7rem;color:#888;margin-top:2px">' + (a.strategy || '') + ' · ' + sideLabel + '</div></div>';
+      html += '<div style="text-align:right"><div class="' + (pnl >= 0 ? 'green' : 'red') + '" style="font-size:1.1rem;font-weight:700">' + (pnl >= 0 ? '+' : '') + f(pnl,2) + 'U</div>';
+      html += '<div style="font-size:0.7rem;color:#555">余额 ' + f(bal,2) + 'U</div></div></div>';
+      if (hasPos) {
+        html += '<div class="agrid">';
+        html += '<div class="astat"><div class="l">持仓</div><div class="v">' + f(a.size,4) + '</div></div>';
+        html += '<div class="astat"><div class="l">均价</div><div class="v">$' + fp(a.entry) + '</div></div>';
+        html += '<div class="astat"><div class="l">强平</div><div class="v">' + (a.sl ? '$' + fp(a.sl) : '--') + '</div></div>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+    document.getElementById('acc-container').innerHTML = html;
+  }
+  
+  document.getElementById('last-update').textContent = m.last_update || '--';
+}
+
+loadData();
+setInterval(loadData, 5000);
 </script>
 </body>
 </html>
