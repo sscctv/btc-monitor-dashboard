@@ -144,6 +144,20 @@ body { font-family: -apple-system, sans-serif; background: #0f0f1a; color: #fff;
   </div>
 
   <div class="card">
+    <div class="label">订单簿 <span id="ob-spread" style="font-size:0.7rem;color:#888;font-weight:normal">价差 $--</span></div>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <div style="flex:1">
+        <div style="font-size:0.65rem;color:#27ae60;margin-bottom:3px">买盘</div>
+        <div id="ob-bids" style="font-size:0.7rem"></div>
+      </div>
+      <div style="flex:1">
+        <div style="font-size:0.65rem;color:#e74c3c;margin-bottom:3px">卖盘</div>
+        <div id="ob-asks" style="font-size:0.7rem"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
     <div class="label">信号记录</div>
     <div id="sig-history" style="font-size:0.75rem;color:#888;padding:4px 0">暂无记录</div>
   </div>
@@ -377,6 +391,26 @@ async function load() {
       histHtml = '<div style="color:#555;text-align:center;padding:8px">暂无记录</div>';
     }
     document.getElementById('sig-history').innerHTML = histHtml;
+
+    // 订单簿
+    var ob = fullData.order_book || {};
+    var bids = ob.bids || [];
+    var asks = ob.asks || [];
+    var spr = m.spread || 0;
+    document.getElementById('ob-spread').textContent = '价差 $' + (spr > 0 ? spr.toFixed(2) : '--');
+
+    function obRow(px, sz, side) {
+      var pct = 0;
+      var maxSz = Math.max.apply(null, [...bids.map(function(b){return b[1]}), ...asks.map(function(a){return a[1]})].filter(Boolean));
+      pct = maxSz > 0 ? (sz / maxSz * 100).toFixed(0) : 0;
+      var bar = '<span style="display:inline-block;height:6px;width:' + pct + '%;background:' + (side === 'bid' ? '#27ae60' : '#e74c3c') + ';opacity:0.4;margin-right:4px;border-radius:2px"></span>';
+      return '<div style="display:flex;justify-content:space-between;padding:1px 0;color:' + (side === 'bid' ? '#27ae60' : '#e74c3c') + '">' + bar + '<span>$' + px.toLocaleString() + '</span><span style="color:#888">' + sz.toFixed(2) + '</span></div>';
+    }
+    var bidsHtml = '', asksHtml = '';
+    for (var i = 0; i < Math.min(bids.length, 8); i++) bidsHtml += obRow(bids[i][0], bids[i][1], 'bid');
+    for (var i = 0; i < Math.min(asks.length, 8); i++) asksHtml += obRow(asks[i][0], asks[i][1], 'ask');
+    document.getElementById('ob-bids').innerHTML = bidsHtml || '<div style="color:#555">暂无</div>';
+    document.getElementById('ob-asks').innerHTML = asksHtml || '<div style="color:#555">暂无</div>';
 
     // Accounts
     var accMap = {};
