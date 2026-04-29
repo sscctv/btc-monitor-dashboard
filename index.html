@@ -143,6 +143,11 @@ body { font-family: -apple-system, sans-serif; background: #0f0f1a; color: #fff;
     </div>
   </div>
 
+  <div class="card">
+    <div class="label">信号记录</div>
+    <div id="sig-history" style="font-size:0.75rem;color:#888;padding:4px 0">暂无记录</div>
+  </div>
+
   <div class="time">最后更新: <span id="update">--</span></div>
 </div>
 
@@ -353,6 +358,25 @@ async function load() {
     document.getElementById('trend').textContent = trend === 'bullish' ? '多头' : trend === 'bearish' ? '空头' : '中性';
     document.getElementById('trend').className = trend === 'bullish' ? 'green' : trend === 'bearish' ? 'red' : 'yellow';
     document.getElementById('update').textContent = now;
+
+    // 信号历史
+    var hist = fullData.signal_history || [];
+    var histHtml = '';
+    if (hist.length > 0) {
+      histHtml = '<table style="width:100%;border-collapse:collapse;font-size:0.7rem">';
+      histHtml += '<tr style="color:#555"><td style="padding:2px 4px">时间</td><td style="padding:2px 4px">方向</td><td style="padding:2px 4px">评分</td><td style="padding:2px 4px">价格</td></tr>';
+      for (var i = hist.length - 1; i >= 0; i--) {
+        var h = hist[i];
+        var mc = h.mode === 'long' ? '#2ecc71' : h.mode === 'short' ? '#e74c3c' : h.mode.includes('pending') ? '#f39c12' : '#888';
+        var ml = h.mode === 'long' ? '多' : h.mode === 'short' ? '空' : h.mode.includes('pending') ? '等' : '观';
+        var dt = h.dt ? h.dt.substring(11, 16) : '--';
+        histHtml += '<tr><td style="padding:2px 4px;color:#555">' + dt + '</td><td style="padding:2px 4px;color:' + mc + ';font-weight:700">' + ml + '</td><td style="padding:2px 4px">' + (h.score >= 0 ? '+' : '') + h.score.toFixed(2) + '</td><td style="padding:2px 4px">$' + (h.price || 0).toLocaleString() + '</td></tr>';
+      }
+      histHtml += '</table>';
+    } else {
+      histHtml = '<div style="color:#555;text-align:center;padding:8px">暂无记录</div>';
+    }
+    document.getElementById('sig-history').innerHTML = histHtml;
 
     // Accounts
     var accMap = {};
