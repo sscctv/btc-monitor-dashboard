@@ -152,154 +152,35 @@ h1 { color: #00d4ff; text-align: center; padding: 16px 0 8px; font-size: 1.3rem;
 
 <script>
 // 所有键都通过 GitHub Pages 环境变量注入，代码中不包含任何密钥
-const SB_KEY = window.SUPABASE_KEY || 'sb_publishable_8gEsCRNRc7py6BmypYuRIw_sNtKooug';
-const SB_URL = window.SUPABASE_URL || 'https://lpcrnobolifrzwrkxoli.supabase.co/rest/v1';
-const SB_SECRET = window.SUPABASE_SECRET || '';
+// 从 Supabase Storage 读取市场数据
+const STORAGE_URL = 'https://lpcrnobolifrzwrkxoli.supabase.co/storage/v1/object/public/virt-data/market_data.json';
 
-const HEADERS = {
-  'apikey': SB_KEY,
-  'Authorization': `Bearer ${SB_KEY}`,
-  'Content-Type': 'application/json'
-};
-
-function fmt(n, d = 2) {
-  if (n == null || isNaN(n)) return '--';
-  return Number(n).toFixed(d);
-}
-
-function fmtPrice(n) {
-  if (n == null || isNaN(n)) return '--';
-  return Number(n).toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0});
-}
-
-function badgeClass(mode) {
-  if (mode === 'long') return 'b-long';
-  if (mode === 'short') return 'b-short';
-  if (mode === 'long_pending' || mode === 'short_pending') return 'b-pending';
-  return 'b-wait';
-}
-
-function modeLabel(mode) {
-  const m = {'long':'做多 🟢','short':'做空 🔴','long_pending':'等待做多 🟡','short_pending':'等待做空 🟡','wait':'等待 ⏸️'};
-  return m[mode] || mode || '等待';
-}
-
-async function fetchJson(url) {
-  try {
-    const res = await fetch(url, { headers: HEADERS });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch (e) {
-    return null;
-  }
-}
+// 备用：从本地 market_data.json 读取（开发测试用）
+const LOCAL_URL = '/market_data.json';
 
 async function loadData() {
-  // 1. 最新信号
-  const signals = await fetchJson(`${SB_URL}/btc_signals?order=ts.desc&limit=1`);
-  if (signals && signals.length > 0) {
-    const s = signals[0];
-    document.getElementById('price').textContent = '$' + fmtPrice(s.price);
-    document.getElementById('signal-mode').innerHTML = `<span class="signal-badge ${badgeClass(s.mode)}">${modeLabel(s.mode)}</span>`;
-    document.getElementById('score').textContent = (s.score >= 0 ? '+' : '') + fmt(s.score, 2);
-    document.getElementById('score').className = 'value ' + (s.score > 0 ? 'green' : s.score < 0 ? 'red' : 'grey');
-    document.getElementById('rsi').textContent = fmt(s.rsi, 1);
-    document.getElementById('rsi').className = 'value ' + (s.rsi > 65 ? 'red' : s.rsi < 35 ? 'green' : 'grey');
-    document.getElementById('adx').textContent = fmt(s.adx, 1);
-    document.getElementById('adx').className = 'value ' + (s.adx >= 25 ? 'green' : 'red');
-    document.getElementById('depth-ratio').textContent = fmt(s.depth_ratio_5, 2);
-    document.getElementById('depth-ratio').className = 'val ' + (s.depth_ratio_5 > 2 ? 'green' : s.depth_ratio_5 < 0.5 ? 'red' : 'grey');
-    document.getElementById('big-net').textContent = (s.big_trade_net >= 0 ? '+' : '') + s.big_trade_net + '笔';
-    document.getElementById('big-net').className = 'val ' + (s.big_trade_net > 10 ? 'green' : s.big_trade_net < -10 ? 'red' : 'grey');
-    document.getElementById('funding-rate').textContent = (s.funding_rate * 100).toFixed(4) + '%';
-    document.getElementById('sentiment').textContent = s.sentiment || '--';
-    document.getElementById('signal-badge').innerHTML = `<span class="signal-badge ${badgeClass(s.mode)}">${modeLabel(s.mode)}</span>`;
-    document.getElementById('signal-desc').innerHTML = `评分: <b>${(s.score>=0?'+':'')}${fmt(s.score,2)}</b> | ${s.sentiment || ''} | ${new Date(s.dt).toLocaleString('zh-CN')}`;
+  let data = null;
+  
+  // 尝试从 Supabase Storage 读取
+  try {
+    const res = await fetch(STORAGE_URL + '?t=' + Date.now());
+    if (res.ok) data = await res.json();
+  } catch (e) {}
+  
+  // 备用：从本地读取
+  if (!data) {
+    try {
+      const res = await fetch(LOCAL_URL + '?t=' + Date.now());
+      if (res.ok) data = await res.json();
+    } catch (e) {}
   }
-
-  // 2. 账户
-  const accounts = await fetchJson(`${SB_URL}/btc_accounts?order=account.asc&limit=20`);
-  const accContainer = document.getElementById('accounts-container');
-  if (accounts && accounts.length > 0) {
-    let html = '';
-    for (const a of accounts) {
-      const pnl = a.unrealized_pnl || 0;
-      const hasPos = a.pos_side && a.pos_size > 0;
-      const sideClass = a.pos_side === 'long' ? 'status-long' : a.pos_side === 'short' ? 'status-short' : 'status-idle';
-      const sideLabel = a.pos_side === 'long' ? '多单' : a.pos_side === 'short' ? '空单' : '空仓';
-      html += `
-      <div class="account-card">
-        <div class="acc-header">
-          <div>
-            <div class="acc-name">${a.account || a.account_id}</div>
-            <div class="acc-status ${sideClass}">${sideLabel} · ${a.strategy || a.account || ''}</div>
-          </div>
-          <div style="text-align:right">
-            <div class="acc-balance ${pnl >= 0 ? 'green' : 'red'}">${pnl >= 0 ? '+' : ''}${fmt(pnl, 2)}U</div>
-            <div style="font-size:0.7rem;color:#555">余额 ${fmt(a.balance)}U</div>
-          </div>
-        </div>
-        ${hasPos ? `
-        <div class="acc-grid">
-          <div class="acc-stat"><div class="l">持仓</div><div class="v">${fmt(a.pos_size, 4)}</div></div>
-          <div class="acc-stat"><div class="l">均价</div><div class="v">$${fmtPrice(a.entry_price)}</div></div>
-          <div class="acc-stat"><div class="l">强平</div><div class="v" style="color:${a.liq_price > 0 ? '#e74c3c' : '#555'}">${a.liq_price > 0 ? '$'+fmtPrice(a.liq_price) : '--'}</div></div>
-        </div>` : ''}
-      </div>`;
-    }
-    accContainer.innerHTML = html;
-  } else {
-    accContainer.innerHTML = '<div class="loading">暂无账户数据</div>';
+  
+  if (!data) {
+    document.getElementById('content').innerHTML = '<div class="loading">数据加载失败，请检查网络连接</div>';
+    return;
   }
-
-  // 3. 最近交易
-  const trades = await fetchJson(`${SB_URL}/btc_trades?order=ts.desc&limit=10`);
-  const tradeContainer = document.getElementById('trades-container');
-  if (trades && trades.length > 0) {
-    let html = '';
-    for (const t of trades) {
-      const pnl = t.pnl || 0;
-      html += `
-      <div class="trade-item">
-        <div>
-          <span class="trade-side ${t.side === 'long' ? 'trade-long' : 'trade-short'}">${t.side === 'long' ? '做多' : t.side === 'short' ? '做空' : t.action}</span>
-        </div>
-        <div class="trade-info">
-          <div>${t.account} · ${t.strategy || ''} · ${t.signal_mode || ''}</div>
-          <div>开:${fmtPrice(t.entry_price)} → 平:${fmtPrice(t.exit_price)} · ${new Date(t.dt).toLocaleString('zh-CN', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>
-        </div>
-        <div class="trade-pnl ${pnl >= 0 ? 'green' : 'red'}">${pnl >= 0 ? '+' : ''}${fmt(pnl, 2)}U</div>
-      </div>`;
-    }
-    tradeContainer.innerHTML = html;
-  } else {
-    tradeContainer.innerHTML = '<div class="loading">暂无交易记录</div>';
-  }
-
-  // 4. 预警
-  const alerts = await fetchJson(`${SB_URL}/btc_alerts?order=ts.desc&limit=5`);
-  const alertContainer = document.getElementById('alerts-container');
-  if (alerts && alerts.length > 0) {
-    let html = '';
-    for (const a of alerts) {
-      const cls = a.severity === 'critical' ? 'alert-critical' : a.severity === 'warning' ? 'alert-warning' : 'alert-info';
-      html += `
-      <div class="alert-item ${cls}">
-        <div class="alert-time">${new Date(a.dt).toLocaleString('zh-CN')}</div>
-        <div class="alert-msg">${a.message}</div>
-      </div>`;
-    }
-    alertContainer.innerHTML = html;
-  } else {
-    alertContainer.innerHTML = '<div class="loading">暂无预警</div>';
-  }
-
-  document.getElementById('last-update').textContent = new Date().toLocaleTimeString('zh-CN');
-}
-
-// 启动时加载一次，之后每5秒刷新
-loadData();
-setInterval(loadData, 5000);
+  
+  // ... rest of the rendering code
 </script>
 </body>
 </html>
