@@ -544,77 +544,62 @@ async function load() {
     document.getElementById('ob-bids').innerHTML = bidsHtml || '<div style="color:#555">暂无</div>';
     document.getElementById('ob-asks').innerHTML = asksHtml || '<div style="color:#555">暂无</div>';
 
-    // Accounts
-    var accMap = {};
-    for (var a of accData) accMap[a.account_id] = a;
-    var tradesByAcc = {};
-    for (var t of tradesData) {
-      if (!tradesByAcc[t.account_id]) tradesByAcc[t.account_id] = [];
-      tradesByAcc[t.account_id].push(t);
+    // Accounts（从 market_data.json 的 accounts 数组）
+    var accs = fullData.accounts || [];
+    var html = '';
+    var displayOrder = ['V1', 'V2', 'V3', 'Real'];
+    // 按displayOrder排，没在列表的放最后
+    var ordered = [];
+    for (var i = 0; i < displayOrder.length; i++) {
+      for (var j = 0; j < accs.length; j++) {
+        if (accs[j].account === displayOrder[i]) ordered.push(accs[j]);
+      }
+    }
+    // 剩余的
+    for (var j = 0; j < accs.length; j++) {
+      if (ordered.indexOf(accs[j]) < 0) ordered.push(accs[j]);
     }
 
-    var displayOrder = ['V1','V2','V3','账号1','账号2','账号3','账号4','账号5','真实账户'];
-    var html = '';
+    for (var i = 0; i < ordered.length; i++) {
+      var acc = ordered[i];
+      var accName = acc.account;
+      var isReal = accName === 'Real';
+      var bal = Number(acc.balance || 0);
+      var upl = Number(acc.unrealized_pnl || 0);
+      var totalAssets = bal + upl;
+      var side = acc.side;
+      var size = Number(acc.size || 0);
+      var entry = Number(acc.entry || 0);
+      var sl = Number(acc.sl || 0);
+      var isIdle = !side || size === 0;
 
-    for (var accName of displayOrder) {
-      var acc = accMap[accName];
-      if (!acc) continue;
-      var isReal = accName === '真实账户';
-      var isIdle = acc.status === 'idle';
-      var trades = tradesByAcc[accName] || [];
-
-      // Total PnL
-      var totalPnl = 0;
-      for (var t of trades) {
-        totalPnl += (t.unrealizedpnl || 0);
-      }
-      var totalAssets = (acc.capital || 0) + totalPnl;
-      var pnlClass = totalPnl > 0.005 ? 'pos' : totalPnl < -0.005 ? 'neg' : 'zero';
+      var pnlClass = upl > 0.005 ? 'pos' : upl < -0.005 ? 'neg' : 'zero';
+      var totalClass = totalAssets > bal ? 'pos' : totalAssets < bal ? 'neg' : 'zero';
 
       html += '<div class="acc-group">';
       html += '<div class="acc-header' + (isReal ? ' real' : '') + '">';
       html += '<div class="acc-name"' + (isReal ? ' style="color:#f39c12"' : '') + '>' + accName + ' <span>' + (acc.strategy || '') + '</span></div>';
-      html += '<div><div class="acc-total ' + pnlClass + '">' + (totalAssets >= 0 ? '+' : '') + fmt(totalAssets, 2) + 'U</div>';
-      html += '<div class="acc-sub">余额 <span>' + fmt(acc.capital, 2) + '</span> + 浮动 <span class="' + pnlClass + '">' + (totalPnl >= 0 ? '+' : '') + fmt(totalPnl, 2) + '</span></div></div></div>';
+      html += '<div><div class="acc-total ' + totalClass + '">' + (totalAssets >= 0 ? '+' : '') + fmt(totalAssets, 2) + 'U</div>';
+      html += '<div class="acc-sub">余额 <span>' + fmt(bal, 2) + '</span> + 浮动 <span class="' + pnlClass + '">' + (upl >= 0 ? '+' : '') + fmt(upl, 2) + '</span></div></div></div>';
 
-      // Positions
-      for (var t of trades) {
-        var sideLabel = t.side === 'long' ? '做多' : '做空';
-        var pnlVal = t.unrealizedpnl || 0;
-        var pnlClass2 = pnlVal > 0.005 ? 'pos' : pnlVal < -0.005 ? 'neg' : 'zero';
-
-        // Estimate margin for sim accounts: entry * size * 0.01 / lev
-        var margin = t.margin || null;
-        if (!margin && t.entry_price && t.size && t.leverage) {
-          margin = (t.entry_price * t.size * 0.01) / t.leverage;
-        }
-
-        // Estimate liq for sim: long=entry*(1+1/lev), short=entry*(1-1/lev)
-        var liq = t.liqprice || t.liq_price || null;
-        if (!liq && t.entry_price && t.leverage) {
-          liq = t.side === 'long' ? t.entry_price * (1 + 1 / t.leverage) : t.entry_price * (1 - 1 / t.leverage);
-        }
-
+      if (!isIdle && side) {
+        var sideLabel = side === 'long' ? '做多' : side === 'short' ? '做空' : side;
+        var pnlClass2 = upl > 0.005 ? 'pos' : upl < -0.005 ? 'neg' : 'zero';
         html += '<div class="pos-table">';
-        html += '<div class="pos-dir ' + t.side + '">';
-        html += '<div class="pos-dir-label ' + t.side + '">' + sideLabel + ' ×' + (t.leverage || '--') + ' ' + (t.size || 0) + '张</div>';
-        html += '<div class="pos-pnl ' + pnlClass2 + '">' + (pnlVal >= 0 ? '+' : '') + fmt(pnlVal, 2) + 'U</div>';
+        html += '<div class="pos-dir ' + side + '">';
+        html += '<div class="pos-dir-label ' + side + '">' + sideLabel + ' ×' + size + '张</div>';
+        html += '<div class="pos-pnl ' + pnlClass2 + '">' + (upl >= 0 ? '+' : '') + fmt(upl, 2) + 'U</div>';
         html += '</div>';
-
         html += '<div class="pos-grid">';
-        html += '<div class="pos-cell"><div class="pos-cell-label">开仓均价</div><div class="pos-cell-value">$' + fmtP(t.entry_price) + '</div></div>';
+        html += '<div class="pos-cell"><div class="pos-cell-label">开仓均价</div><div class="pos-cell-value">$' + fmtP(entry) + '</div></div>';
         html += '<div class="pos-cell"><div class="pos-cell-label">当前价</div><div class="pos-cell-value cyan">$' + fmtP(price) + '</div></div>';
-        html += '<div class="pos-cell"><div class="pos-cell-label">预估强平价</div><div class="pos-cell-value yellow">' + (liq ? '$' + fmtP(liq) : '--') + '</div></div>';
-        html += '<div class="pos-cell"><div class="pos-cell-label">保证金(USDT)</div><div class="pos-cell-value">' + (margin ? fmt(margin, 2) : '--') + '</div></div>';
-        html += '<div class="pos-cell"><div class="pos-cell-label">止盈</div><div class="pos-cell-value pos">$' + fmtP(t.tp) + '</div></div>';
-        html += '<div class="pos-cell"><div class="pos-cell-label">止损</div><div class="pos-cell-value neg">$' + fmtP(t.sl) + '</div></div>';
-        html += '<div class="pos-cell"><div class="pos-cell-label">可平量</div><div class="pos-cell-value">' + ((t.size || 0) > 0 ? t.size + ' 张' : '--') + '</div></div>';
-        html += '<div class="pos-cell"><div class="pos-cell-label">浮动盈亏(USD)</div><div class="pos-cell-value ' + pnlClass2 + '">' + (pnlVal >= 0 ? '+' : '') + fmt(pnlVal, 2) + '</div></div>';
+        html += '<div class="pos-cell"><div class="pos-cell-label">预估强平价</div><div class="pos-cell-value yellow">' + (sl > 0 ? '$' + fmtP(sl) : '--') + '</div></div>';
+        html += '<div class="pos-cell"><div class="pos-cell-label">浮动盈亏</div><div class="pos-cell-value ' + pnlClass2 + '">' + (upl >= 0 ? '+' : '') + fmt(upl, 2) + '</div></div>';
         html += '</div></div>';
       }
 
-      if (isIdle && trades.length === 0) {
-        html += '<div class="acc-idle">空闲 · 本金 <span>' + fmt(acc.capital, 2) + 'U</span></div>';
+      if (isIdle) {
+        html += '<div class="acc-idle">空闲 · 本金 <span>' + fmt(bal, 2) + 'U</span></div>';
       }
 
       html += '</div>';
