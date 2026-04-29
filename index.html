@@ -233,8 +233,12 @@ function showSignalModal() {
   var sb = Number(m.score_big || 0);
   var sf = Number(m.score_fund || 0);
   var sr = Number(m.score_rsi || 0);
+  var sm = Number(m.score_macd || 0);
+  var sc = Number(m.score_cvd || 0);
+  var adxMult = Number(m.adx_mult || 1.0);
+  var macdVal = Number(m.macd || 0);
+  var cvdVal = Number(m.cvd || 0);
 
-  // 信号名称映射
   var modeNames = {
     'long': '做多 🟢', 'short': '做空 🔴',
     'long_pending': '等待做多 🟡', 'short_pending': '等待做空 🟡',
@@ -242,55 +246,54 @@ function showSignalModal() {
   };
   var modeName = modeNames[mode] || mode;
 
-  // 各组件说明
   var depthTip = depth > 2.0 ? '买盘强势' : depth < 0.5 ? '卖盘强势' : '中性';
   var bigTip = bigNet > 3 ? '大单净买入' : bigNet < -3 ? '大单净卖出' : '大单中性';
   var fundTip = funding > 0.0001 ? '多头付钱（利空）' : funding < -0.0001 ? '空头付钱（利多）' : '费率中性';
   var rsiTip = rsi > 70 ? '超买' : rsi < 30 ? '超卖' : rsi > 60 ? '偏多' : rsi < 40 ? '偏空' : '中性';
+  var macdTip = macdVal > 0 ? '做多动能' : '做空动能';
+  var cvdTip = cvdVal > 0 ? '成交量偏多' : '成交量偏空';
 
-  // 缺少什么
   var missing = [];
   if (mode.includes('pending')) {
     if (adx < 20) missing.push('ADX < 20（趋势不明确）');
-    if (score > 0 && score < 0.65) missing.push('评分还需达到 +0.65（当前 ' + score.toFixed(2) + '）');
-    if (score < 0 && score > -0.65) missing.push('评分还需达到 -0.65（当前 ' + score.toFixed(2) + '）');
+    if (score > 0 && score < 0.55) missing.push('评分需达 +0.55（当前 ' + score.toFixed(2) + '）');
+    if (score < 0 && score > -0.55) missing.push('评分需达 -0.55（当前 ' + score.toFixed(2) + '）');
   }
-  if (mode === 'wait' && Math.abs(score) <= 0.35) missing.push('评分需突破 ±0.35（当前 ' + score.toFixed(2) + '）');
-  if (adx < 20) missing.push('ADX < 20（市场震荡，无趋势）');
+  if (mode === 'wait' && Math.abs(score) <= 0.30) missing.push('评分需突破 ±0.30（当前 ' + score.toFixed(2) + '）');
+  if (adx < 20) missing.push('ADX < 20（震荡市，信号打折）');
 
-  // 渲染
   var html = '<div style="margin-bottom:12px">';
   html += '<div style="font-size:1.1rem;font-weight:bold;color:#00d4ff;margin-bottom:6px">' + modeName + '</div>';
-  html += '<div style="color:#888;font-size:0.8rem">综合评分: <span style="color:' + (score >= 0 ? '#2ecc71' : '#e74c3c') + ';font-weight:bold">' + (score >= 0 ? '+' : '') + score.toFixed(2) + '</span> / +0.65 确认做多 / -0.65 确认做空</div>';
+  html += '<div style="color:#888;font-size:0.8rem">综合评分: <span style="color:' + (score >= 0 ? '#2ecc71' : '#e74c3c') + ';font-weight:bold">' + (score >= 0 ? '+' : '') + score.toFixed(2) + '</span> <span style="color:#888">/ ±0.55 确认信号 / ±0.30 待确认</span></div>';
   html += '</div>';
 
-  // 评分拆解
   html += '<div style="background:#16213e;border-radius:8px;padding:10px;margin-bottom:10px">';
-  html += '<div style="color:#888;font-size:0.72rem;margin-bottom:6px">评分构成（权重）</div>';
+  html += '<div style="color:#888;font-size:0.72rem;margin-bottom:6px">评分构成（6指标 + ADX加权）</div>';
   var items = [
-    ['📐 深度', sd, '深度比 ' + depth.toFixed(2) + '，' + depthTip],
-    ['📊 大单', sb, '大单净流向 ' + bigNet + '，' + bigTip],
-    ['💰 费率', sf, '费率 ' + (funding * 100).toFixed(4) + '%，' + fundTip],
-    ['📉 RSI', sr, 'RSI ' + rsi.toFixed(0) + '，' + rsiTip],
+    ['📐 深度', '20%', sd, '深度比 ' + depth.toFixed(2) + '，' + depthTip],
+    ['📊 大单', '20%', sb, '大单净流向 ' + bigNet + '，' + bigTip],
+    ['💰 费率', '10%', sf, '费率 ' + (funding * 100).toFixed(4) + '%，' + fundTip],
+    ['📉 RSI', '10%', sr, 'RSI ' + rsi.toFixed(0) + '，' + rsiTip],
+    ['📈 MACD', '10%', sm, 'MACD ' + macdVal.toFixed(2) + '，' + macdTip],
+    ['📊 CVD', '10%', sc, 'CVD ' + cvdVal.toFixed(1) + '，' + cvdTip],
   ];
   for (var i = 0; i < items.length; i++) {
     var it = items[i];
-    var val = it[1];
+    var val = it[2];
     var col = val > 0 ? '#2ecc71' : val < 0 ? '#e74c3c' : '#888';
-    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;font-size:0.78rem">';
-    html += '<span style="color:#aaa">' + it[0] + '</span>';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;font-size:0.78rem">';
+    html += '<span style="color:#aaa">' + it[0] + ' <span style="color:#555;font-size:0.65rem">(' + it[1] + ')</span></span>';
     html += '<span style="color:' + col + ';font-weight:bold">' + (val >= 0 ? '+' : '') + val.toFixed(3) + '</span></div>';
-    html += '<div style="font-size:0.68rem;color:#555;margin-bottom:4px;margin-left:50px">' + it[2] + '</div>';
+    html += '<div style="font-size:0.65rem;color:#555;margin-bottom:5px;margin-left:60px">' + it[3] + '</div>';
   }
   html += '</div>';
 
-  // ADX 趋势
   html += '<div style="margin-bottom:10px;font-size:0.8rem">';
-  html += '<div style="color:#888;margin-bottom:4px">ADX 趋势指标: <span style="color:' + (adx >= 25 ? '#2ecc71' : adx >= 20 ? '#f39c12' : '#e74c3c') + ';font-weight:bold">' + adx.toFixed(1) + '</span></div>';
-  html += '<div style="font-size:0.72rem;color:#555">' + (adx >= 25 ? '✅ ADX≥25，趋势明确' : adx >= 20 ? '⚠️ ADX 20-25，趋势初现' : '❌ ADX<20，市场震荡') + '</div>';
+  html += '<div style="color:#888;margin-bottom:4px">ADX 趋势强度: <span style="color:' + (adx >= 25 ? '#2ecc71' : adx >= 20 ? '#f39c12' : '#e74c3c') + ';font-weight:bold">' + adx.toFixed(1) + '</span>';
+  html += ' <span style="font-size:0.7rem;color:#888">×' + adxMult.toFixed(1) + '权重</span></div>';
+  html += '<div style="font-size:0.72rem;color:#555">' + (adx >= 25 ? '✅ ADX≥25 趋势明确，信号加权×1.2' : adx >= 20 ? '⚠️ ADX 20-25 趋势初现，信号加权×0.8' : '❌ ADX<20 震荡市，信号打折×0.5') + '</div>';
   html += '</div>';
 
-  // 缺少条件
   if (missing.length > 0) {
     html += '<div style="background:#1a1a2e;border:1px solid #333;border-radius:8px;padding:10px;margin-bottom:10px">';
     html += '<div style="color:#f39c12;font-size:0.78rem;font-weight:bold;margin-bottom:6px">⏳ 等待以下条件达成:</div>';
@@ -300,7 +303,6 @@ function showSignalModal() {
     html += '</div>';
   }
 
-  // 情绪
   if (sentiment && sentiment['情绪']) {
     html += '<div style="font-size:0.78rem;color:#aaa;margin-bottom:4px">情绪: <span style="color:#00d4ff">' + sentiment['情绪'] + '</span></div>';
     html += '<div style="font-size:0.72rem;color:#555">' + (sentiment['理由'] || '') + '</div>';
