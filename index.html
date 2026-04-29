@@ -256,15 +256,15 @@ function showSignalModal() {
   var missing = [];
   if (mode.includes('pending')) {
     if (adx < 20) missing.push('ADX < 20（趋势不明确）');
-    if (score > 0 && score < 0.55) missing.push('评分需达 +0.55（当前 ' + score.toFixed(2) + '）');
-    if (score < 0 && score > -0.55) missing.push('评分需达 -0.55（当前 ' + score.toFixed(2) + '）');
+    if (score > 0 && score < 0.35) missing.push('评分需达 +0.35（当前 ' + score.toFixed(2) + '）');
+    if (score < 0 && score > -0.35) missing.push('评分需达 -0.35（当前 ' + score.toFixed(2) + '）');
   }
-  if (mode === 'wait' && Math.abs(score) <= 0.30) missing.push('评分需突破 ±0.30（当前 ' + score.toFixed(2) + '）');
+  if (mode === 'wait' && Math.abs(score) <= 0.25) missing.push('评分需突破 ±0.25（当前 ' + score.toFixed(2) + '）');
   if (adx < 20) missing.push('ADX < 20（震荡市，信号打折）');
 
   var html = '<div style="margin-bottom:12px">';
   html += '<div style="font-size:1.1rem;font-weight:bold;color:#00d4ff;margin-bottom:6px">' + modeName + '</div>';
-  html += '<div style="color:#888;font-size:0.8rem">综合评分: <span style="color:' + (score >= 0 ? '#2ecc71' : '#e74c3c') + ';font-weight:bold">' + (score >= 0 ? '+' : '') + score.toFixed(2) + '</span> <span style="color:#888">/ ±0.55 确认信号 / ±0.30 待确认</span></div>';
+  html += '<div style="color:#888;font-size:0.8rem">综合评分: <span style="color:' + (score >= 0 ? '#2ecc71' : '#e74c3c') + ';font-weight:bold">' + (score >= 0 ? '+' : '') + score.toFixed(2) + '</span> <span style="color:#888">/ ±0.35 确认 / ±0.15 观望</span></div>';
   html += '</div>';
 
   html += '<div style="background:#16213e;border-radius:8px;padding:10px;margin-bottom:10px">';
@@ -291,7 +291,7 @@ function showSignalModal() {
   html += '<div style="margin-bottom:10px;font-size:0.8rem">';
   html += '<div style="color:#888;margin-bottom:4px">ADX 趋势强度: <span style="color:' + (adx >= 25 ? '#2ecc71' : adx >= 20 ? '#f39c12' : '#e74c3c') + ';font-weight:bold">' + adx.toFixed(1) + '</span>';
   html += ' <span style="font-size:0.7rem;color:#888">×' + adxMult.toFixed(1) + '权重</span></div>';
-  html += '<div style="font-size:0.72rem;color:#555">' + (adx >= 25 ? '✅ ADX≥25 趋势明确，信号加权×1.2' : adx >= 20 ? '⚠️ ADX 20-25 趋势初现，信号加权×0.8' : '❌ ADX<20 震荡市，信号打折×0.5') + '</div>';
+  html += '<div style="font-size:0.72rem;color:#555">' + (adx >= 25 ? '✅ ADX≥25 趋势明确，信号正常' : adx >= 20 ? '⚠️ ADX 20-25 趋势初现，信号×0.8' : '❌ ADX<20 震荡市，信号×0.5') + '</div>';
   html += '</div>';
 
   if (missing.length > 0) {
