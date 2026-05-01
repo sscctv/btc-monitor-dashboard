@@ -708,17 +708,9 @@ async function loadVirt() {
   } catch(e) { console.log('Virt load error:', e); }
 }
 
-function toggleAccDetail(accName) {
-  var list = document.getElementById('virt-list');
-  var existing = document.getElementById('acc-detail-' + accName);
-  if (existing) {
-    existing.style.display = existing.style.display === 'none' ? 'block' : 'none';
-    return;
-  }
-  loadAccDetail(accName);
-}
+function toggleAccDetail(accName) { showAccDetailModal(accName); }
 
-async function loadAccDetail(accName) {
+async function showAccDetailModal(accName) {
   try {
     const res = await fetch('https://lpcrnobolifrzwrkxoli.supabase.co/storage/v1/object/public/virt-data/virt_positions.json?t=' + Date.now());
     const data = await res.json();
@@ -728,70 +720,52 @@ async function loadAccDetail(accName) {
     var pnlClass = acc.total_pnl >= 0 ? 'pos' : 'neg';
     var unrealClass = acc.unrealized_pnl >= 0 ? 'pos' : 'neg';
     
-    var html = '<div id="acc-detail-' + accName + '" style="background:#16213e;border-radius:10px;padding:12px;margin-bottom:8px">';
-    html += '<div class="back-btn" onclick="closeAccDetail(\'' + accName + '\')" style="margin-bottom:10px">← 返回账户概览</div>';
-    
-    // Account name + total
-    html += '<div style="text-align:center;margin-bottom:10px">';
-    html += '<div style="font-size:1.3rem;font-weight:bold;color:#00d4ff">' + acc.account + '</div>';
-    html += '<div style="font-size:0.75rem;color:#666;margin-top:2px">' + acc.strategy + '</div>';
-    html += '<div class="acc-total ' + pnlClass + '" style="font-size:1.6rem;margin-top:6px">' + (acc.balance >= 0 ? '+' : '') + fmt(acc.balance, 2) + 'U</div>';
-    html += '<div style="font-size:0.75rem;color:#666;margin-top:2px">累计收益 <span class="' + pnlClass + '">' + (acc.total_pnl >= 0 ? '+' : '') + fmt(acc.total_pnl, 2) + 'U</span> | ROI <span class="' + pnlClass + '">' + (acc.roi >= 0 ? '+' : '') + fmt(acc.roi, 2) + '%</span></div>';
+    var html = '<div style="margin-bottom:12px">';
+    html += '<div style="font-size:1.1rem;font-weight:bold;color:#00d4ff;margin-bottom:4px">' + acc.account + ' · ' + acc.strategy + '</div>';
+    html += '<div style="font-size:1.4rem;font-weight:bold;' + (pnlClass === 'pos' ? 'color:#2ecc71' : 'color:#e74c3c') + '">' + (acc.balance >= 0 ? '+' : '') + fmt(acc.balance, 2) + 'U</div>';
+    html += '<div style="font-size:0.75rem;color:#888">累计收益 <span class="' + pnlClass + '">' + (acc.total_pnl >= 0 ? '+' : '') + fmt(acc.total_pnl, 2) + 'U</span> | ROI <span class="' + pnlClass + '">' + (acc.roi >= 0 ? '+' : '') + fmt(acc.roi, 2) + '%</span></div>';
     html += '</div>';
     
-    // Detailed stats grid
-    html += '<div class="acc-detail-grid">';
-    html += '<div class="acc-stat-cell"><div class="val ' + pnlClass + '">' + acc.win_rate + '%</div><div class="lbl">胜率</div></div>';
-    html += '<div class="acc-stat-cell"><div class="val">' + acc.total_trades + '</div><div class="lbl">总交易</div></div>';
-    html += '<div class="acc-stat-cell"><div class="val ' + (acc.pnl_ratio >= 1 ? 'pos' : 'neg') + '">' + acc.pnl_ratio + '</div><div class="lbl">盈亏比</div></div>';
-    html += '<div class="acc-stat-cell"><div class="val">' + acc.leverage + 'X</div><div class="lbl">杠杆</div></div>';
-    html += '<div class="acc-stat-cell"><div class="val pos">' + (acc.avg_win >= 0 ? '+' : '') + acc.avg_win + '</div><div class="lbl">均盈</div></div>';
-    html += '<div class="acc-stat-cell"><div class="val neg">' + acc.avg_lose + '</div><div class="lbl">均亏</div></div>';
-    html += '<div class="acc-stat-cell"><div class="val pos">' + (acc.max_win >= 0 ? '+' : '') + acc.max_win + '</div><div class="lbl">单笔最大盈</div></div>';
-    html += '<div class="acc-stat-cell"><div class="val neg">' + acc.max_lose + '</div><div class="lbl">单笔最大亏</div></div>';
-    html += '<div class="acc-stat-cell"><div class="val">' + acc.initial + '</div><div class="lbl">初始资金</div></div>';
-    html += '<div class="acc-stat-cell"><div class="val ' + pnlClass + '">' + acc.win + '胜/' + acc.lose + '负</div><div class="lbl">胜/负</div></div>';
-    html += '</div>';
-    
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">';
+    html += '<div style="background:#1a1a2e;padding:8px;border-radius:8px;text-align:center"><div style="font-size:1rem;font-weight:bold">' + acc.win_rate + '%</div><div style="font-size:0.65rem;color:#666">胜率</div></div>';
+    html += '<div style="background:#1a1a2e;padding:8px;border-radius:8px;text-align:center"><div style="font-size:1rem;font-weight:bold">' + acc.total_trades + '</div><div style="font-size:0.65rem;color:#666">总交易</div></div>';
+    html += '<div style="background:#1a1a2e;padding:8px;border-radius:8px;text-align:center"><div style="font-size:1rem;font-weight:bold">' + acc.pnl_ratio + '</div><div style="font-size:0.65rem;color:#666">盈亏比</div></div>';
+    html += '<div style="background:#1a1a2e;padding:8px;border-radius:8px;text-align:center"><div style="font-size:1rem;font-weight:bold">' + acc.leverage + 'X</div><div style="font-size:0.65rem;color:#666">杠杆</div></div>';
+    html += '<div style="background:#1a1a2e;padding:8px;border-radius:8px;text-align:center"><div style="font-size:1rem;font-weight:bold;color:#2ecc71">' + (acc.avg_win >= 0 ? '+' : '') + acc.avg_win + '</div><div style="font-size:0.65rem;color:#666">均盈</div></div>';
+    html += '<div style="background:#1a1a2e;padding:8px;border-radius:8px;text-align:center"><div style="font-size:1rem;font-weight:bold;color:#e74c3c">' + acc.avg_lose + '</div><div style="font-size:0.65rem;color:#666">均亏</div></div>';
+    html += '<div style="background:#1a1a2e;padding:8px;border-radius:8px;text-align:center"><div style="font-size:1rem;font-weight:bold">' + acc.win + '胜/' + acc.lose + '负</div><div style="font-size:0.65rem;color:#666">胜/负</div></div>';
+    html += '<div style="background:#1a1a2e;padding:8px;border-radius:8px;text-align:center"><div style="font-size:1rem;font-weight:bold">' + acc.initial + '</div><div style="font-size:0.65rem;color:#666">初始资金</div></div>';
+    html += '<div style="background:#1a1a2e;padding:8px;border-radius:8px;text-align:center"><div style="font-size:1rem;font-weight:bold;color:#2ecc71">' + (acc.max_win >= 0 ? '+' : '') + acc.max_win + '</div><div style="font-size:0.65rem;color:#666">最大单笔盈</div></div>';
+    html += '<div style="background:#1a1a2e;padding:8px;border-radius:8px;text-align:center"><div style="font-size:1rem;font-weight:bold;color:#e74c3c">' + acc.max_lose + '</div><div style="font-size:0.65rem;color:#666">最大单笔亏</div></div>';
     if (acc.status === '持仓中') {
-      html += '<div style="margin-top:8px;font-size:0.75rem;color:#666;padding:6px;background:#1a1a2e;border-radius:6px;text-align:center">';
-      html += (acc.side === 'long' ? '做多' : '做空') + ' | 入场 $' + fmtP(acc.entry) + ' | 当前 $' + fmtP(acc.current) + ' | 浮动 <span class="' + unrealClass + '">' + (acc.unrealized_pnl >= 0 ? '+' : '') + fmt(acc.unrealized_pnl, 2) + 'U</span>';
-      html += '</div>';
+      html += '<div style="background:#1a1a2e;padding:8px;border-radius:8px;text-align:center;grid-column:span 3"><div style="font-size:0.8rem">' + (acc.side === 'long' ? '做多' : '做空') + ' | 入场 $' + fmtP(acc.entry) + ' | 当前 $' + fmtP(acc.current) + ' | 浮动 <span class="' + unrealClass + '">' + (acc.unrealized_pnl >= 0 ? '+' : '') + fmt(acc.unrealized_pnl, 2) + 'U</span></div></div>';
     }
+    html += '</div>';
     
-    // Recent trades
     var trades = acc.recent_trades || [];
+    html += '<div style="font-size:0.8rem;color:#888;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #333">交易记录 (' + trades.length + ' 笔)</div>';
     if (trades.length > 0) {
-      html += '<div style="margin-top:10px;font-size:0.75rem;color:#666;padding:4px 0">最近 ' + trades.length + ' 笔交易</div>';
-      html += '<div class="trade-list">';
+      html += '<div style="max-height:40vh;overflow-y:auto">';
       for (var i = 0; i < trades.length; i++) {
         var t = trades[i];
         var tPnlClass = t.pnl > 0.005 ? 'pos' : t.pnl < -0.005 ? 'neg' : 'zero';
-        var timeStr = t.time ? t.time.substring(11, 16) : '--:--';
-        html += '<div class="trade-row">';
-        html += '<div class="t-side ' + t.side + '">' + (t.side === 'long' ? '多' : '空') + '</div>';
-        html += '<div class="t-time">' + timeStr + '</div>';
-        html += '<div class="t-entry">$' + fmtP(t.entry) + '</div>';
-        html += '<div class="t-arrow">→</div>';
-        html += '<div class="t-exit">$' + fmtP(t.exit) + '</div>';
-        html += '<div class="t-pnl ' + tPnlClass + '">' + (t.pnl >= 0 ? '+' : '') + t.pnl + 'U</div>';
-        html += '<div class="t-strategy">' + (t.leverage || 100) + 'X</div>';
+        var timeStr = t.time ? t.time.substring(5, 16) : '--';
+        html += '<div style="display:flex;align-items:center;padding:6px 0;border-bottom:1px solid #222">';
+        html += '<div style="width:36px;font-weight:bold;font-size:0.8rem;' + (t.side === 'long' ? 'color:#2ecc71' : 'color:#e74c3c') + '">' + (t.side === 'long' ? '多' : '空') + '</div>';
+        html += '<div style="width:60px;font-size:0.7rem;color:#555">' + timeStr + '</div>';
+        html += '<div style="flex:1;font-size:0.75rem;color:#aaa;text-align:center">$' + fmtP(t.entry) + ' → $' + fmtP(t.exit) + '</div>';
+        html += '<div style="width:60px;text-align:right;font-weight:bold;font-size:0.8rem;' + (tPnlClass === 'pos' ? 'color:#2ecc71' : tPnlClass === 'neg' ? 'color:#e74c3c' : 'color:#555') + '">' + (t.pnl >= 0 ? '+' : '') + t.pnl + 'U</div>';
         html += '</div>';
       }
       html += '</div>';
     } else {
-      html += '<div class="no-data" style="padding:12px">暂无交易记录</div>';
+      html += '<div style="color:#555;text-align:center;padding:12px">暂无交易记录</div>';
     }
     
-    html += '</div>';
-    
-    document.getElementById('virt-list').insertAdjacentHTML('beforeend', html);
+    document.getElementById('modal-title').textContent = '📋 ' + acc.account + ' 账户详情';
+    document.getElementById('modal-body').innerHTML = html;
+    document.getElementById('modal').classList.remove('hide');
   } catch(e) { console.log('Acc detail error:', e); }
-}
-
-function closeAccDetail(accName) {
-  var el = document.getElementById('acc-detail-' + accName);
-  if (el) el.style.display = 'none';
 }
 
 load();
