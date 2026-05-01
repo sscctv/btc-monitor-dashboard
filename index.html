@@ -666,7 +666,7 @@ async function loadVirt() {
       
       html += '<div class="acc-group">';
       html += '<div class="acc-header" style="cursor:pointer" onclick="toggleAccDetail(\'' + a.account + '\')">';
-      html += '<div class="acc-name">' + a.account + ' <span>' + a.strategy + '</span></div>';
+      html += '<div class="acc-name">' + a.account + ' <span>' + a.strategy + '</span><span style="float:right;color:#555;font-size:0.8rem">›</span></div>';
       html += '<div><div class="acc-total ' + pnlClass + '">' + (a.balance >= 0 ? '+' : '') + fmt(a.balance, 2) + 'U</div>';
       html += '<div class="acc-sub">累计 <span class="' + pnlClass + '">' + (a.total_pnl >= 0 ? '+' : '') + fmt(a.total_pnl, 2) + '</span> | ROI <span class="' + roiClass + '">' + (a.roi >= 0 ? '+' : '') + fmt(a.roi, 2) + '%</span></div></div></div>';
       
@@ -677,6 +677,8 @@ async function loadVirt() {
       html += '<div class="acc-stat-cell" style="flex:1"><div class="val ' + (a.pnl_ratio >= 1 ? 'pos' : 'neg') + '">' + (a.pnl_ratio || 0) + '</div><div class="lbl">盈亏比</div></div>';
       html += '<div class="acc-stat-cell" style="flex:1"><div class="val">' + a.leverage + 'X</div><div class="lbl">杠杆</div></div>';
       html += '</div>';
+      
+      html += '<div onclick="toggleAccDetail(\'' + a.account + '\')" style="background:#1e3050;border-radius:8px;padding:8px;text-align:center;color:#00d4ff;font-size:0.8rem;cursor:pointer;margin-bottom:6px">📋 查看 ' + (a.total_trades || 0) + ' 笔交易记录 ›</div>';
       
       // Position info or idle
       if (a.status === '持仓中') {
