@@ -1,0 +1,12 @@
+{
+  "name": "btc-monitor-dashboard",
+  "version": "1.0.0",
+  "description": "BTC交易监控面板",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
