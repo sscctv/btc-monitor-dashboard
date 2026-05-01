@@ -83,15 +83,16 @@ body { font-family: -apple-system, sans-serif; background: #0f0f1a; color: #fff;
 .modal-body { padding: 14px 16px; font-size: 0.82rem; line-height: 1.6; color: #aaa; }
 .modal-footer { padding: 10px 16px; border-top: 1px solid #333; font-size: 0.7rem; color: #555; text-align: center; }
 
-/* Trades Tab */
-.trade-stats { display: flex; gap: 6px; margin-bottom: 8px; }
-.trade-stat-card { flex: 1; background: #1a1a2e; border-radius: 8px; padding: 8px; text-align: center; }
-.trade-stat-card .val { font-size: 1.2rem; font-weight: bold; }
-.trade-stat-card .lbl { font-size: 0.65rem; color: #666; margin-top: 2px; }
-.trade-filter { display: flex; gap: 4px; margin-bottom: 8px; flex-wrap: wrap; }
-.filter-btn { padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; border: 1px solid #333; background: none; color: #666; cursor: pointer; }
-.filter-btn.active { background: #16213e; color: #00d4ff; border-color: #00d4ff; }
-.trade-list { max-height: 60vh; overflow-y: auto; }
+/* Virt Tab - Account Detail (repurposed from trades styles) */
+.acc-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
+.acc-stat-cell { background: #1a1a2e; border-radius: 8px; padding: 10px; text-align: center; }
+.acc-stat-cell .val { font-size: 1.1rem; font-weight: bold; }
+.acc-stat-cell .lbl { font-size: 0.62rem; color: #666; margin-top: 2px; }
+.acc-stat-cell .val.pos { color: #2ecc71; }
+.acc-stat-cell .val.neg { color: #e74c3c; }
+.back-btn { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 0.75rem; border: 1px solid #333; color: #666; cursor: pointer; margin-bottom: 8px; }
+.back-btn:hover { background: #1e3050; color: #00d4ff; border-color: #00d4ff; }
+.trade-list { max-height: 50vh; overflow-y: auto; }
 .trade-row { display: flex; align-items: center; padding: 6px 8px; border-bottom: 1px solid #1e2a3a; cursor: pointer; }
 .trade-row:hover { background: #1e3050; }
 .trade-row .t-side { font-size: 0.75rem; font-weight: bold; width: 30px; }
@@ -106,13 +107,6 @@ body { font-family: -apple-system, sans-serif; background: #0f0f1a; color: #fff;
 .trade-row .t-pnl.neg { color: #e74c3c; }
 .trade-row .t-pnl.zero { color: #555; }
 .trade-row .t-strategy { font-size: 0.6rem; color: #444; width: 60px; text-align: right; }
-.trade-detail { background: #16213e; border-radius: 8px; padding: 10px; margin-bottom: 6px; }
-.trade-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.trade-detail-cell { background: #1a1a2e; border-radius: 6px; padding: 6px; }
-.trade-detail-cell .lbl { font-size: 0.6rem; color: #555; }
-.trade-detail-cell .val { font-size: 0.85rem; color: #fff; font-weight: 500; }
-.trade-detail-cell .val.pos { color: #2ecc71; }
-.trade-detail-cell .val.neg { color: #e74c3c; }
 </style>
 </head>
 <body>
@@ -121,7 +115,6 @@ body { font-family: -apple-system, sans-serif; background: #0f0f1a; color: #fff;
   <button class="tab-btn active" id="btn-market" onclick="switchTab('market')">📊 行情</button>
   <button class="tab-btn" id="btn-accounts" onclick="switchTab('accounts')">📱 账号</button>
   <button class="tab-btn" id="btn-virt" onclick="switchTab('virt')">🎮 虚拟</button>
-  <button class="tab-btn" id="btn-trades" onclick="switchTab('trades')">📋 记录</button>
 </div>
 
 <div id="tab-market" class="tab-content active">
@@ -207,12 +200,7 @@ body { font-family: -apple-system, sans-serif; background: #0f0f1a; color: #fff;
   <div class="time">最后更新: <span id="acc-update">--</span></div>
 </div>
 
-<div id="tab-trades" class="tab-content">
-  <div id="trade-stats-summary"></div>
-  <div class="trade-filter" id="trade-filter"></div>
-  <div class="trade-list" id="trade-list"></div>
-  <div class="time">最后更新: <span id="trade-update">--</span></div>
-</div>
+
 
 <div id="modal" class="modal-overlay hide" onclick="if(event.target===this)closeModal()">
   <div class="modal-box">
@@ -358,7 +346,6 @@ function switchTab(tab) {
   document.getElementById('tab-' + tab).classList.add('active');
   document.getElementById('btn-' + tab).classList.add('active');
   if (tab === 'virt') loadVirt();
-  if (tab === 'trades') loadTrades();
 }
 
 function fmt(n, d=1) { return n != null && !isNaN(n) ? n.toFixed(d) : '--'; }
@@ -656,7 +643,7 @@ async function load() {
 
 async function loadVirt() {
   try {
-    const res = await fetch('https://lpcrnobolifrzwrkxoli.supabase.co/storage/v1/object/public/virt-data/market_data.json?t=' + Date.now());
+    const res = await fetch('https://lpcrnobolifrzwrkxoli.supabase.co/storage/v1/object/public/virt-data/virt_positions.json?t=' + Date.now());
     const data = await res.json();
     
     var html = '';
@@ -672,35 +659,42 @@ async function loadVirt() {
     html += '<div style="text-align:center"><div class="label">信号</div><div style="color:' + (mkt.mode === 'long' ? '#2ecc71' : mkt.mode === 'short' ? '#e74c3c' : '#888') + '">' + (mkt.mode || 'wait') + '</div></div>';
     html += '</div></div>';
     
-    // Accounts
+    // Accounts overview
     for (var a of data.accounts || []) {
-      var isLong = a.side === 'long';
-      var isShort = a.side === 'short';
-      var isEmpty = !a.side;
-      var pnl = a.unrealized_pnl || 0;
-      var pnlClass = pnl > 0.005 ? 'pos' : pnl < -0.005 ? 'neg' : 'zero';
+      var pnlClass = a.total_pnl >= 0 ? 'pos' : 'neg';
+      var roiClass = a.roi >= 0 ? 'pos' : 'neg';
       
       html += '<div class="acc-group">';
-      html += '<div class="acc-header">';
-      html += '<div class="acc-name">' + a.account + ' <span>100X动态</span></div>';
+      html += '<div class="acc-header" style="cursor:pointer" onclick="toggleAccDetail(\'' + a.account + '\')">';
+      html += '<div class="acc-name">' + a.account + ' <span>' + a.strategy + '</span></div>';
       html += '<div><div class="acc-total ' + pnlClass + '">' + (a.balance >= 0 ? '+' : '') + fmt(a.balance, 2) + 'U</div>';
-      html += '<div class="acc-sub">浮动 <span class="' + pnlClass + '">' + (pnl >= 0 ? '+' : '') + fmt(pnl, 2) + '</span></div></div></div>';
+      html += '<div class="acc-sub">累计 <span class="' + pnlClass + '">' + (a.total_pnl >= 0 ? '+' : '') + fmt(a.total_pnl, 2) + '</span> | ROI <span class="' + roiClass + '">' + (a.roi >= 0 ? '+' : '') + fmt(a.roi, 2) + '%</span></div></div></div>';
       
-      if (!isEmpty) {
+      // Stats row
+      html += '<div style="display:flex;gap:4px;margin-bottom:6px">';
+      html += '<div class="acc-stat-cell" style="flex:1"><div class="val ' + pnlClass + '">' + (a.win_rate || 0) + '%</div><div class="lbl">胜率</div></div>';
+      html += '<div class="acc-stat-cell" style="flex:1"><div class="val">' + (a.total_trades || 0) + '</div><div class="lbl">交易数</div></div>';
+      html += '<div class="acc-stat-cell" style="flex:1"><div class="val ' + (a.pnl_ratio >= 1 ? 'pos' : 'neg') + '">' + (a.pnl_ratio || 0) + '</div><div class="lbl">盈亏比</div></div>';
+      html += '<div class="acc-stat-cell" style="flex:1"><div class="val">' + a.leverage + 'X</div><div class="lbl">杠杆</div></div>';
+      html += '</div>';
+      
+      // Position info or idle
+      if (a.status === '持仓中') {
+        var isLong = a.side === 'long';
+        var unrealClass = a.unrealized_pnl >= 0 ? 'pos' : 'neg';
         html += '<div class="pos-table">';
         html += '<div class="pos-dir ' + a.side + '">';
-        html += '<div class="pos-dir-label ' + a.side + '">' + (isLong ? '做多' : '做空') + ' ×' + (a.leverage || 100) + ' ' + (a.size || 0) + '张</div>';
-        html += '<div class="pos-pnl ' + pnlClass + '">' + (pnl >= 0 ? '+' : '') + fmt(pnl, 2) + 'U</div>';
+        html += '<div class="pos-dir-label ' + a.side + '">' + (isLong ? '做多' : '做空') + ' ×' + a.leverage + 'X ' + a.size + '张</div>';
+        html += '<div class="pos-pnl ' + unrealClass + '">' + (a.unrealized_pnl >= 0 ? '+' : '') + fmt(a.unrealized_pnl, 2) + 'U</div>';
         html += '</div>';
-        
         html += '<div class="pos-grid">';
         html += '<div class="pos-cell"><div class="pos-cell-label">开仓均价</div><div class="pos-cell-value">$' + fmtP(a.entry) + '</div></div>';
-        html += '<div class="pos-cell"><div class="pos-cell-label">当前价</div><div class="pos-cell-value cyan">$' + fmtP(a.current) + '</div></div>';
-        html += '<div class="pos-cell"><div class="pos-cell-label">偏离</div><div class="pos-cell-value ' + pnlClass + '">' + fmt(a.profit_pct, 3) + '%</div></div>';
-        html += '<div class="pos-cell"><div class="pos-cell-label">状态</div><div class="pos-cell-value">' + a.status + '</div></div>';
+        html += '<div class="pos-cell"><div class="pos-cell-label">当前价</div><div class="pos-cell-value cyan">$' + fmtP(mkt.price) + '</div></div>';
+        html += '<div class="pos-cell"><div class="pos-cell-label">偏离</div><div class="pos-cell-value ' + unrealClass + '">' + fmt(a.profit_pct, 3) + '%</div></div>';
+        html += '<div class="pos-cell"><div class="pos-cell-label">浮动盈亏</div><div class="pos-cell-value ' + unrealClass + '">' + (a.unrealized_pnl >= 0 ? '+' : '') + fmt(a.unrealized_pnl, 2) + 'U</div></div>';
         html += '</div></div>';
       } else {
-        html += '<div class="acc-idle">空仓 · 本金 <span>' + fmt(a.balance, 2) + 'U</span></div>';
+        html += '<div class="acc-idle">空仓 | 本金 <span>' + fmt(a.initial, 2) + 'U</span></div>';
       }
       
       html += '</div>';
@@ -712,182 +706,93 @@ async function loadVirt() {
   } catch(e) { console.log('Virt load error:', e); }
 }
 
+function toggleAccDetail(accName) {
+  var list = document.getElementById('virt-list');
+  var existing = document.getElementById('acc-detail-' + accName);
+  if (existing) {
+    existing.style.display = existing.style.display === 'none' ? 'block' : 'none';
+    return;
+  }
+  loadAccDetail(accName);
+}
+
+async function loadAccDetail(accName) {
+  try {
+    const res = await fetch('https://lpcrnobolifrzwrkxoli.supabase.co/storage/v1/object/public/virt-data/virt_positions.json?t=' + Date.now());
+    const data = await res.json();
+    var acc = (data.accounts || []).find(function(a) { return a.account === accName; });
+    if (!acc) return;
+    
+    var pnlClass = acc.total_pnl >= 0 ? 'pos' : 'neg';
+    var unrealClass = acc.unrealized_pnl >= 0 ? 'pos' : 'neg';
+    
+    var html = '<div id="acc-detail-' + accName + '" style="background:#16213e;border-radius:10px;padding:12px;margin-bottom:8px">';
+    html += '<div class="back-btn" onclick="closeAccDetail(\'' + accName + '\')" style="margin-bottom:10px">← 返回账户概览</div>';
+    
+    // Account name + total
+    html += '<div style="text-align:center;margin-bottom:10px">';
+    html += '<div style="font-size:1.3rem;font-weight:bold;color:#00d4ff">' + acc.account + '</div>';
+    html += '<div style="font-size:0.75rem;color:#666;margin-top:2px">' + acc.strategy + '</div>';
+    html += '<div class="acc-total ' + pnlClass + '" style="font-size:1.6rem;margin-top:6px">' + (acc.balance >= 0 ? '+' : '') + fmt(acc.balance, 2) + 'U</div>';
+    html += '<div style="font-size:0.75rem;color:#666;margin-top:2px">累计收益 <span class="' + pnlClass + '">' + (acc.total_pnl >= 0 ? '+' : '') + fmt(acc.total_pnl, 2) + 'U</span> | ROI <span class="' + pnlClass + '">' + (acc.roi >= 0 ? '+' : '') + fmt(acc.roi, 2) + '%</span></div>';
+    html += '</div>';
+    
+    // Detailed stats grid
+    html += '<div class="acc-detail-grid">';
+    html += '<div class="acc-stat-cell"><div class="val ' + pnlClass + '">' + acc.win_rate + '%</div><div class="lbl">胜率</div></div>';
+    html += '<div class="acc-stat-cell"><div class="val">' + acc.total_trades + '</div><div class="lbl">总交易</div></div>';
+    html += '<div class="acc-stat-cell"><div class="val ' + (acc.pnl_ratio >= 1 ? 'pos' : 'neg') + '">' + acc.pnl_ratio + '</div><div class="lbl">盈亏比</div></div>';
+    html += '<div class="acc-stat-cell"><div class="val">' + acc.leverage + 'X</div><div class="lbl">杠杆</div></div>';
+    html += '<div class="acc-stat-cell"><div class="val pos">' + (acc.avg_win >= 0 ? '+' : '') + acc.avg_win + '</div><div class="lbl">均盈</div></div>';
+    html += '<div class="acc-stat-cell"><div class="val neg">' + acc.avg_lose + '</div><div class="lbl">均亏</div></div>';
+    html += '<div class="acc-stat-cell"><div class="val pos">' + (acc.max_win >= 0 ? '+' : '') + acc.max_win + '</div><div class="lbl">单笔最大盈</div></div>';
+    html += '<div class="acc-stat-cell"><div class="val neg">' + acc.max_lose + '</div><div class="lbl">单笔最大亏</div></div>';
+    html += '<div class="acc-stat-cell"><div class="val">' + acc.initial + '</div><div class="lbl">初始资金</div></div>';
+    html += '<div class="acc-stat-cell"><div class="val ' + pnlClass + '">' + acc.win + '胜/' + acc.lose + '负</div><div class="lbl">胜/负</div></div>';
+    html += '</div>';
+    
+    if (acc.status === '持仓中') {
+      html += '<div style="margin-top:8px;font-size:0.75rem;color:#666;padding:6px;background:#1a1a2e;border-radius:6px;text-align:center">';
+      html += (acc.side === 'long' ? '做多' : '做空') + ' | 入场 $' + fmtP(acc.entry) + ' | 当前 $' + fmtP(acc.current) + ' | 浮动 <span class="' + unrealClass + '">' + (acc.unrealized_pnl >= 0 ? '+' : '') + fmt(acc.unrealized_pnl, 2) + 'U</span>';
+      html += '</div>';
+    }
+    
+    // Recent trades
+    var trades = acc.recent_trades || [];
+    if (trades.length > 0) {
+      html += '<div style="margin-top:10px;font-size:0.75rem;color:#666;padding:4px 0">最近 ' + trades.length + ' 笔交易</div>';
+      html += '<div class="trade-list">';
+      for (var i = 0; i < trades.length; i++) {
+        var t = trades[i];
+        var tPnlClass = t.pnl > 0.005 ? 'pos' : t.pnl < -0.005 ? 'neg' : 'zero';
+        var timeStr = t.time ? t.time.substring(11, 16) : '--:--';
+        html += '<div class="trade-row">';
+        html += '<div class="t-side ' + t.side + '">' + (t.side === 'long' ? '多' : '空') + '</div>';
+        html += '<div class="t-time">' + timeStr + '</div>';
+        html += '<div class="t-entry">$' + fmtP(t.entry) + '</div>';
+        html += '<div class="t-arrow">→</div>';
+        html += '<div class="t-exit">$' + fmtP(t.exit) + '</div>';
+        html += '<div class="t-pnl ' + tPnlClass + '">' + (t.pnl >= 0 ? '+' : '') + t.pnl + 'U</div>';
+        html += '<div class="t-strategy">' + (t.leverage || 100) + 'X</div>';
+        html += '</div>';
+      }
+      html += '</div>';
+    } else {
+      html += '<div class="no-data" style="padding:12px">暂无交易记录</div>';
+    }
+    
+    html += '</div>';
+    
+    document.getElementById('virt-list').insertAdjacentHTML('beforeend', html);
+  } catch(e) { console.log('Acc detail error:', e); }
+}
+
+function closeAccDetail(accName) {
+  var el = document.getElementById('acc-detail-' + accName);
+  if (el) el.style.display = 'none';
+}
+
 load();
 setInterval(load, 15000);
 setInterval(loadVirt, 10000);
 
-// ==================== TRADES TAB ====================
-var _tradesData = null;
-var _tradesFilter = 'all';
-
-function filterTrades(data, filter) {
-  if (filter === 'all') return data;
-  if (filter === 'V1' || filter === 'V2' || filter === 'V3') {
-    return data.filter(function(t) { return t.account === filter; });
-  }
-  if (filter === 'long') return data.filter(function(t) { return t.side === 'long'; });
-  if (filter === 'short') return data.filter(function(t) { return t.side === 'short'; });
-  if (filter === 'win') return data.filter(function(t) { return t.pnl > 0; });
-  if (filter === 'lose') return data.filter(function(t) { return t.pnl < 0; });
-  return data;
-}
-
-function renderTradeStats(summary) {
-  var html = '<div class="trade-stats">';
-  var colors = { 'V1': '#27ae60', 'V2': '#3498db', 'V3': '#e74c3c' };
-  for (var acc in summary) {
-    var s = summary[acc];
-    if (!s || s.total === 0) continue;
-    var col = colors[acc] || '#00d4ff';
-    var wrClass = s.win_rate >= 55 ? 'pos' : s.win_rate < 48 ? 'neg' : '';
-    html += '<div class="trade-stat-card">';
-    html += '<div class="val" style="color:' + col + '">' + acc + '</div>';
-    html += '<div class="lbl">胜率 <span class="' + wrClass + '">' + s.win_rate + '%</span></div>';
-    html += '<div class="lbl">净 <span class="' + (s.total_pnl >= 0 ? 'pos' : 'neg') + '">' + (s.total_pnl >= 0 ? '+' : '') + s.total_pnl + 'U</span></div>';
-    html += '<div class="lbl">' + s.win + '胜/' + s.lose + '负</div>';
-    html += '</div>';
-  }
-  html += '</div>';
-  document.getElementById('trade-stats-summary').innerHTML = html;
-}
-
-function renderTradeRow(t) {
-  var isLong = t.side === 'long';
-  var pnlClass = t.pnl > 0.005 ? 'pos' : t.pnl < -0.005 ? 'neg' : 'zero';
-  var leverage = t.leverage || 100;
-  var strategy = t.strategy || (leverage + 'X');
-  var exitPrice = t.exit || t.entry || 0;
-  var entryPrice = t.entry || 0;
-  var timeStr = t.time ? t.time.substring(11, 16) : '--:--';
-
-  var html = '<div class="trade-row" onclick="showTradeDetail(this, ' + t.entry + ', ' + exitPrice + ', ' + t.size + ', ' + leverage + ', \'' + t.strategy + '\', \'' + t.time + '\', ' + t.pnl + ')">';
-  html += '<div class="t-side ' + t.side + '">' + (isLong ? '多' : '空') + '</div>';
-  html += '<div class="t-time">' + timeStr + '</div>';
-  html += '<div class="t-entry">$' + Math.round(entryPrice).toLocaleString() + '</div>';
-  html += '<div class="t-arrow">→</div>';
-  html += '<div class="t-exit">$' + Math.round(exitPrice).toLocaleString() + '</div>';
-  html += '<div class="t-pnl ' + pnlClass + '">' + (t.pnl >= 0 ? '+' : '') + t.pnl + 'U</div>';
-  html += '<div class="t-strategy">' + strategy + '</div>';
-  html += '</div>';
-  return html;
-}
-
-function showTradeDetail(el, entry, exit, size, leverage, strategy, time, pnl) {
-  var isLong = entry < exit;
-  var pnlClass = pnl > 0.005 ? 'pos' : pnl < -0.005 ? 'neg' : 'zero';
-  var diff = exit - entry;
-  var diffPct = entry > 0 ? (diff / entry * 100).toFixed(2) + '%' : '--';
-  
-  var html = '<div style="margin-bottom:6px;font-weight:bold;color:#00d4ff">' + (isLong ? '做多' : '做空') + ' ' + leverage + 'X · ' + strategy + '</div>';
-  html += '<div class="trade-detail-grid">';
-  html += '<div class="trade-detail-cell"><div class="lbl">入场价格</div><div class="val">$' + Math.round(entry).toLocaleString() + '</div></div>';
-  html += '<div class="trade-detail-cell"><div class="lbl">出场价格</div><div class="val">$' + Math.round(exit).toLocaleString() + '</div></div>';
-  html += '<div class="trade-detail-cell"><div class="lbl">数量</div><div class="val">' + size.toFixed(4) + ' BTC</div></div>';
-  html += '<div class="trade-detail-cell"><div class="lbl">杠杆</div><div class="val">' + leverage + 'X</div></div>';
-  html += '<div class="trade-detail-cell"><div class="lbl">涨跌</div><div class="val ' + pnlClass + '">' + (diff >= 0 ? '+' : '') + diff.toFixed(1) + ' (' + diffPct + ')</div></div>';
-  html += '<div class="trade-detail-cell"><div class="lbl">盈亏</div><div class="val ' + pnlClass + '">' + (pnl >= 0 ? '+' : '') + pnl.toFixed(2) + ' U</div></div>';
-  html += '<div class="trade-detail-cell"><div class="lbl">时间</div><div class="val" style="font-size:0.75rem">' + (time || '--') + '</div></div>';
-  html += '</div>';
-  
-  var existing = el.nextElementSibling;
-  if (existing && existing.classList.contains('trade-detail')) {
-    if (existing.style.display === 'none') {
-      existing.style.display = 'block';
-    } else {
-      existing.style.display = 'none';
-    }
-    return;
-  }
-  
-  var detailDiv = document.createElement('div');
-  detailDiv.className = 'trade-detail';
-  detailDiv.style.display = 'block';
-  detailDiv.innerHTML = html;
-  el.parentNode.insertBefore(detailDiv, el.nextElementSibling);
-}
-
-async function loadTrades() {
-  try {
-    var filter = _tradesFilter;
-    
-    // 显示筛选按钮
-    var filters = ['all', 'V1', 'V2', 'V3', 'long', 'short', 'win', 'lose'];
-    var filterHtml = '';
-    for (var i = 0; i < filters.length; i++) {
-      var f = filters[i];
-      filterHtml += '<button class="filter-btn' + (filter === f ? ' active' : '') + '" onclick="setTradeFilter(\'' + f + '\')">' + f + '</button>';
-    }
-    document.getElementById('trade-filter').innerHTML = filterHtml;
-    
-    // 加载数据
-    var res = await fetch('https://lpcrnobolifrzwrkxoli.supabase.co/storage/v1/object/public/virt-data/trades_history.json?t=' + Date.now());
-    if (!res.ok) {
-      document.getElementById('trade-list').innerHTML = '<div class="no-data">暂无可用数据，稍后再试</div>';
-      return;
-    }
-    var data = await res.json();
-    _tradesData = data;
-    
-    renderTradeStats(data.summary || {});
-    
-    // 收集所有交易记录
-    var allTrades = [];
-    var accs = data.accounts || {};
-    for (var acc in accs) {
-      var trades = accs[acc] || [];
-      for (var i = 0; i < trades.length; i++) {
-        var t = trades[i];
-        t.account = acc;
-        allTrades.push(t);
-      }
-    }
-    
-    // 按时间倒序
-    allTrades.sort(function(a, b) { return (b.time || '').localeCompare(a.time || ''); });
-    
-    var filtered = filterTrades(allTrades, filter);
-    
-    var listEl = document.getElementById('trade-list');
-    if (filtered.length === 0) {
-      listEl.innerHTML = '<div class="no-data">暂无交易记录</div>';
-      return;
-    }
-    
-    listEl.innerHTML = filtered.map(renderTradeRow).join('');
-    document.getElementById('trade-update').textContent = data.updated_at || '--';
-    
-  } catch(e) {
-    console.log('Trades load error:', e);
-    document.getElementById('trade-list').innerHTML = '<div class="no-data">加载失败: ' + e.message + '</div>';
-  }
-}
-
-function setTradeFilter(f) {
-  _tradesFilter = f;
-  if (_tradesData) {
-    renderTradeStats(_tradesData.summary || {});
-    
-    var accs = _tradesData.accounts || {};
-    var allTrades = [];
-    for (var acc in accs) {
-      var trades = accs[acc] || [];
-      for (var i = 0; i < trades.length; i++) {
-        var t = trades[i];
-        t.account = acc;
-        allTrades.push(t);
-      }
-    }
-    allTrades.sort(function(a, b) { return (b.time || '').localeCompare(a.time || ''); });
-    
-    var filtered = filterTrades(allTrades, f);
-    var listEl = document.getElementById('trade-list');
-    if (filtered.length === 0) {
-      listEl.innerHTML = '<div class="no-data">暂无交易记录</div>';
-      return;
-    }
-    listEl.innerHTML = filtered.map(renderTradeRow).join('');
-  }
-}
-</script>
-</body>
-</html>
