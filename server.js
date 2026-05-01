@@ -1,18 +1,35 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const https = require('https');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const ROOT_DIR = process.env.RAILWAY_GIT_DIR || __dirname;
 
-// Static files - serve from correct directory
+// Try multiple possible root directories
+const POSSIBLE_ROOTS = [
+  process.cwd(),
+  '/app',
+  '/app/repo',
+  path.join(process.cwd(), 'repo'),
+  __dirname,
+];
+
+let ROOT_DIR = POSSIBLE_ROOTS.find(dir => {
+  try {
+    return fs.existsSync(path.join(dir, 'index.html'));
+  } catch { return false; }
+}) || process.cwd();
+
+console.log('=== BTC Dashboard Server ===');
+console.log('PORT:', PORT);
+console.log('__dirname:', __dirname);
+console.log('cwd:', process.cwd());
+console.log('ROOT_DIR:', ROOT_DIR);
+console.log('Files:', fs.readdirSync(ROOT_DIR).join(', '));
+
+// Static files
 app.use(express.static(ROOT_DIR));
-
-// Serve index.html for root
-app.get('/', (req, res) => {
-  res.sendFile(path.join(ROOT_DIR, 'index.html'));
-});
 
 // API: get market data
 app.get('/data.json', (req, res) => {
@@ -25,12 +42,11 @@ app.get('/data.json', (req, res) => {
       res.setHeader('Cache-Control', 'no-cache');
       try { res.json(JSON.parse(data)); } catch { res.status(500).send('Invalid JSON'); }
     });
-  }).on('error', (e) => {
-    res.status(500).send('Proxy error: ' + e.message);
-  });
+  }).on('error', (e) => res.status(500).send('Proxy error: ' + e.message));
 });
 
+app.get('/favicon.ico', (req, res) => res.status(204).send());
+
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`BTC Dashboard running on ${PORT} from ${ROOT_DIR}`);
-  console.log(`Files in ROOT_DIR: ${require('fs').readdirSync(ROOT_DIR).join(', ')}`);
+  console.log(`Running on http://0.0.0.0:${PORT}`);
 });
