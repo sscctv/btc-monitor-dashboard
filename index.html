@@ -574,11 +574,10 @@ async function load() {
     document.getElementById('ob-asks').innerHTML = asksHtml || '<div style="color:#555">暂无</div>';
 
     // Accounts（从 market_data.json 的 accounts 数组）
+    // 实仓Tab只显示Real，虚拟Tab显示V1~V5
     var accs = fullData.accounts || [];
     var html = '';
-    var displayOrder = ['V1', 'V2', 'V3', 'V4', 'V5', 'Real'];
-    // 按displayOrder排，没在列表的放最后
-    // 账号Tab = Real实仓 | 虚拟Tab = V1~V5
+    var displayOrder = ['Real'];  // 实仓Tab只显示Real
     var ordered = [];
     for (var i = 0; i < displayOrder.length; i++) {
       for (var j = 0; j < accs.length; j++) {
@@ -645,69 +644,78 @@ async function load() {
 
 async function loadVirt() {
   try {
-    const res = await fetch('https://lpcrnobolifrzwrkxoli.supabase.co/storage/v1/object/public/virt-data/virt_positions.json?t=' + Date.now());
-    const data = await res.json();
-    
+    // 虚拟Tab从market_data.json读取V1~V5数据（与引擎同步）
+    const res = await fetch('https://lpcrnobolifrzwrkxoli.supabase.co/storage/v1/object/public/virt-data/market_data.json?t=' + Date.now());
+    const fullData = await res.json();
+    var data = fullData.market || {};
+    var accounts = fullData.accounts || [];
+
     var html = '';
-    var mkt = data.market || {};
-    
-    // Market summary
+
+    // Market summary（复用market_data的市场数据）
     html += '<div class="card">';
-    html += '<div class="label">虚拟账户市场状态</div>';
+    html += '<div class="label">BTC-USD-SWAP 行情</div>';
     html += '<div style="display:flex;justify-content:space-around;margin-top:8px">';
-    html += '<div style="text-align:center"><div class="label">BTC</div><div class="cyan">$' + fmtP(mkt.price) + '</div></div>';
-    html += '<div style="text-align:center"><div class="label">RSI</div><div class="' + (mkt.rsi > 70 ? 'red' : mkt.rsi < 30 ? 'green' : 'yellow') + '">' + fmt(mkt.rsi) + '</div></div>';
-    html += '<div style="text-align:center"><div class="label">ADX</div><div class="' + (mkt.adx > 25 ? 'green' : 'red') + '">' + fmt(mkt.adx) + '</div></div>';
-    html += '<div style="text-align:center"><div class="label">信号</div><div style="color:' + (mkt.mode === 'long' ? '#2ecc71' : mkt.mode === 'short' ? '#e74c3c' : '#888') + '">' + (mkt.mode || 'wait') + '</div></div>';
+    html += '<div style="text-align:center"><div class="label">价格</div><div class="cyan">$' + fmtP(data.price) + '</div></div>';
+    html += '<div style="text-align:center"><div class="label">RSI</div><div class="' + (data.rsi > 70 ? 'red' : data.rsi < 30 ? 'green' : 'yellow') + '">' + fmt(data.rsi) + '</div></div>';
+    html += '<div style="text-align:center"><div class="label">ADX</div><div class="' + (data.adx > 25 ? 'green' : 'red') + '">' + fmt(data.adx) + '</div></div>';
+    html += '<div style="text-align:center"><div class="label">信号</div><div style="color:' + (data.mode === 'long' ? '#2ecc71' : data.mode === 'short' ? '#e74c3c' : '#888') + '">' + (data.mode || 'wait') + '</div></div>';
     html += '</div></div>';
-    
-    // Accounts overview
-    for (var a of data.accounts || []) {
-      var pnlClass = a.total_pnl >= 0 ? 'pos' : 'neg';
-      var roiClass = a.roi >= 0 ? 'pos' : 'neg';
-      
+
+    // 只显示V1~V5虚拟账户（排除Real）
+    var virtAccounts = accounts.filter(a => ['V1','V2','V3','V4','V5'].includes(a.account));
+    var displayOrder = ['V1', 'V2', 'V3', 'V4', 'V5'];
+    virtAccounts.sort((a, b) => displayOrder.indexOf(a.account) - displayOrder.indexOf(b.account));
+
+    for (var a of virtAccounts) {
+      var bal = Number(a.balance || 0);
+      var roi = ((bal - 1000) / 1000 * 100);
+      var roiClass = roi >= 0 ? 'pos' : 'neg';
+      var pnlClass = 'zero';
+      var side = a.side;
+      var size = Number(a.size || 0);
+      var entry = Number(a.entry || 0);
+      var upl = Number(a.unrealized_pnl || 0);
+      var strategy = a.strategy || '';
+
       html += '<div class="acc-group">';
-      html += '<div class="acc-header" style="cursor:pointer" onclick="toggleAccDetail(\'' + a.account + '\')">';
-      html += '<div class="acc-name">' + a.account + ' <span>' + a.strategy + '</span><span style="float:right;color:#555;font-size:0.8rem">›</span></div>';
-      html += '<div><div class="acc-total ' + pnlClass + '">' + (a.balance >= 0 ? '+' : '') + fmt(a.balance, 2) + 'U</div>';
-      html += '<div class="acc-sub">累计 <span class="' + pnlClass + '">' + (a.total_pnl >= 0 ? '+' : '') + fmt(a.total_pnl, 2) + '</span> | ROI <span class="' + roiClass + '">' + (a.roi >= 0 ? '+' : '') + fmt(a.roi, 2) + '%</span></div></div></div>';
-      
+      html += '<div class="acc-header">';
+      html += '<div class="acc-name">' + a.account + ' <span>' + strategy + '</span></div>';
+      html += '<div><div class="acc-total ' + (bal >= 1000 ? 'zero' : bal > 1000 ? 'pos' : 'neg') + '">' + fmt(bal, 2) + 'U</div>';
+      html += '<div class="acc-sub">ROI <span class="' + roiClass + '">' + (roi >= 0 ? '+' : '') + fmt(roi, 1) + '%</span></div></div></div>';
+
       // Stats row
+      var lev = strategy.includes('50') ? 50 : 100;
       html += '<div style="display:flex;gap:4px;margin-bottom:6px">';
-      html += '<div class="acc-stat-cell" style="flex:1"><div class="val ' + pnlClass + '">' + (a.win_rate || 0) + '%</div><div class="lbl">胜率</div></div>';
-      html += '<div class="acc-stat-cell" style="flex:1"><div class="val">' + (a.total_trades || 0) + '</div><div class="lbl">交易数</div></div>';
-      html += '<div class="acc-stat-cell" style="flex:1"><div class="val ' + (a.pnl_ratio >= 1 ? 'pos' : 'neg') + '">' + (a.pnl_ratio || 0) + '</div><div class="lbl">盈亏比</div></div>';
-      html += '<div class="acc-stat-cell" style="flex:1"><div class="val">' + a.leverage + 'X</div><div class="lbl">杠杆</div></div>';
+      html += '<div class="acc-stat-cell" style="flex:1"><div class="val ' + (side === 'long' ? 'pos' : side === 'short' ? 'neg' : 'zero') + '">' + (side || '空仓') + '</div><div class="lbl">方向</div></div>';
+      html += '<div class="acc-stat-cell" style="flex:1"><div class="val cyan">' + lev + 'X</div><div class="lbl">杠杆</div></div>';
+      html += '<div class="acc-stat-cell" style="flex:1"><div class="val ' + (size > 0 ? 'cyan' : 'zero') + '">' + size.toFixed(4) + '</div><div class="lbl">张数</div></div>';
+      html += '<div class="acc-stat-cell" style="flex:1"><div class="val ' + roiClass + '">' + (roi >= 0 ? '+' : '') + fmt(roi, 1) + '%</div><div class="lbl">ROI</div></div>';
       html += '</div>';
-      
-      html += '<div onclick="toggleAccDetail(\'' + a.account + '\')" style="background:#1e3050;border-radius:8px;padding:8px;text-align:center;color:#00d4ff;font-size:0.8rem;cursor:pointer;margin-bottom:6px">📋 查看 ' + (a.total_trades || 0) + ' 笔交易记录 ›</div>';
-      
-      // Position info or idle
-      if (a.status === '持仓中') {
-        var isLong = a.side === 'long';
-        var unrealClass = a.unrealized_pnl >= 0 ? 'pos' : 'neg';
+
+      // Position
+      if (size > 0 && side) {
+        var pnlClass2 = upl >= 0 ? 'pos' : 'neg';
         html += '<div class="pos-table">';
-        html += '<div class="pos-dir ' + a.side + '">';
-        html += '<div class="pos-dir-label ' + a.side + '">' + (isLong ? '做多' : '做空') + ' ×' + a.leverage + 'X ' + a.size + '张</div>';
-        html += '<div class="pos-pnl ' + unrealClass + '">' + (a.unrealized_pnl >= 0 ? '+' : '') + fmt(a.unrealized_pnl, 2) + 'U</div>';
+        html += '<div class="pos-dir ' + side + '">';
+        html += '<div class="pos-dir-label ' + side + '">' + (side === 'long' ? '做多' : '做空') + ' ×' + size.toFixed(4) + '张</div>';
+        html += '<div class="pos-pnl ' + pnlClass2 + '">' + (upl >= 0 ? '+' : '') + fmt(upl, 2) + 'U</div>';
         html += '</div>';
         html += '<div class="pos-grid">';
-        html += '<div class="pos-cell"><div class="pos-cell-label">持仓数量</div><div class="pos-cell-value cyan">' + a.size + ' 张</div></div>';
-        html += '<div class="pos-cell"><div class="pos-cell-label">开仓均价</div><div class="pos-cell-value">$' + fmtP(a.entry) + '</div></div>';
-        html += '<div class="pos-cell"><div class="pos-cell-label">当前价</div><div class="pos-cell-value cyan">$' + fmtP(mkt.price) + '</div></div>';
-        html += '<div class="pos-cell"><div class="pos-cell-label">偏离</div><div class="pos-cell-value ' + unrealClass + '">' + fmt(a.profit_pct, 3) + '%</div></div>';
-        html += '<div class="pos-cell"><div class="pos-cell-label">浮动盈亏</div><div class="pos-cell-value ' + unrealClass + '">' + (a.unrealized_pnl >= 0 ? '+' : '') + fmt(a.unrealized_pnl, 2) + 'U</div></div>';
+        html += '<div class="pos-cell"><div class="pos-cell-label">开仓价</div><div class="pos-cell-value">$' + fmtP(entry) + '</div></div>';
+        html += '<div class="pos-cell"><div class="pos-cell-label">当前价</div><div class="pos-cell-value cyan">$' + fmtP(data.price) + '</div></div>';
+        html += '<div class="pos-cell"><div class="pos-cell-label">浮动盈亏</div><div class="pos-cell-value ' + pnlClass2 + '">' + (upl >= 0 ? '+' : '') + fmt(upl, 2) + 'U</div></div>';
         html += '</div></div>';
       } else {
-        html += '<div class="acc-idle">空仓 | 本金 <span>' + fmt(a.initial, 2) + 'U</span></div>';
+        html += '<div class="acc-idle">空仓 · 本金 <span>1000.00U</span></div>';
       }
-      
+
       html += '</div>';
     }
-    
+
     if (!html) html = '<div class="no-data">暂无虚拟账号数据</div>';
     document.getElementById('virt-list').innerHTML = html;
-    document.getElementById('virt-update').textContent = data.updated_at || '--';
+    document.getElementById('virt-update').textContent = data.last_update || '--';
   } catch(e) { console.log('Virt load error:', e); }
 }
 
