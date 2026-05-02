@@ -74,14 +74,15 @@ body { font-family: -apple-system, sans-serif; background: #0f0f1a; color: #fff;
 .no-data { text-align: center; color: #444; font-size: 0.8rem; padding: 20px; }
 
 /* Modal */
-.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; transition: opacity 0.2s; }
 .modal-overlay.hide { display: none; }
-.modal-box { background: #1a1a2e; border-radius: 14px; max-width: 340px; width: 100%; }
-.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: #16213e; border-bottom: 1px solid #333; }
+.modal-box { background: #1a1a2e; border-radius: 14px; max-width: 340px; width: 100%; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: #16213e; border-bottom: 1px solid #333; border-radius: 14px 14px 0 0; }
 .modal-title { font-size: 1rem; font-weight: bold; color: #00d4ff; }
-.modal-close { background: none; border: none; color: #666; font-size: 1.4rem; cursor: pointer; }
-.modal-body { padding: 14px 16px; font-size: 0.82rem; line-height: 1.6; color: #aaa; }
-.modal-footer { padding: 10px 16px; border-top: 1px solid #333; font-size: 0.7rem; color: #555; text-align: center; }
+.modal-close { width: 28px; height: 28px; border-radius: 50%; border: 1px solid #444; background: #222; color: #888; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; line-height: 1; }
+.modal-close:hover { background: #333; color: #fff; border-color: #00d4ff; }
+.modal-body { padding: 14px 16px; font-size: 0.82rem; line-height: 1.6; color: #aaa; max-height: 70vh; overflow-y: auto; }
+.modal-footer { padding: 8px 16px; border-top: 1px solid #222; font-size: 0.68rem; color: #444; text-align: center; }
 
 /* Virt Tab - Account Detail (repurposed from trades styles) */
 .acc-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
@@ -206,10 +207,9 @@ body { font-family: -apple-system, sans-serif; background: #0f0f1a; color: #fff;
   <div class="modal-box">
     <div class="modal-header">
       <div class="modal-title" id="modal-title">--</div>
-      <button class="modal-close" onclick="closeModal()">×</button>
+      <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
     <div class="modal-body" id="modal-body"></div>
-    <div class="modal-footer">点击外部区域关闭</div>
   </div>
 </div>
 
@@ -620,6 +620,7 @@ async function load() {
         html += '<div class="pos-pnl ' + pnlClass2 + '">' + (upl >= 0 ? '+' : '') + fmt(upl, 2) + 'U</div>';
         html += '</div>';
         html += '<div class="pos-grid">';
+        html += '<div class="pos-cell"><div class="pos-cell-label">持仓数量</div><div class="pos-cell-value cyan">' + size + ' 张</div></div>';
         html += '<div class="pos-cell"><div class="pos-cell-label">开仓均价</div><div class="pos-cell-value">$' + fmtP(entry) + '</div></div>';
         html += '<div class="pos-cell"><div class="pos-cell-label">当前价</div><div class="pos-cell-value cyan">$' + fmtP(price) + '</div></div>';
         html += '<div class="pos-cell"><div class="pos-cell-label">预估强平价</div><div class="pos-cell-value yellow">' + (sl > 0 ? '$' + fmtP(sl) : '--') + '</div></div>';
@@ -690,6 +691,7 @@ async function loadVirt() {
         html += '<div class="pos-pnl ' + unrealClass + '">' + (a.unrealized_pnl >= 0 ? '+' : '') + fmt(a.unrealized_pnl, 2) + 'U</div>';
         html += '</div>';
         html += '<div class="pos-grid">';
+        html += '<div class="pos-cell"><div class="pos-cell-label">持仓数量</div><div class="pos-cell-value cyan">' + a.size + ' 张</div></div>';
         html += '<div class="pos-cell"><div class="pos-cell-label">开仓均价</div><div class="pos-cell-value">$' + fmtP(a.entry) + '</div></div>';
         html += '<div class="pos-cell"><div class="pos-cell-label">当前价</div><div class="pos-cell-value cyan">$' + fmtP(mkt.price) + '</div></div>';
         html += '<div class="pos-cell"><div class="pos-cell-label">偏离</div><div class="pos-cell-value ' + unrealClass + '">' + fmt(a.profit_pct, 3) + '%</div></div>';
