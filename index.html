@@ -114,7 +114,7 @@ body { font-family: -apple-system, sans-serif; background: #0f0f1a; color: #fff;
 
 <div class="tab-bar">
   <button class="tab-btn active" id="btn-market" onclick="switchTab('market')">📊 行情</button>
-  <button class="tab-btn" id="btn-accounts" onclick="switchTab('accounts')">📱 账号</button>
+  <button class="tab-btn" id="btn-accounts" onclick="switchTab('accounts')">📱 实仓</button>
   <button class="tab-btn" id="btn-virt" onclick="switchTab('virt')">🎮 虚拟</button>
 </div>
 
@@ -576,8 +576,9 @@ async function load() {
     // Accounts（从 market_data.json 的 accounts 数组）
     var accs = fullData.accounts || [];
     var html = '';
-    var displayOrder = ['V1', 'V2', 'V3', 'Real'];
+    var displayOrder = ['V1', 'V2', 'V3', 'V4', 'V5', 'Real'];
     // 按displayOrder排，没在列表的放最后
+    // 账号Tab = Real实仓 | 虚拟Tab = V1~V5
     var ordered = [];
     for (var i = 0; i < displayOrder.length; i++) {
       for (var j = 0; j < accs.length; j++) {
