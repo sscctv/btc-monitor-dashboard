@@ -580,16 +580,16 @@ async function load() {
     // 实仓Tab只显示Real，虚拟Tab显示V1~V5
     var accs = fullData.accounts || [];
     var html = '';
-    var displayOrder = ['Real'];  // 实仓Tab只显示Real
+    var displayOrder = ['Real'];  // 实仓Tab只显示Real账户，不显示S1-S8虚拟账户
     var ordered = [];
     for (var i = 0; i < displayOrder.length; i++) {
       for (var j = 0; j < accs.length; j++) {
         if (accs[j].account === displayOrder[i]) ordered.push(accs[j]);
       }
     }
-    // 剩余的
+    // 剩余的（过滤掉S1-S8，这些在虚拟Tab显示）
     for (var j = 0; j < accs.length; j++) {
-      if (ordered.indexOf(accs[j]) < 0) ordered.push(accs[j]);
+      if (ordered.indexOf(accs[j]) < 0 && accs[j].account !== 'Real' && !accs[j].account.startsWith('S')) ordered.push(accs[j]);
     }
 
     for (var i = 0; i < ordered.length; i++) {
@@ -678,7 +678,7 @@ async function loadVirt() {
       var size = Number(a.size || 0);
       var entry = Number(a.entry || 0);
       var upl = Number(a.unrealized_pnl || 0);
-      var strategy = a.strategy || '';
+      var strategy = (a.strategy_name || a.strategy || '');
       var win_rate = Number(a.win_rate || 0);
       var total_trades = Number(a.total_trades || 0);
       var leverage = Number(a.leverage || 0);
