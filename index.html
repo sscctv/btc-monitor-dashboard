@@ -598,6 +598,16 @@ async function load() {
       var isReal = accName === 'Real';
       var bal = Number(acc.balance || 0);
       var upl = Number(acc.unrealized_pnl || 0);
+      // 如果unrealized_pnl为0但有持仓，根据entry/current/leverage计算浮动盈亏
+      if (upl === 0 && acc.side && acc.entry > 0 && data.price > 0) {
+        var lev = Number(acc.leverage || 0);
+        var bal = Number(acc.balance || 1000);
+        if (acc.side === 'long') {
+          upl = bal * lev * (data.price - acc.entry) / acc.entry;
+        } else if (acc.side === 'short') {
+          upl = bal * lev * (acc.entry - data.price) / acc.entry;
+        }
+      }
       var totalAssets = bal + upl;
       var side = acc.side;
       var size = Number(acc.size || 0);
@@ -678,6 +688,16 @@ async function loadVirt() {
       var size = Number(a.size || 0);
       var entry = Number(a.entry || 0);
       var upl = Number(a.unrealized_pnl || 0);
+      // 如果unrealized_pnl为0但有持仓，根据entry/current/leverage计算浮动盈亏
+      if (upl === 0 && a.side && a.entry > 0 && data.price > 0) {
+        var lev = Number(a.leverage || 0);
+        var bal = Number(a.balance || 1000);
+        if (a.side === 'long') {
+          upl = bal * lev * (data.price - a.entry) / a.entry;
+        } else if (a.side === 'short') {
+          upl = bal * lev * (a.entry - data.price) / a.entry;
+        }
+      }
       var strategy = (a.strategy_name || a.strategy || '');
       var win_rate = Number(a.win_rate || 0);
       var total_trades = Number(a.total_trades || 0);
