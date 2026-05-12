@@ -644,8 +644,8 @@ async function load() {
 
 async function loadVirt() {
   try {
-    // 虚拟Tab从market_data.json读取V1~V5数据（与引擎同步）
-    const res = await fetch('https://lpcrnobolifrzwrkxoli.supabase.co/storage/v1/object/public/virt-data/market_data.json?t=' + Date.now());
+    // 虚拟Tab从virt_positions.json读取5策略数据
+    const res = await fetch('https://lpcrnobolifrzwrkxoli.supabase.co/storage/v1/object/public/virt-data/virt_positions.json?t=' + Date.now());
     const fullData = await res.json();
     var data = fullData.market || {};
     var accounts = fullData.accounts || [];
@@ -662,35 +662,36 @@ async function loadVirt() {
     html += '<div style="text-align:center"><div class="label">信号</div><div style="color:' + (data.mode === 'long' ? '#2ecc71' : data.mode === 'short' ? '#e74c3c' : '#888') + '">' + (data.mode || 'wait') + '</div></div>';
     html += '</div></div>';
 
-    // 只显示V1~V5虚拟账户（排除Real）
-    var virtAccounts = accounts.filter(a => ['V1','V2','V3','V4','V5'].includes(a.account));
-    var displayOrder = ['V1', 'V2', 'V3', 'V4', 'V5'];
-    virtAccounts.sort((a, b) => displayOrder.indexOf(a.account) - displayOrder.indexOf(b.account));
-
+    // 显示所有虚拟账户（5策略）
+    var virtAccounts = accounts;  // 直接显示所有账户
     for (var a of virtAccounts) {
       var bal = Number(a.balance || 0);
-      var roi = ((bal - 1000) / 1000 * 100);
+      var initial = Number(a.initial || 1000);
+      var roi = ((bal - initial) / initial * 100);
       var roiClass = roi >= 0 ? 'pos' : 'neg';
-      var pnlClass = 'zero';
+      var total_pnl = Number(a.total_pnl || 0);
+      var total_pnl_class = total_pnl >= 0 ? 'pos' : 'neg';
       var side = a.side;
       var size = Number(a.size || 0);
       var entry = Number(a.entry || 0);
       var upl = Number(a.unrealized_pnl || 0);
       var strategy = a.strategy || '';
+      var win_rate = Number(a.win_rate || 0);
+      var total_trades = Number(a.total_trades || 0);
+      var leverage = Number(a.leverage || 0);
 
       html += '<div class="acc-group">';
       html += '<div class="acc-header">';
       html += '<div class="acc-name">' + a.account + ' <span>' + strategy + '</span></div>';
-      html += '<div><div class="acc-total ' + (bal >= 1000 ? 'zero' : bal > 1000 ? 'pos' : 'neg') + '">' + fmt(bal, 2) + 'U</div>';
-      html += '<div class="acc-sub">ROI <span class="' + roiClass + '">' + (roi >= 0 ? '+' : '') + fmt(roi, 1) + '%</span></div></div></div>';
+      html += '<div><div class="acc-total ' + (bal >= initial ? 'zero' : bal > initial ? 'pos' : 'neg') + '">' + fmt(bal, 2) + 'U</div>';
+      html += '<div class="acc-sub">累计 <span class="' + total_pnl_class + '">' + (total_pnl >= 0 ? '+' : '') + fmt(total_pnl, 2) + '</span> | ROI <span class="' + roiClass + '">' + (roi >= 0 ? '+' : '') + fmt(roi, 1) + '%</span></div></div></div>';
 
       // Stats row
-      var lev = strategy.includes('50') ? 50 : 100;
       html += '<div style="display:flex;gap:4px;margin-bottom:6px">';
-      html += '<div class="acc-stat-cell" style="flex:1"><div class="val ' + (side === 'long' ? 'pos' : side === 'short' ? 'neg' : 'zero') + '">' + (side || '空仓') + '</div><div class="lbl">方向</div></div>';
-      html += '<div class="acc-stat-cell" style="flex:1"><div class="val cyan">' + lev + 'X</div><div class="lbl">杠杆</div></div>';
-      html += '<div class="acc-stat-cell" style="flex:1"><div class="val ' + (size > 0 ? 'cyan' : 'zero') + '">' + size.toFixed(4) + '</div><div class="lbl">张数</div></div>';
-      html += '<div class="acc-stat-cell" style="flex:1"><div class="val ' + roiClass + '">' + (roi >= 0 ? '+' : '') + fmt(roi, 1) + '%</div><div class="lbl">ROI</div></div>';
+      html += '<div class="acc-stat-cell" style="flex:1"><div class="val ' + (side === 'long' ? 'pos' : side === 'short' ? 'neg' : 'zero') + '">' + (side === 'long' ? '做多' : side === 'short' ? '做空' : '空仓') + '</div><div class="lbl">方向</div></div>';
+      html += '<div class="acc-stat-cell" style="flex:1"><div class="val cyan">' + leverage + 'X</div><div class="lbl">杠杆</div></div>';
+      html += '<div class="acc-stat-cell" style="flex:1"><div class="val">' + total_trades + '</div><div class="lbl">交易</div></div>';
+      html += '<div class="acc-stat-cell" style="flex:1"><div class="val ' + (win_rate >= 50 ? 'pos' : 'neg') + '">' + win_rate + '%</div><div class="lbl">胜率</div></div>';
       html += '</div>';
 
       // Position
@@ -698,16 +699,16 @@ async function loadVirt() {
         var pnlClass2 = upl >= 0 ? 'pos' : 'neg';
         html += '<div class="pos-table">';
         html += '<div class="pos-dir ' + side + '">';
-        html += '<div class="pos-dir-label ' + side + '">' + (side === 'long' ? '做多' : '做空') + ' ×' + size.toFixed(4) + '张</div>';
+        html += '<div class="pos-dir-label ' + side + '">持仓中 ×' + size.toFixed(4) + '张</div>';
         html += '<div class="pos-pnl ' + pnlClass2 + '">' + (upl >= 0 ? '+' : '') + fmt(upl, 2) + 'U</div>';
         html += '</div>';
         html += '<div class="pos-grid">';
         html += '<div class="pos-cell"><div class="pos-cell-label">开仓价</div><div class="pos-cell-value">$' + fmtP(entry) + '</div></div>';
-        html += '<div class="pos-cell"><div class="pos-cell-label">当前价</div><div class="pos-cell-value cyan">$' + fmtP(data.price) + '</div></div>';
+        html += '<div class="pos-cell"><div class="pos-cell-label">当前价</div><div class="pos-cell-value cyan">$' + fmtP(a.current || data.price) + '</div></div>';
         html += '<div class="pos-cell"><div class="pos-cell-label">浮动盈亏</div><div class="pos-cell-value ' + pnlClass2 + '">' + (upl >= 0 ? '+' : '') + fmt(upl, 2) + 'U</div></div>';
         html += '</div></div>';
       } else {
-        html += '<div class="acc-idle">空仓 · 本金 <span>1000.00U</span></div>';
+        html += '<div class="acc-idle">空仓 · 本金 <span>' + fmt(initial, 2) + 'U</span></div>';
       }
 
       html += '</div>';
@@ -715,7 +716,7 @@ async function loadVirt() {
 
     if (!html) html = '<div class="no-data">暂无虚拟账号数据</div>';
     document.getElementById('virt-list').innerHTML = html;
-    document.getElementById('virt-update').textContent = data.last_update || '--';
+    document.getElementById('virt-update').textContent = fullData.updated_at || '--';
   } catch(e) { console.log('Virt load error:', e); }
 }
 
