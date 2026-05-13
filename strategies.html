@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>策略管理 - BTC Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="brand">
+            <span class="brand-icon">⚙️</span>
+            <span>策略管理</span>
+        </div>
+        <div class="live-badge">
+            <span class="live-dot"></span>
+            <span id="updateTime">实时</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- 总览统计 -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">策略总数</div>
+                <div class="stat-value">15</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">总资金</div>
+                <div class="stat-value" id="totalBalance">$85,234</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">总盈亏</div>
+                <div class="stat-value" style="color: var(--accent-primary)" id="totalPnl">+$76,398</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">今日交易</div>
+                <div class="stat-value" id="todayTrades">23</div>
+            </div>
+        </div>
+
+        <!-- 筛选 -->
+        <div class="filter-bar">
+            <select class="filter-select" id="strategyTypeFilter" onchange="filterStrategies()">
+                <option value="all">全部策略</option>
+                <option value="bb">BB策略</option>
+                <option value="rsi">RSI策略</option>
+            </select>
+            <select class="filter-select" id="statusFilter" onchange="filterStrategies()">
+                <option value="all">全部状态</option>
+                <option value="active">交易中</option>
+                <option value="idle">空闲</option>
+            </select>
+        </div>
+
+        <!-- BB策略（原项目5个） -->
+        <div class="card" id="bbStrategies">
+            <div class="card-header">
+                <span class="card-title">📊 BB策略（原项目）</span>
+                <span class="badge badge-pending">5个策略</span>
+            </div>
+            <div class="strategy-cards" id="bbStrategyList">
+                <!-- BB策略卡片将由JS生成 -->
+            </div>
+        </div>
+
+        <!-- RSI策略（新增Top 10） -->
+        <div class="card" id="rsiStrategies">
+            <div class="card-header">
+                <span class="card-title">🎯 RSI策略（Top 10）</span>
+                <span class="badge badge-success">10个策略</span>
+            </div>
+            <div class="strategy-cards" id="rsiStrategyList">
+                <!-- RSI策略卡片将由JS生成 -->
+            </div>
+        </div>
+
+        <!-- 策略对比图表 -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">📈 策略收益对比</span>
+            </div>
+            <div class="chart-container" id="compareChart"></div>
+        </div>
+    </div>
+
+    <!-- 交易记录弹窗 -->
+    <div class="modal" id="tradeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">交易记录</h3>
+                <span class="modal-close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="strategy-summary" id="strategySummary">
+                    <!-- 策略摘要 -->
+                </div>
+                <div class="trade-list" id="tradeList">
+                    <!-- 交易记录列表 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-text">首页</span>
+        </a>
+        <a href="virtual.html" class="nav-item">
+            <span class="nav-icon">📊</span>
+            <span class="nav-text">交易</span>
+        </a>
+        <a href="signals.html" class="nav-item">
+            <span class="nav-icon">📡</span>
+            <span class="nav-text">信号</span>
+        </a>
+        <a href="strategies.html" class="nav-item active">
+            <span class="nav-icon">⚙️</span>
+            <span class="nav-text">策略</span>
+        </a>
+        <a href="history.html" class="nav-item">
+            <span class="nav-icon">📜</span>
+            <span class="nav-text">记录</span>
+        </a>
+    </nav>
+
+    <style>
+        /* 策略卡片 */
+        .strategy-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .strategy-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .strategy-card:active {
+            transform: scale(0.98);
+        }
+
+        .strategy-card.has-position {
+            border-left: 4px solid var(--accent-primary);
+        }
+
+        .strategy-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .strategy-card-name {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .strategy-card-status {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 12px;
+        }
+
+        .strategy-card-status.active {
+            background: rgba(0, 212, 170, 0.15);
+            color: var(--accent-primary);
+        }
+
+        .strategy-card-status.idle {
+            background: rgba(156, 163, 175, 0.15);
+            color: var(--text-secondary);
+        }
+
+        .strategy-card-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .strategy-metric {
+            text-align: center;
+        }
+
+        .strategy-metric-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 2px;
+        }
+
+        .strategy-metric-value {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .strategy-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .position-info {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .position-badge {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .position-badge.long {
+            background: rgba(0, 212, 170, 0.15);
+            color: var(--accent-primary);
+        }
+
+        .position-badge.short {
+            background: rgba(255, 107, 107, 0.15);
+            color: var(--accent-danger);
+        }
+
+        .win-rate {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .win-rate span {
+            color: var(--accent-primary);
+            font-weight: 600;
+        }
+
+        /* 弹窗 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            overflow-y: auto;
+        }
+
+        .modal.show {
+            display: block;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            margin: 20px;
+            border-radius: 16px;
+            max-height: calc(100vh - 40px);
+            overflow: hidden;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-header h3 {
+            font-size: 18px;
+        }
+
+        .modal-close {
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        .modal-body {
+            padding: 20px;
+            max-height: calc(100vh - 150px);
+            overflow-y: auto;
+        }
+
+        .strategy-summary {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .summary-item {
+            background: var(--bg-secondary);
+            padding: 14px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .summary-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .summary-value {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .trade-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .trade-item {
+            background: var(--bg-secondary);
+            padding: 14px;
+            border-radius: 10px;
+        }
+
+        .trade-item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .trade-item-time {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .trade-item-pnl {
+            font-weight: 600;
+        }
+
+        .trade-item-details {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+        }
+
+        .trade-item-details span:first-child {
+            color: var(--text-secondary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+    </style>
+
+    <script>
+        // 策略数据（从数据库读取的模拟数据）
+        const strategiesData = {
+            bb: [
+                { id: 1, name: 'BB策略 30x全仓', type: 'bb', lev: 30, mode: '全仓', 
+                  initial: 1000, balance: 4523, pnl: 3523, pnlPercent: 352.3,
+                  trades: 89, wins: 58, winRate: 65.2,
+                  position: { type: '做多', entry: 104500, current: 105234, size: 0.019 },
+                  status: 'active', lastTrade: '2026-05-13 14:30' },
+                { id: 2, name: 'BB策略 30x逐仓', type: 'bb', lev: 30, mode: '逐仓',
+                  initial: 1000, balance: 4156, pnl: 3156, pnlPercent: 315.6,
+                  trades: 82, wins: 52, winRate: 63.4,
+                  position: null, status: 'idle', lastTrade: '2026-05-13 12:15' },
+                { id: 3, name: 'BB策略 25x全仓', type: 'bb', lev: 25, mode: '全仓',
+                  initial: 1000, balance: 3892, pnl: 2892, pnlPercent: 289.2,
+                  trades: 78, wins: 49, winRate: 62.8,
+                  position: { type: '做空', entry: 105100, current: 105234, size: 0.019 },
+                  status: 'active', lastTrade: '2026-05-13 13:45' },
+                { id: 4, name: 'BB策略 25x逐仓', type: 'bb', lev: 25, mode: '逐仓',
+                  initial: 1000, balance: 3456, pnl: 2456, pnlPercent: 245.6,
+                  trades: 72, wins: 45, winRate: 62.5,
+                  position: null, status: 'idle', lastTrade: '2026-05-13 10:30' },
+                { id: 5, name: 'BB策略 20x', type: 'bb', lev: 20, mode: '逐仓',
+                  initial: 1000, balance: 3124, pnl: 2124, pnlPercent: 212.4,
+                  trades: 68, wins: 42, winRate: 61.8,
+                  position: { type: '做多', entry: 103890, current: 105234, size: 0.019 },
+                  status: 'active', lastTrade: '2026-05-13 11:00' }
+            ],
+            rsi: [
+                { id: 6, name: 'RSI_14_35_65_L20', type: 'rsi', params: '周期14 | 35/65',
+                  initial: 1000, balance: 72398, pnl: 71398, pnlPercent: 7139.8,
+                  trades: 420, wins: 280, winRate: 66.8,
+                  position: { type: '做多', entry: 103890, current: 105234, size: 0.019 },
+                  status: 'active', lastTrade: '2026-05-13 14:30' },
+                { id: 7, name: 'RSI_7_30_75_L20', type: 'rsi', params: '周期7 | 30/75',
+                  initial: 1000, balance: 68920, pnl: 67920, pnlPercent: 6792.0,
+                  trades: 380, wins: 248, winRate: 65.2,
+                  position: null, status: 'idle', lastTrade: '2026-05-13 13:45' },
+                { id: 8, name: 'RSI_7_35_75_L20', type: 'rsi', params: '周期7 | 35/75',
+                  initial: 1000, balance: 67410, pnl: 66410, pnlPercent: 6641.0,
+                  trades: 350, wins: 226, winRate: 64.5,
+                  position: { type: '做多', entry: 103200, current: 105234, size: 0.019 },
+                  status: 'active', lastTrade: '2026-05-13 12:00' },
+                { id: 9, name: 'RSI_7_20_75_L20', type: 'rsi', params: '周期7 | 20/75',
+                  initial: 1000, balance: 65340, pnl: 64340, pnlPercent: 6434.0,
+                  trades: 320, wins: 204, winRate: 63.8,
+                  position: null, status: 'idle', lastTrade: '2026-05-13 11:30' },
+                { id: 10, name: 'RSI_14_35_70_L20', type: 'rsi', params: '周期14 | 35/70',
+                  initial: 1000, balance: 64230, pnl: 63230, pnlPercent: 6323.0,
+                  trades: 310, wins: 197, winRate: 63.5,
+                  position: { type: '做空', entry: 104890, current: 105234, size: 0.019 },
+                  status: 'active', lastTrade: '2026-05-13 10:15' },
+                { id: 11, name: 'RSI_7_35_65_L20', type: 'rsi', params: '周期7 | 35/65',
+                  initial: 1000, balance: 63120, pnl: 62120, pnlPercent: 6212.0,
+                  trades: 295, wins: 186, winRate: 63.0,
+                  position: null, status: 'idle', lastTrade: '2026-05-13 09:45' },
+                { id: 12, name: 'RSI_7_25_75_L20', type: 'rsi', params: '周期7 | 25/75',
+                  initial: 1000, balance: 62010, pnl: 61010, pnlPercent: 6101.0,
+                  trades: 285, wins: 178, winRate: 62.4,
+                  position: { type: '做多', entry: 103500, current: 105234, size: 0.019 },
+                  status: 'active', lastTrade: '2026-05-13 08:30' },
+                { id: 13, name: 'RSI_7_35_70_L20', type: 'rsi', params: '周期7 | 35/70',
+                  initial: 1000, balance: 60890, pnl: 59890, pnlPercent: 5989.0,
+                  trades: 275, wins: 170, winRate: 61.8,
+                  position: null, status: 'idle', lastTrade: '2026-05-13 07:15' },
+                { id: 14, name: 'RSI_14_35_75_L20', type: 'rsi', params: '周期14 | 35/75',
+                  initial: 1000, balance: 59780, pnl: 58780, pnlPercent: 5878.0,
+                  trades: 265, wins: 162, winRate: 61.1,
+                  position: { type: '做多', entry: 102800, current: 105234, size: 0.019 },
+                  status: 'active', lastTrade: '2026-05-12 22:30' },
+                { id: 15, name: 'RSI_7_20_70_L20', type: 'rsi', params: '周期7 | 20/70',
+                  initial: 1000, balance: 58670, pnl: 57670, pnlPercent: 5767.0,
+                  trades: 255, wins: 154, winRate: 60.4,
+                  position: null, status: 'idle', lastTrade: '2026-05-12 20:45' }
+            ]
+        };
+
+        // 模拟交易记录
+        const tradeHistory = {
+            6: [
+                { time: '2026-05-13 14:30', type: '做多', entry: 104890, exit: 105234, pnl: 156, pnlPercent: 7.8, reason: '止盈' },
+                { time: '2026-05-13 12:00', type: '做空', entry: 104500, exit: 104890, pnl: -42, pnlPercent: -2.1, reason: '止损' },
+                { time: '2026-05-13 09:45', type: '做多', entry: 103890, exit: 104500, pnl: 234, pnlPercent: 11.7, reason: '止盈' },
+                { time: '2026-05-12 22:30', type: '做多', entry: 103200, exit: 103890, pnl: 312, pnlPercent: 15.6, reason: '止盈' },
+                { time: '2026-05-12 18:15', type: '做空', entry: 103890, exit: 103200, pnl: 289, pnlPercent: 14.5, reason: '止盈' }
+            ],
+            1: [
+                { time: '2026-05-13 14:30', type: '做多', entry: 104500, exit: 105234, pnl: 89, pnlPercent: 4.5, reason: '手动平仓' },
+                { time: '2026-05-13 12:15', type: '做空', entry: 104200, exit: 104500, pnl: -35, pnlPercent: -1.8, reason: '止损' },
+                { time: '2026-05-13 10:00', type: '做多', entry: 103800, exit: 104200, pnl: 156, pnlPercent: 7.8, reason: '止盈' }
+            ]
+        };
+
+        // 渲染策略卡片
+        function renderStrategyCard(strategy) {
+            const hasPosition = strategy.position !== null;
+            const pnlColor = strategy.pnl >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)';
+            
+            return `
+                <div class="strategy-card ${hasPosition ? 'has-position' : ''}" onclick="openTradeModal(${strategy.id}, '${strategy.name}')">
+                    <div class="strategy-card-header">
+                        <span class="strategy-card-name">${strategy.name}</span>
+                        <span class="strategy-card-status ${strategy.status}">${strategy.status === 'active' ? '交易中' : '空闲'}</span>
+                    </div>
+                    <div class="strategy-card-metrics">
+                        <div class="strategy-metric">
+                            <div class="strategy-metric-label">初始资金</div>
+                            <div class="strategy-metric-value">$${strategy.initial.toLocaleString()}</div>
+                        </div>
+                        <div class="strategy-metric">
+                            <div class="strategy-metric-label">当前余额</div>
+                            <div class="strategy-metric-value">$${strategy.balance.toLocaleString()}</div>
+                        </div>
+                        <div class="strategy-metric">
+                            <div class="strategy-metric-label">浮动盈亏</div>
+                            <div class="strategy-metric-value" style="color: ${pnlColor}">${strategy.pnl >= 0 ? '+' : ''}$${strategy.pnl.toLocaleString()}</div>
+                        </div>
+                    </div>
+                    <div class="strategy-card-footer">
+                        <div class="position-info">
+                            ${hasPosition ? `
+                                <span class="position-badge ${strategy.position.type === '做多' ? 'long' : 'short'}">
+                                    ${strategy.position.type} | $${strategy.position.entry.toLocaleString()}
+                                </span>
+                            ` : '<span style="color: var(--text-secondary); font-size: 13px;">无持仓</span>'}
+                        </div>
+                        <span class="win-rate">胜率 <span>${strategy.winRate}%</span> | ${strategy.trades}笔</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 渲染BB策略列表
+        function renderBBStrategies() {
+            const container = document.getElementById('bbStrategyList');
+            container.innerHTML = strategiesData.bb.map(s => renderStrategyCard(s)).join('');
+        }
+
+        // 渲染RSI策略列表
+        function renderRSIStrategies() {
+            const container = document.getElementById('rsiStrategyList');
+            container.innerHTML = strategiesData.rsi.map(s => renderStrategyCard(s)).join('');
+        }
+
+        // 筛选策略
+        function filterStrategies() {
+            const typeFilter = document.getElementById('strategyTypeFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            document.getElementById('bbStrategies').style.display = 
+                (typeFilter === 'all' || typeFilter === 'bb') ? 'block' : 'none';
+            document.getElementById('rsiStrategies').style.display = 
+                (typeFilter === 'all' || typeFilter === 'rsi') ? 'block' : 'none';
+        }
+
+        // 打开交易记录弹窗
+        function openTradeModal(strategyId, strategyName) {
+            const modal = document.getElementById('tradeModal');
+            const summary = document.getElementById('strategySummary');
+            const tradeList = document.getElementById('tradeList');
+            const modalTitle = document.getElementById('modalTitle');
+            
+            modalTitle.textContent = strategyName;
+            
+            // 查找策略
+            let strategy = null;
+            for (const s of [...strategiesData.bb, ...strategiesData.rsi]) {
+                if (s.id === strategyId) {
+                    strategy = s;
+                    break;
+                }
+            }
+            
+            if (strategy) {
+                const pnlColor = strategy.pnl >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)';
+                summary.innerHTML = `
+                    <div class="summary-item">
+                        <div class="summary-label">初始资金</div>
+                        <div class="summary-value">$${strategy.initial.toLocaleString()}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">当前余额</div>
+                        <div class="summary-value">$${strategy.balance.toLocaleString()}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">总盈亏</div>
+                        <div class="summary-value" style="color: ${pnlColor}">${strategy.pnl >= 0 ? '+' : ''}$${strategy.pnl.toLocaleString()}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">收益率</div>
+                        <div class="summary-value" style="color: ${pnlColor}">${strategy.pnlPercent >= 0 ? '+' : ''}${strategy.pnlPercent.toFixed(1)}%</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">交易次数</div>
+                        <div class="summary-value">${strategy.trades}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">胜率</div>
+                        <div class="summary-value" style="color: var(--accent-primary)">${strategy.winRate}%</div>
+                    </div>
+                `;
+                
+                // 获取交易记录
+                const trades = tradeHistory[strategyId] || [];
+                if (trades.length > 0) {
+                    tradeList.innerHTML = trades.map(t => `
+                        <div class="trade-item">
+                            <div class="trade-item-header">
+                                <span class="trade-item-time">${t.time}</span>
+                                <span class="trade-item-pnl" style="color: ${t.pnl >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)'}">
+                                    ${t.pnl >= 0 ? '+' : ''}$${t.pnl.toFixed(2)}
+                                </span>
+                            </div>
+                            <div class="trade-item-details">
+                                <span>${t.type} ${t.entry} → ${t.exit}</span>
+                                <span>${t.reason}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    tradeList.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📋</div>
+                            <p>暂无交易记录</p>
+                        </div>
+                    `;
+                }
+            }
+            
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // 关闭弹窗
+        function closeModal() {
+            document.getElementById('tradeModal').classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        // 点击弹窗背景关闭
+        document.getElementById('tradeModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // 渲染对比图表
+        function renderCompareChart() {
+            const chart = echarts.init(document.getElementById('compareChart'));
+            const allStrategies = [...strategiesData.bb, ...strategiesData.rsi];
+            
+            const sortedByPnl = allStrategies.sort((a, b) => b.pnl - a.pnl).slice(0, 10);
+            
+            chart.setOption({
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: function(params) {
+                        const data = params[0];
+                        return `${data.name}<br/>收益率: ${data.value}%`;
+                    }
+                },
+                grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
+                xAxis: {
+                    type: 'category',
+                    data: sortedByPnl.map(s => s.name.substring(0, 8)),
+                    axisLine: { lineStyle: { color: '#444' } },
+                    axisLabel: { color: '#888', fontSize: 9, rotate: 30 }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLine: { show: false },
+                    splitLine: { lineStyle: { color: '#333' } },
+                    axisLabel: { color: '#888', fontSize: 10, formatter: '{value}%' }
+                },
+                series: [{
+                    type: 'bar',
+                    data: sortedByPnl.map((s, i) => ({
+                        value: s.pnlPercent.toFixed(0),
+                        itemStyle: {
+                            color: i < 3 ? ['#ffd700', '#c0c0c0', '#cd7f32'][i] : '#0096ff',
+                            borderRadius: [4, 4, 0, 0]
+                        }
+                    })),
+                    barWidth: '60%'
+                }]
+            });
+
+            window.addEventListener('resize', () => chart.resize());
+        }
+
+        // 更新总览统计
+        function updateSummary() {
+            const all = [...strategiesData.bb, ...strategiesData.rsi];
+            const totalBalance = all.reduce((sum, s) => sum + s.balance, 0);
+            const totalPnl = all.reduce((sum, s) => sum + s.pnl, 0);
+            const todayTrades = all.reduce((sum, s) => sum + Math.floor(s.trades / 15), 0);
+            
+            document.getElementById('totalBalance').textContent = '$' + totalBalance.toLocaleString();
+            document.getElementById('totalPnl').textContent = (totalPnl >= 0 ? '+' : '') + '$' + totalPnl.toLocaleString();
+            document.getElementById('totalPnl').style.color = totalPnl >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)';
+            document.getElementById('todayTrades').textContent = todayTrades;
+        }
+
+        // 初始化
+        renderBBStrategies();
+        renderRSIStrategies();
+        renderCompareChart();
+        updateSummary();
+
+        // 更新按钮显示
+        document.getElementById('updateTime').textContent = '更新于 ' + new Date().toLocaleTimeString();
+    </script>
+</body>
+</html>
