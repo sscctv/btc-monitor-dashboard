@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>虚拟交易 - BTC Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="brand">
+            <span class="brand-icon">📊</span>
+            <span>虚拟交易</span>
+        </div>
+        <div class="live-badge">
+            <span class="live-dot"></span>
+            <span>运行中</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- 统计概览 -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">初始资金</div>
+                <div class="stat-value">$1,000</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">当前资金</div>
+                <div class="stat-value" style="color: var(--accent-primary)">$72,398</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">总收益率</div>
+                <div class="stat-value" style="color: var(--accent-primary)">+7,139%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">目标进度</div>
+                <div class="stat-value">7.2%</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 7.2%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 收益曲线 -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">📈 收益曲线</span>
+            </div>
+            <div class="chart-container" id="profitChart"></div>
+        </div>
+
+        <!-- 交易统计 -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">📊 交易统计</span>
+            </div>
+            <div class="stats-row">
+                <div class="stat-mini">
+                    <div class="label">总交易</div>
+                    <div class="value">1,247</div>
+                </div>
+                <div class="stat-mini">
+                    <div class="label">盈利</div>
+                    <div class="value positive" style="color: var(--accent-primary)">833</div>
+                </div>
+                <div class="stat-mini">
+                    <div class="label">亏损</div>
+                    <div class="value negative" style="color: var(--accent-danger)">414</div>
+                </div>
+                <div class="stat-mini">
+                    <div class="label">胜率</div>
+                    <div class="value" style="color: var(--accent-primary)">66.8%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 策略对比 -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">🎯 策略收益对比</span>
+            </div>
+            <div class="chart-container" id="compareChart" style="height: 220px;"></div>
+        </div>
+
+        <!-- 筛选 -->
+        <div class="filter-bar">
+            <select class="filter-select" id="strategyFilter">
+                <option value="all">全部策略</option>
+                <option value="RSI_14_35_65_L20">RSI_14_35_65_L20</option>
+                <option value="RSI_7_30_75_L20">RSI_7_30_75_L20</option>
+                <option value="RSI_7_35_75_L20">RSI_7_35_75_L20</option>
+            </select>
+        </div>
+
+        <!-- 交易记录 -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">📋 交易记录</span>
+                <span class="badge badge-pending">最新5条</span>
+            </div>
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-title">RSI_14_35_65_L20 <span class="badge badge-long">做多</span></div>
+                    <div class="list-item-subtitle">2026-05-13 14:30 | $104,890 → $105,234</div>
+                </div>
+                <span class="strategy-profit">+$156</span>
+            </div>
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-title">RSI_7_30_75_L20 <span class="badge badge-short">做空</span></div>
+                    <div class="list-item-subtitle">2026-05-13 13:45 | $104,500 → $104,890</div>
+                </div>
+                <span style="color: var(--accent-danger)">-$42</span>
+            </div>
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-title">RSI_14_35_65_L20 <span class="badge badge-long">做多</span></div>
+                    <div class="list-item-subtitle">2026-05-13 12:20 | $103,890 → $104,500</div>
+                </div>
+                <span class="strategy-profit">+$234</span>
+            </div>
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-title">RSI_7_35_75_L20 <span class="badge badge-long">做多</span></div>
+                    <div class="list-item-subtitle">2026-05-13 11:00 | $103,200 → $103,890</div>
+                </div>
+                <span class="strategy-profit">+$312</span>
+            </div>
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-title">RSI_14_35_65_L20 <span class="badge badge-long">做多</span></div>
+                    <div class="list-item-subtitle">2026-05-13 10:15 | $103,890 → 持仓中</div>
+                </div>
+                <span class="badge badge-pending">持仓中</span>
+            </div>
+        </div>
+
+        <div class="pagination">
+            <button class="page-btn" disabled>上一页</button>
+            <span class="page-info">1 / 250</span>
+            <button class="page-btn">下一页</button>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-text">首页</span>
+        </a>
+        <a href="virtual.html" class="nav-item active">
+            <span class="nav-icon">📊</span>
+            <span class="nav-text">交易</span>
+        </a>
+        <a href="signals.html" class="nav-item">
+            <span class="nav-icon">📡</span>
+            <span class="nav-text">信号</span>
+        </a>
+        <a href="strategies.html" class="nav-item">
+            <span class="nav-icon">⚙️</span>
+            <span class="nav-text">策略</span>
+        </a>
+        <a href="history.html" class="nav-item">
+            <span class="nav-icon">📜</span>
+            <span class="nav-text">记录</span>
+        </a>
+    </nav>
+
+    <script>
+        const profitChart = echarts.init(document.getElementById('profitChart'));
+        profitChart.setOption({
+            tooltip: { trigger: 'axis' },
+            grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
+            xAxis: {
+                type: 'category',
+                data: ['Day 1', 'Day 3', 'Day 5', 'Day 7', 'Day 9', 'Day 11', 'Day 13', 'Day 15'],
+                axisLine: { lineStyle: { color: '#444' } },
+                axisLabel: { color: '#888', fontSize: 10 }
+            },
+            yAxis: {
+                type: 'value',
+                axisLine: { show: false },
+                splitLine: { lineStyle: { color: '#333' } },
+                axisLabel: { color: '#888', fontSize: 10, formatter: '${value}' }
+            },
+            series: [{
+                type: 'line',
+                smooth: true,
+                data: [1000, 1850, 4200, 8900, 15600, 32000, 51000, 72398],
+                lineStyle: { color: '#00d4aa', width: 3 },
+                areaStyle: { color: 'rgba(0,212,170,0.2)' }
+            }]
+        });
+
+        const compareChart = echarts.init(document.getElementById('compareChart'));
+        compareChart.setOption({
+            tooltip: { trigger: 'axis' },
+            grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
+            xAxis: {
+                type: 'category',
+                data: ['Top 1', 'Top 2', 'Top 3', 'Top 4', 'Top 5'],
+                axisLine: { lineStyle: { color: '#444' } },
+                axisLabel: { color: '#888', fontSize: 10 }
+            },
+            yAxis: {
+                type: 'value',
+                axisLine: { show: false },
+                splitLine: { lineStyle: { color: '#333' } },
+                axisLabel: { color: '#888', fontSize: 10 }
+            },
+            series: [{
+                type: 'bar',
+                data: [7139, 6892, 6741, 6534, 6423],
+                itemStyle: {
+                    color: function(params) {
+                        const colors = ['#ffd700', '#c0c0c0', '#cd7f32', '#0096ff', '#0096ff'];
+                        return colors[params.dataIndex];
+                    },
+                    borderRadius: [6, 6, 0, 0]
+                }
+            }]
+        });
+
+        window.addEventListener('resize', () => {
+            profitChart.resize();
+            compareChart.resize();
+        });
+    </script>
+</body>
+</html>
