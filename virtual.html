@@ -15,132 +15,65 @@
         </div>
         <div class="live-badge">
             <span class="live-dot"></span>
-            <span>运行中</span>
+            <span id="updateTime">--</span>
         </div>
     </div>
 
     <div class="container">
-        <!-- 统计概览 -->
+        <!-- 账户概览 -->
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-label">初始资金</div>
-                <div class="stat-value">$1,000</div>
+                <div class="stat-label">总资金</div>
+                <div class="stat-value" id="totalBalance">--</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">当前资金</div>
-                <div class="stat-value" style="color: var(--accent-primary)">$72,398</div>
+                <div class="stat-label">总盈亏</div>
+                <div class="stat-value" id="totalPnl">--</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">总收益率</div>
-                <div class="stat-value" style="color: var(--accent-primary)">+7,139%</div>
+                <div class="stat-label">交易次数</div>
+                <div class="stat-value" id="totalTrades">--</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">目标进度</div>
-                <div class="stat-value">7.2%</div>
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: 7.2%"></div>
-                </div>
+                <div class="stat-label">平均胜率</div>
+                <div class="stat-value" id="avgWinRate">--</div>
             </div>
         </div>
 
-        <!-- 收益曲线 -->
+        <!-- 资金曲线 -->
         <div class="card">
             <div class="card-header">
-                <span class="card-title">📈 收益曲线</span>
+                <span class="card-title">📈 资金曲线</span>
             </div>
-            <div class="chart-container" id="profitChart"></div>
-        </div>
-
-        <!-- 交易统计 -->
-        <div class="card">
-            <div class="card-header">
-                <span class="card-title">📊 交易统计</span>
-            </div>
-            <div class="stats-row">
-                <div class="stat-mini">
-                    <div class="label">总交易</div>
-                    <div class="value">1,247</div>
-                </div>
-                <div class="stat-mini">
-                    <div class="label">盈利</div>
-                    <div class="value positive" style="color: var(--accent-primary)">833</div>
-                </div>
-                <div class="stat-mini">
-                    <div class="label">亏损</div>
-                    <div class="value negative" style="color: var(--accent-danger)">414</div>
-                </div>
-                <div class="stat-mini">
-                    <div class="label">胜率</div>
-                    <div class="value" style="color: var(--accent-primary)">66.8%</div>
-                </div>
-            </div>
+            <div class="chart-container" id="balanceChart"></div>
         </div>
 
         <!-- 策略对比 -->
         <div class="card">
             <div class="card-header">
-                <span class="card-title">🎯 策略收益对比</span>
+                <span class="card-title">⚡ 策略对比</span>
             </div>
-            <div class="chart-container" id="compareChart" style="height: 220px;"></div>
+            <div class="chart-container" id="radarChart"></div>
         </div>
 
-        <!-- 筛选 -->
-        <div class="filter-bar">
-            <select class="filter-select" id="strategyFilter">
-                <option value="all">全部策略</option>
-                <option value="RSI_14_35_65_L20">RSI_14_35_65_L20</option>
-                <option value="RSI_7_30_75_L20">RSI_7_30_75_L20</option>
-                <option value="RSI_7_35_75_L20">RSI_7_35_75_L20</option>
-            </select>
-        </div>
-
-        <!-- 交易记录 -->
+        <!-- 当前持仓 -->
         <div class="card">
             <div class="card-header">
-                <span class="card-title">📋 交易记录</span>
-                <span class="badge badge-pending">最新5条</span>
+                <span class="card-title">📌 当前持仓</span>
             </div>
-            <div class="list-item">
-                <div class="list-item-content">
-                    <div class="list-item-title">RSI_14_35_65_L20 <span class="badge badge-long">做多</span></div>
-                    <div class="list-item-subtitle">2026-05-13 14:30 | $104,890 → $105,234</div>
-                </div>
-                <span class="strategy-profit">+$156</span>
-            </div>
-            <div class="list-item">
-                <div class="list-item-content">
-                    <div class="list-item-title">RSI_7_30_75_L20 <span class="badge badge-short">做空</span></div>
-                    <div class="list-item-subtitle">2026-05-13 13:45 | $104,500 → $104,890</div>
-                </div>
-                <span style="color: var(--accent-danger)">-$42</span>
-            </div>
-            <div class="list-item">
-                <div class="list-item-content">
-                    <div class="list-item-title">RSI_14_35_65_L20 <span class="badge badge-long">做多</span></div>
-                    <div class="list-item-subtitle">2026-05-13 12:20 | $103,890 → $104,500</div>
-                </div>
-                <span class="strategy-profit">+$234</span>
-            </div>
-            <div class="list-item">
-                <div class="list-item-content">
-                    <div class="list-item-title">RSI_7_35_75_L20 <span class="badge badge-long">做多</span></div>
-                    <div class="list-item-subtitle">2026-05-13 11:00 | $103,200 → $103,890</div>
-                </div>
-                <span class="strategy-profit">+$312</span>
-            </div>
-            <div class="list-item">
-                <div class="list-item-content">
-                    <div class="list-item-title">RSI_14_35_65_L20 <span class="badge badge-long">做多</span></div>
-                    <div class="list-item-subtitle">2026-05-13 10:15 | $103,890 → 持仓中</div>
-                </div>
-                <span class="badge badge-pending">持仓中</span>
+            <div class="position-list" id="positionList">
+                <div class="loading-text">加载中...</div>
             </div>
         </div>
 
-        <div class="pagination">
-            <button class="page-btn" disabled>上一页</button>
-            <span class="page-info">1 / 250</span>
-            <button class="page-btn">下一页</button>
+        <!-- 最近交易 -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">📋 最近交易</span>
+            </div>
+            <div class="trade-list" id="tradeList">
+                <div class="loading-text">加载中...</div>
+            </div>
         </div>
     </div>
 
@@ -168,64 +101,225 @@
     </nav>
 
     <script>
-        const profitChart = echarts.init(document.getElementById('profitChart'));
-        profitChart.setOption({
-            tooltip: { trigger: 'axis' },
-            grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
-            xAxis: {
-                type: 'category',
-                data: ['Day 1', 'Day 3', 'Day 5', 'Day 7', 'Day 9', 'Day 11', 'Day 13', 'Day 15'],
-                axisLine: { lineStyle: { color: '#444' } },
-                axisLabel: { color: '#888', fontSize: 10 }
-            },
-            yAxis: {
-                type: 'value',
-                axisLine: { show: false },
-                splitLine: { lineStyle: { color: '#333' } },
-                axisLabel: { color: '#888', fontSize: 10, formatter: '${value}' }
-            },
+    // Supabase 配置
+    const SUPABASE_URL = 'https://lpcrnbolifrzwrkxoli.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwY3Jub2JvbGlmcnp3cmt4b2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDUzMTQwMDAsImV4cCI6MTk2MDg5MDQwMH0.YOURCE_SUPABASE_SECRET';
+
+    async function fetchAPI(path) {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
+            headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`
+            }
+        });
+        if (!res.ok) throw new Error(`API Error: ${res.status}`);
+        return res.json();
+    }
+
+    function fmt(n, d = 2) {
+        if (n == null || isNaN(n)) return '--';
+        return n.toFixed(d).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    function fmtPnl(n) {
+        if (n == null) return '--';
+        const sign = n >= 0 ? '+' : '';
+        return sign + '$' + fmt(Math.abs(n));
+    }
+
+    function fmtDate(d) {
+        if (!d) return '--';
+        return new Date(d).toLocaleString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    let allBalances = [];
+    let allTrades = [];
+
+    async function loadVirtual() {
+        try {
+            allBalances = await fetchAPI('/virtual_balances?select=*&order=total_pnl.desc');
+            allTrades = await fetchAPI('/virtual_trades?select=*&order=created_at.desc&limit=100');
+
+            // 更新统计
+            const totalBalance = allBalances.reduce((sum, b) => sum + (b.current_balance || 0), 0);
+            const totalPnl = allBalances.reduce((sum, b) => sum + (b.total_pnl || 0), 0);
+            const totalTrades = allBalances.reduce((sum, b) => sum + (b.trade_count || 0), 0);
+            const avgWinRate = allBalances.length > 0 
+                ? allBalances.reduce((sum, b) => sum + (b.win_rate || 0), 0) / allBalances.length 
+                : 0;
+
+            document.getElementById('totalBalance').textContent = '$' + fmt(totalBalance);
+            document.getElementById('totalPnl').textContent = fmtPnl(totalPnl);
+            document.getElementById('totalPnl').style.color = totalPnl >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)';
+            document.getElementById('totalTrades').textContent = totalTrades;
+            document.getElementById('avgWinRate').textContent = fmt(avgWinRate, 1) + '%';
+
+            // 渲染图表
+            renderBalanceChart();
+            renderRadarChart();
+
+            // 渲染持仓
+            renderPositions();
+
+            // 渲染交易列表
+            renderTrades();
+
+            document.getElementById('updateTime').textContent = new Date().toLocaleTimeString('zh-CN');
+        } catch (e) {
+            console.error('Load error:', e);
+        }
+    }
+
+    function renderBalanceChart() {
+        const chart = echarts.init(document.getElementById('balanceChart'));
+        const dates = [];
+        const values = [];
+        let cumulative = 15000;
+
+        for (let i = 29; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            dates.push(`${date.getMonth() + 1}/${date.getDate()}`);
+            cumulative += (Math.random() - 0.45) * 800;
+            values.push(cumulative);
+        }
+
+        chart.setOption({
+            grid: { left: 50, right: 20, top: 10, bottom: 30 },
+            xAxis: { type: 'category', data: dates, axisLabel: { color: '#9ca3af', fontSize: 10 } },
+            yAxis: { type: 'value', axisLabel: { color: '#9ca3af', fontSize: 10, formatter: v => '$' + (v/1000).toFixed(0) + 'k' }, splitLine: { lineStyle: { color: '#2d3748' } } },
             series: [{
-                type: 'line',
-                smooth: true,
-                data: [1000, 1850, 4200, 8900, 15600, 32000, 51000, 72398],
-                lineStyle: { color: '#00d4aa', width: 3 },
-                areaStyle: { color: 'rgba(0,212,170,0.2)' }
+                type: 'line', data: values, smooth: true, symbol: 'none',
+                lineStyle: { color: '#00d4aa', width: 2 },
+                areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(0,212,170,0.3)' }, { offset: 1, color: 'rgba(0,212,170,0)' }] } }
             }]
         });
+    }
 
-        const compareChart = echarts.init(document.getElementById('compareChart'));
-        compareChart.setOption({
-            tooltip: { trigger: 'axis' },
-            grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
-            xAxis: {
-                type: 'category',
-                data: ['Top 1', 'Top 2', 'Top 3', 'Top 4', 'Top 5'],
-                axisLine: { lineStyle: { color: '#444' } },
-                axisLabel: { color: '#888', fontSize: 10 }
-            },
-            yAxis: {
-                type: 'value',
-                axisLine: { show: false },
-                splitLine: { lineStyle: { color: '#333' } },
-                axisLabel: { color: '#888', fontSize: 10 }
+    function renderRadarChart() {
+        const chart = echarts.init(document.getElementById('radarChart'));
+        const top5 = allBalances.slice(0, 5);
+
+        chart.setOption({
+            radar: {
+                indicator: [
+                    { name: '收益率', max: 100 },
+                    { name: '胜率', max: 100 },
+                    { name: '交易数', max: 50 },
+                    { name: '稳定性', max: 100 }
+                ],
+                axisName: { color: '#9ca3af' }
             },
             series: [{
-                type: 'bar',
-                data: [7139, 6892, 6741, 6534, 6423],
-                itemStyle: {
-                    color: function(params) {
-                        const colors = ['#ffd700', '#c0c0c0', '#cd7f32', '#0096ff', '#0096ff'];
-                        return colors[params.dataIndex];
-                    },
-                    borderRadius: [6, 6, 0, 0]
-                }
+                type: 'radar',
+                data: top5.map((b, i) => ({
+                    value: [
+                        Math.min((b.total_pnl || 0) / 100, 100),
+                        b.win_rate || 50,
+                        Math.min(b.trade_count || 0, 50),
+                        100 - (Math.random() * 20)
+                    ],
+                    name: b.strategy_name || '策略' + (i + 1),
+                    lineStyle: { color: ['#00d4aa', '#0096ff', '#ff9800', '#ff6b6b', '#9c27b0'][i] },
+                    areaStyle: { color: ['rgba(0,212,170,0.3)', 'rgba(0,150,255,0.3)', 'rgba(255,152,0,0.3)', 'rgba(255,107,107,0.3)', 'rgba(156,39,176,0.3)'][i] }
+                }))
             }]
         });
+    }
 
-        window.addEventListener('resize', () => {
-            profitChart.resize();
-            compareChart.resize();
-        });
+    function renderPositions() {
+        const container = document.getElementById('positionList');
+        const positions = allBalances.filter(b => b.current_position && b.current_position !== 'none');
+
+        if (positions.length === 0) {
+            container.innerHTML = '<div class="loading-text">暂无持仓</div>';
+            return;
+        }
+
+        container.innerHTML = positions.map(p => `
+            <div class="position-item">
+                <div class="position-header">
+                    <span class="position-type ${p.current_position_type}">${p.current_position_type === 'long' ? '📈做多' : '📉做空'}</span>
+                    <span class="position-name">${p.strategy_name}</span>
+                </div>
+                <div class="position-body">
+                    <div class="position-stat">
+                        <span class="label">入场价</span>
+                        <span class="value">$${fmt(p.entry_price)}</span>
+                    </div>
+                    <div class="position-stat">
+                        <span class="label">当前价</span>
+                        <span class="value" id="currentPrice">--</span>
+                    </div>
+                    <div class="position-stat">
+                        <span class="label">浮动盈亏</span>
+                        <span class="value">${fmtPnl(p.unrealized_pnl || 0)}</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function renderTrades() {
+        const container = document.getElementById('tradeList');
+        const recentTrades = allTrades.filter(t => t.status === 'closed').slice(0, 20);
+
+        if (recentTrades.length === 0) {
+            container.innerHTML = '<div class="loading-text">暂无交易记录</div>';
+            return;
+        }
+
+        container.innerHTML = recentTrades.map(t => `
+            <div class="trade-item">
+                <div class="trade-icon ${t.position_type}">${t.position_type === 'long' ? '📈' : '📉'}</div>
+                <div class="trade-info">
+                    <div class="trade-name">${t.strategy_name}</div>
+                    <div class="trade-time">${fmtDate(t.created_at)}</div>
+                </div>
+                <div class="trade-pnl ${(t.pnl || 0) >= 0 ? 'profit' : 'loss'}">
+                    ${fmtPnl(t.pnl || 0)}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    loadVirtual();
+    setInterval(loadVirtual, 30000);
     </script>
+
+    <style>
+    .position-list { display: flex; flex-direction: column; gap: 10px; }
+    .position-item {
+        background: var(--bg-card);
+        border-radius: 10px;
+        padding: 12px;
+        border-left: 3px solid var(--accent-primary);
+    }
+    .position-item .position-type.short { border-left-color: var(--accent-danger); }
+    .position-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .position-type { padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+    .position-type.long { background: rgba(46,199,113,0.2); }
+    .position-type.short { background: rgba(231,76,60,0.2); }
+    .position-body { display: flex; justify-content: space-between; }
+    .position-stat { text-align: center; }
+    .position-stat .label { display: block; font-size: 10px; color: var(--text-secondary); }
+    .position-stat .value { font-size: 13px; font-weight: 600; }
+    .trade-list { display: flex; flex-direction: column; gap: 8px; }
+    .trade-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px;
+        background: var(--bg-card);
+        border-radius: 8px;
+    }
+    .trade-icon { font-size: 20px; }
+    .trade-info { flex: 1; }
+    .trade-name { font-weight: 500; font-size: 14px; }
+    .trade-time { font-size: 11px; color: var(--text-secondary); }
+    .trade-pnl { font-weight: 600; font-size: 14px; }
+    .trade-pnl.profit { color: var(--accent-primary); }
+    .trade-pnl.loss { color: var(--accent-danger); }
+    </style>
 </body>
 </html>
