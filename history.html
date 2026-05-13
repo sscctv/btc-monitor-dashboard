@@ -8,46 +8,118 @@
 </head>
 <body>
     <div class="container">
-        <header class="header"><h1>历史记录</h1><div class="connection-status"><span id="dbStatus" class="status-dot offline"></span><span id="dbStatusText">连接中...</span></div></header>
+        <header class="header">
+            <h1>历史记录</h1>
+            <div class="connection-status">
+                <span id="dbStatus" class="status-dot offline"></span>
+                <span id="dbStatusText">连接中...</span>
+            </div>
+        </header>
+
         <main class="main-content">
             <section class="overview-section">
                 <div class="overview-cards">
-                    <div class="card"><div class="card-label">总交易</div><div class="card-value" id="totalTrades">--</div></div>
-                    <div class="card"><div class="card-label">盈利交易</div><div class="card-value profit" id="winningTrades">--</div></div>
-                    <div class="card"><div class="card-label">亏损交易</div><div class="card-value loss" id="losingTrades">--</div></div>
+                    <div class="card">
+                        <div class="card-label">总交易</div>
+                        <div class="card-value" id="totalTrades">--</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">盈利交易</div>
+                        <div class="card-value profit" id="winningTrades">--</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">亏损交易</div>
+                        <div class="card-value loss" id="losingTrades">--</div>
+                    </div>
                 </div>
             </section>
+
             <section class="strategies-section">
-                <div class="section-header"><h2>交易历史</h2></div>
-                <div class="strategies-grid" id="historyGrid"><p>加载中...</p></div>
+                <div class="section-header">
+                    <h2>交易历史</h2>
+                </div>
+                <div class="strategies-grid" id="historyGrid">
+                    <div class="loading-spinner">加载中...</div>
+                </div>
             </section>
         </main>
+
         <nav class="bottom-nav">
-            <a href="index.html" class="nav-item"><span class="nav-icon">📊</span><span>首页</span></a>
-            <a href="strategies.html" class="nav-item"><span class="nav-icon">⚙️</span><span>策略</span></a>
-            <a href="virtual.html" class="nav-item"><span class="nav-icon">💰</span><span>交易</span></a>
-            <a href="signals.html" class="nav-item"><span class="nav-icon">📡</span><span>信号</span></a>
-            <a href="history.html" class="nav-item active"><span class="nav-icon">📜</span><span>历史</span></a>
+            <a href="index.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-text">首页</span></a>
+            <a href="strategies.html" class="nav-item"><span class="nav-icon">⚙️</span><span class="nav-text">策略</span></a>
+            <a href="virtual.html" class="nav-item"><span class="nav-icon">💰</span><span class="nav-text">交易</span></a>
+            <a href="signals.html" class="nav-item"><span class="nav-icon">📡</span><span class="nav-text">信号</span></a>
+            <a href="history.html" class="nav-item active"><span class="nav-icon">📜</span><span class="nav-text">历史</span></a>
         </nav>
     </div>
+
+    <script src="api.js"></script>
     <script>
-        const SUPABASE_URL = 'https://lpcrnobolifrzwrkxoli.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_8gEsCRNRc7py6BmypYuRIw_sNtKooug';
-        async function fetchFromSupabase(table) {
-            try { const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=*&order=created_at.desc&limit=50`, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }); return r.ok ? await r.json() : null; }
-            catch (e) { console.error(e); return null; }
-        }
         async function loadHistory() {
             const statusEl = document.getElementById('dbStatus');
-            const trades = await fetchFromSupabase('virtual_trades');
-            statusEl.className = 'status-dot ' + (trades ? 'online' : 'offline');
-            document.getElementById('dbStatusText').textContent = trades ? '已连接' : '离线';
-            const list = trades || [];
-            document.getElementById('totalTrades').textContent = list.length;
-            document.getElementById('winningTrades').textContent = list.filter(t => t.pnl > 0).length;
-            document.getElementById('losingTrades').textContent = list.filter(t => t.pnl < 0).length;
-            document.getElementById('historyGrid').innerHTML = list.length ? list.map(t => '<div class=\"strategy-card\"><div class=\"strategy-header\"><span>' + (t.strategy_name || '') + '</span><span class=\"strategy-badge ' + (t.pnl >= 0 ? 'profit' : 'loss') + '\">' + (t.pnl >= 0 ? '+' : '') + (t.pnl || 0).toFixed(2) + '</span></div><div class=\"strategy-stats\"><div class=\"stat\"><span class=\"stat-label\">类型</span><span>' + (t.action || '') + '</span></div><div class=\"stat\"><span class=\"stat-label\">时间</span><span>' + ((t.created_at || '').substring(0, 16)) + '</span></div></div></div>').join('') : '<p>暂无历史记录</p>';
+            const statusTextEl = document.getElementById('dbStatusText');
+
+            try {
+                const trades = await fetchData('virtual_trades');
+
+                statusEl.className = 'status-dot online';
+                statusTextEl.textContent = API_CONFIG.isLocal ? '本地' : '云端';
+
+                const list = trades || [];
+                const wins = list.filter(t => t.pnl > 0).length;
+                const losses = list.filter(t => t.pnl < 0).length;
+
+                document.getElementById('totalTrades').textContent = list.length;
+                document.getElementById('winningTrades').textContent = wins;
+                document.getElementById('losingTrades').textContent = losses;
+
+                renderHistory(list);
+            } catch (error) {
+                statusEl.className = 'status-dot offline';
+                statusTextEl.textContent = '离线';
+                renderHistory([]);
+            }
         }
+
+        function renderHistory(trades) {
+            const grid = document.getElementById('historyGrid');
+
+            if (trades.length === 0) {
+                grid.innerHTML = '<div class="loading-spinner">暂无历史记录</div>';
+                return;
+            }
+
+            grid.innerHTML = trades.slice(0, 50).map(t => {
+                const date = t.created_at ? t.created_at.replace('T', ' ').substring(0, 16) : '--';
+                const actionClass = t.action === 'LONG' || t.action === 'BUY' ? 'profit' : (t.action === 'SHORT' || t.action === 'SELL' ? 'loss' : '');
+
+                return `
+                    <div class="strategy-card">
+                        <div class="strategy-header">
+                            <span class="strategy-name">${t.strategy_name || 'Unknown'}</span>
+                            <span class="strategy-badge ${getPnLClass(t.pnl)}">
+                                ${t.pnl >= 0 ? '+' : ''}${formatNumber(t.pnl)}
+                            </span>
+                        </div>
+                        <div class="strategy-stats">
+                            <div class="stat">
+                                <span class="stat-label">类型</span>
+                                <span class="stat-value ${actionClass}">${t.action || '--'}</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">数量</span>
+                                <span class="stat-value">${formatNumber(t.quantity, 4)}</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-label">时间</span>
+                                <span class="stat-value" style="font-size: 12px;">${date}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
         document.addEventListener('DOMContentLoaded', loadHistory);
     </script>
 </body>
