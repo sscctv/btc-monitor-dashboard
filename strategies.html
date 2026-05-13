@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>策略管理 - BTC Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>策略 - BTC Dashboard</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -24,7 +24,7 @@
                         <div class="card-value" id="accountCount">--</div>
                     </div>
                     <div class="card">
-                        <div class="card-label">总交易数</div>
+                        <div class="card-label">总交易</div>
                         <div class="card-value" id="totalTrades">--</div>
                     </div>
                     <div class="card">
@@ -35,96 +35,139 @@
             </section>
 
             <section class="strategies-section">
-                <div class="section-header">
-                    <h2>所有账户</h2>
-                </div>
-                <div class="strategies-grid" id="strategiesGrid">
-                    <div class="loading-spinner">加载中...</div>
-                </div>
+                <div class="section-header"><h2>账户列表</h2></div>
+                <div id="strategiesList"><div class="loading-spinner">加载中...</div></div>
             </section>
         </main>
 
+        <div id="tradeModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button class="back-btn" onclick="closeTradeModal()">← 返回</button>
+                    <h2 id="modalTitle">交易记录</h2>
+                    <div style="width:50px"></div>
+                </div>
+                <div id="tradeList"><div class="loading-spinner">加载中...</div></div>
+            </div>
+        </div>
+
         <nav class="bottom-nav">
-            <a href="index.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-text">首页</span></a>
-            <a href="strategies.html" class="nav-item active"><span class="nav-icon">⚙️</span><span class="nav-text">策略</span></a>
-            <a href="virtual.html" class="nav-item"><span class="nav-icon">💰</span><span class="nav-text">交易</span></a>
-            <a href="signals.html" class="nav-item"><span class="nav-icon">📡</span><span class="nav-text">信号</span></a>
-            <a href="history.html" class="nav-item"><span class="nav-icon">📜</span><span class="nav-text">历史</span></a>
+            <a href="index.html" class="nav-item"><span class="nav-icon">📊</span><span>首页</span></a>
+            <a href="strategies.html" class="nav-item active"><span class="nav-icon">⚙️</span><span>策略</span></a>
+            <a href="virtual.html" class="nav-item"><span class="nav-icon">💰</span><span>交易</span></a>
+            <a href="signals.html" class="nav-item"><span class="nav-icon">📡</span><span>信号</span></a>
+            <a href="history.html" class="nav-item"><span class="nav-icon">📜</span><span>历史</span></a>
         </nav>
     </div>
 
     <script src="api.js"></script>
     <script>
-        async function loadStrategies() {
+        var allTrades = [], strategyStats = [];
+
+        async function loadData() {
             var statusEl = document.getElementById('dbStatus');
             var statusTextEl = document.getElementById('dbStatusText');
-
             try {
                 var trades = await fetchAllTrades();
-
                 if (trades && trades.length > 0) {
-                    // 为每笔交易计算盈亏
-                    var enrichedTrades = trades.map(function(t) {
-                        return enrichTradeWithPnL(t);
-                    });
-
-                    var stats = transformTradesData(enrichedTrades);
-
+                    allTrades = trades.map(function(t) { return enrichTradeWithPnL(t); });
+                    strategyStats = transformTradesData(allTrades);
                     statusEl.className = 'status-dot online';
                     statusTextEl.textContent = API_CONFIG.isLocal ? '本地' : '云端';
-
-                    document.getElementById('accountCount').textContent = stats.length;
-                    document.getElementById('totalTrades').textContent = enrichedTrades.length;
-                    
-                    var totalPnl = stats.reduce(function(s, t) { return s + t.total_pnl; }, 0);
-                    document.getElementById('totalPnl').textContent = formatNumber(totalPnl);
-                    document.getElementById('totalPnl').className = 'card-value ' + getPnLClass(totalPnl);
-
-                    renderStrategies(stats);
+                    updateOverview();
+                    renderStrategies();
                 } else {
-                    statusEl.className = 'status-dot offline';
-                    statusTextEl.textContent = '无数据';
-                    renderStrategies([]);
+                    useSampleData();
                 }
             } catch (error) {
-                console.error('Load error:', error);
                 statusEl.className = 'status-dot offline';
                 statusTextEl.textContent = '离线';
-                renderStrategies([]);
+                useSampleData();
             }
         }
 
-        function renderStrategies(stats) {
-            var grid = document.getElementById('strategiesGrid');
+        function useSampleData() {
+            strategyStats = SAMPLE_BALANCES;
+            allTrades = [];
+            updateOverview();
+            renderStrategies();
+            document.getElementById('dbStatusText').textContent = '示例';
+        }
 
-            if (!stats || stats.length === 0) {
-                grid.innerHTML = '<div class="loading-spinner">暂无数据</div>';
+        function updateOverview() {
+            var totalPnl = 0, totalTrades = allTrades.length;
+            allTrades.forEach(function(t) { totalPnl += t.realized_pnl || 0; });
+            document.getElementById('accountCount').textContent = strategyStats.length;
+            document.getElementById('totalTrades').textContent = totalTrades;
+            var pnlEl = document.getElementById('totalPnl');
+            pnlEl.textContent = (totalPnl >= 0 ? '+' : '') + formatNumber(totalPnl);
+            pnlEl.className = 'card-value ' + getPnLClass(totalPnl);
+        }
+
+        function renderStrategies() {
+            var container = document.getElementById('strategiesList');
+            if (strategyStats.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div>暂无数据</div>';
                 return;
             }
-
-            grid.innerHTML = stats.map(function(s) {
-                var actionClass = s.total_pnl >= 0 ? 'profit' : 'loss';
-                var winLoss = s.wins + '胜 / ' + s.losses + '负';
-
+            container.innerHTML = strategyStats.map(function(s) {
+                var pnlClass = getPnLClass(s.total_pnl);
                 return '<div class="strategy-card">' +
                     '<div class="strategy-header">' +
                     '<span class="strategy-name">' + s.strategy_name + '</span>' +
-                    '<span class="strategy-badge ' + actionClass + '">' + formatPercent(s.total_pnl_percent) + '</span>' +
+                    '<span class="strategy-badge ' + pnlClass + '">' + formatPercent(s.total_pnl_percent) + '</span>' +
                     '</div>' +
                     '<div class="strategy-stats">' +
-                    '<div class="stat"><span class="stat-label">交易数</span><span class="stat-value">' + s.trade_count + '</span></div>' +
-                    '<div class="stat"><span class="stat-label">胜/负</span><span class="stat-value">' + winLoss + '</span></div>' +
-                    '<div class="stat"><span class="stat-label">胜率</span><span class="stat-value">' + s.win_rate.toFixed(1) + '%</span></div>' +
+                    '<div class="stat"><span class="stat-label">盈亏</span><span class="stat-value ' + pnlClass + '">' + (s.total_pnl >= 0 ? '+' : '') + formatNumber(s.total_pnl) + '</span></div>' +
+                    '<div class="stat"><span class="stat-label">交易</span><span class="stat-value">' + s.trade_count + '</span></div>' +
+                    '<div class="stat"><span class="stat-label">胜率</span><span class="stat-value">' + s.win_rate.toFixed(0) + '%</span></div>' +
                     '</div>' +
-                    '<div class="strategy-stats">' +
-                    '<div class="stat"><span class="stat-label">总盈亏</span><span class="stat-value ' + actionClass + '">' + formatNumber(s.total_pnl) + '</span></div>' +
-                    '<div class="stat"><span class="stat-label">余额</span><span class="stat-value">' + formatNumber(s.balance) + '</span></div>' +
+                    '<div class="strategy-actions">' +
+                    '<button class="btn btn-primary" onclick="showTradeModal(\'' + s.strategy_name + '\')">📋 交易记录</button>' +
+                    '</div></div>';
+            }).join('');
+        }
+
+        function showTradeModal(strategyName) {
+            var modal = document.getElementById('tradeModal');
+            document.getElementById('modalTitle').textContent = strategyName;
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            var trades = allTrades.filter(function(t) {
+                return (t.strategy || t.account_id || 'Unknown') === strategyName;
+            });
+            var list = document.getElementById('tradeList');
+            if (trades.length === 0) {
+                list.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div>暂无交易记录</div>';
+                return;
+            }
+            list.innerHTML = trades.slice(0, 50).map(function(t) {
+                var side = (t.side || '--').toUpperCase();
+                var sideClass = (side === 'LONG' || side === 'BUY') ? 'long' : ((side === 'SHORT' || side === 'SELL') ? 'short' : '');
+                var pnlClass = getPnLClass(t.realized_pnl);
+                var date = t.opened_at ? t.opened_at.replace('T', ' ').substring(0, 16) : '--';
+                return '<div class="trade-item">' +
+                    '<div class="trade-header">' +
+                    '<span class="trade-type ' + sideClass + '">' + side + '</span>' +
+                    '<span class="trade-pnl ' + pnlClass + '">' + (t.realized_pnl >= 0 ? '+' : '') + formatNumber(t.realized_pnl) + '</span>' +
                     '</div>' +
+                    '<div class="trade-details">' +
+                    '<div>开仓: <span>' + formatNumber(t.entry_price) + '</span></div>' +
+                    '<div>平仓: <span>' + formatNumber(t.close_price) + '</span></div>' +
+                    '<div>数量: <span>' + formatNumber(t.size, 4) + '</span></div>' +
+                    '<div>杠杆: <span>' + (t.leverage || 0) + 'x</span></div>' +
+                    '</div>' +
+                    '<div class="trade-time">' + date + '</div>' +
                     '</div>';
             }).join('');
         }
 
-        document.addEventListener('DOMContentLoaded', loadStrategies);
+        function closeTradeModal() {
+            document.getElementById('tradeModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        document.addEventListener('DOMContentLoaded', loadData);
     </script>
 </body>
 </html>
