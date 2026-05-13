@@ -117,7 +117,6 @@ body { font-family: -apple-system, sans-serif; background: #0f0f1a; color: #fff;
 
 <div class="tab-bar">
   <button class="tab-btn active" id="btn-market" onclick="switchTab('market')">📊 行情</button>
-  <button class="tab-btn" id="btn-accounts" onclick="switchTab('accounts')">📱 实仓</button>
   <button class="tab-btn" id="btn-virt" onclick="switchTab('virt')">🎮 虚拟</button>
 </div>
 
@@ -198,13 +197,6 @@ body { font-family: -apple-system, sans-serif; background: #0f0f1a; color: #fff;
   <div id="virt-list"></div>
   <div class="time">最后更新: <span id="virt-update">--</span></div>
 </div>
-
-<div id="tab-accounts" class="tab-content">
-  <div id="acc-list"></div>
-  <div class="time">最后更新: <span id="acc-update">--</span></div>
-</div>
-
-
 
 <div id="modal" class="modal-overlay hide" onclick="if(event.target===this)closeModal()">
   <div class="modal-box">
