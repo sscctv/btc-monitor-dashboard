@@ -15,73 +15,41 @@
         </div>
         <div class="live-badge">
             <span class="live-dot"></span>
-            <span id="updateTime">实时</span>
+            <span id="updateTime">--</span>
         </div>
     </div>
 
     <div class="container">
-        <!-- 总览统计 -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-label">策略总数</div>
-                <div class="stat-value">15</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">总资金</div>
-                <div class="stat-value" id="totalBalance">$85,234</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">总盈亏</div>
-                <div class="stat-value" style="color: var(--accent-primary)" id="totalPnl">+$76,398</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">今日交易</div>
-                <div class="stat-value" id="todayTrades">23</div>
-            </div>
-        </div>
-
-        <!-- 筛选 -->
+        <!-- 筛选器 -->
         <div class="filter-bar">
-            <select class="filter-select" id="strategyTypeFilter" onchange="filterStrategies()">
-                <option value="all">全部策略</option>
-                <option value="bb">BB策略</option>
-                <option value="rsi">RSI策略</option>
+            <select id="filterType" class="filter-select">
+                <option value="">全部类型</option>
+                <option value="BB">BB策略</option>
+                <option value="RSI">RSI策略</option>
             </select>
-            <select class="filter-select" id="statusFilter" onchange="filterStrategies()">
-                <option value="all">全部状态</option>
-                <option value="active">交易中</option>
-                <option value="idle">空闲</option>
+            <select id="filterStatus" class="filter-select">
+                <option value="">全部状态</option>
+                <option value="open">有持仓</option>
+                <option value="closed">空闲</option>
             </select>
         </div>
 
-        <!-- BB策略（原项目5个） -->
-        <div class="card" id="bbStrategies">
-            <div class="card-header">
-                <span class="card-title">📊 BB策略（原项目）</span>
-                <span class="badge badge-pending">5个策略</span>
-            </div>
-            <div class="strategy-cards" id="bbStrategyList">
-                <!-- BB策略卡片将由JS生成 -->
-            </div>
-        </div>
-
-        <!-- RSI策略（新增Top 10） -->
-        <div class="card" id="rsiStrategies">
-            <div class="card-header">
-                <span class="card-title">🎯 RSI策略（Top 10）</span>
-                <span class="badge badge-success">10个策略</span>
-            </div>
-            <div class="strategy-cards" id="rsiStrategyList">
-                <!-- RSI策略卡片将由JS生成 -->
-            </div>
-        </div>
-
-        <!-- 策略对比图表 -->
+        <!-- 收益对比图表 -->
         <div class="card">
             <div class="card-header">
-                <span class="card-title">📈 策略收益对比</span>
+                <span class="card-title">📊 收益对比</span>
             </div>
             <div class="chart-container" id="compareChart"></div>
+        </div>
+
+        <!-- 策略列表 -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">🎯 策略列表 (<span id="strategyCount">0</span>)</span>
+            </div>
+            <div class="strategy-grid" id="strategyList">
+                <div class="loading-text">加载中...</div>
+            </div>
         </div>
     </div>
 
@@ -89,16 +57,11 @@
     <div class="modal" id="tradeModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="modalTitle">交易记录</h3>
-                <span class="modal-close" onclick="closeModal()">&times;</span>
+                <span class="modal-title" id="modalTitle">交易记录</span>
+                <button class="modal-close" onclick="closeModal()">×</button>
             </div>
-            <div class="modal-body">
-                <div class="strategy-summary" id="strategySummary">
-                    <!-- 策略摘要 -->
-                </div>
-                <div class="trade-list" id="tradeList">
-                    <!-- 交易记录列表 -->
-                </div>
+            <div class="modal-body" id="modalBody">
+                <div class="loading-text">加载中...</div>
             </div>
         </div>
     </div>
@@ -126,527 +89,348 @@
         </a>
     </nav>
 
-    <style>
-        /* 策略卡片 */
-        .strategy-cards {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .strategy-card {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            padding: 16px;
-            border: 1px solid var(--border-color);
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .strategy-card:active {
-            transform: scale(0.98);
-        }
-
-        .strategy-card.has-position {
-            border-left: 4px solid var(--accent-primary);
-        }
-
-        .strategy-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-
-        .strategy-card-name {
-            font-size: 15px;
-            font-weight: 600;
-        }
-
-        .strategy-card-status {
-            font-size: 11px;
-            padding: 4px 10px;
-            border-radius: 12px;
-        }
-
-        .strategy-card-status.active {
-            background: rgba(0, 212, 170, 0.15);
-            color: var(--accent-primary);
-        }
-
-        .strategy-card-status.idle {
-            background: rgba(156, 163, 175, 0.15);
-            color: var(--text-secondary);
-        }
-
-        .strategy-card-metrics {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-
-        .strategy-metric {
-            text-align: center;
-        }
-
-        .strategy-metric-label {
-            font-size: 11px;
-            color: var(--text-secondary);
-            margin-bottom: 2px;
-        }
-
-        .strategy-metric-value {
-            font-size: 16px;
-            font-weight: 600;
-        }
-
-        .strategy-card-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 12px;
-            border-top: 1px solid var(--border-color);
-        }
-
-        .position-info {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .position-badge {
-            font-size: 11px;
-            padding: 4px 8px;
-            border-radius: 6px;
-        }
-
-        .position-badge.long {
-            background: rgba(0, 212, 170, 0.15);
-            color: var(--accent-primary);
-        }
-
-        .position-badge.short {
-            background: rgba(255, 107, 107, 0.15);
-            color: var(--accent-danger);
-        }
-
-        .win-rate {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-
-        .win-rate span {
-            color: var(--accent-primary);
-            font-weight: 600;
-        }
-
-        /* 弹窗 */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 2000;
-            overflow-y: auto;
-        }
-
-        .modal.show {
-            display: block;
-        }
-
-        .modal-content {
-            background: var(--bg-card);
-            margin: 20px;
-            border-radius: 16px;
-            max-height: calc(100vh - 40px);
-            overflow: hidden;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .modal-header h3 {
-            font-size: 18px;
-        }
-
-        .modal-close {
-            font-size: 24px;
-            cursor: pointer;
-            color: var(--text-secondary);
-        }
-
-        .modal-body {
-            padding: 20px;
-            max-height: calc(100vh - 150px);
-            overflow-y: auto;
-        }
-
-        .strategy-summary {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .summary-item {
-            background: var(--bg-secondary);
-            padding: 14px;
-            border-radius: 10px;
-            text-align: center;
-        }
-
-        .summary-label {
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-bottom: 4px;
-        }
-
-        .summary-value {
-            font-size: 18px;
-            font-weight: 600;
-        }
-
-        .trade-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .trade-item {
-            background: var(--bg-secondary);
-            padding: 14px;
-            border-radius: 10px;
-        }
-
-        .trade-item-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-        }
-
-        .trade-item-time {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-
-        .trade-item-pnl {
-            font-weight: 600;
-        }
-
-        .trade-item-details {
-            display: flex;
-            justify-content: space-between;
-            font-size: 13px;
-        }
-
-        .trade-item-details span:first-child {
-            color: var(--text-secondary);
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: var(--text-secondary);
-        }
-
-        .empty-state-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
-        }
-    </style>
-
     <script>
-        // 从Supabase获取真实策略数据
-        let strategiesData = { bb: [], rsi: [] };
-        
-        async function fetchStrategies() {
-            try {
-                const res = await fetch('https://lpcrnobolifrzwrkxoli.supabase.co/storage/v1/object/public/virt-data/virt_positions.json?t=' + Date.now());
-                const data = await res.json();
-                const accounts = data.accounts || [];
-                
-                // BB策略 (S1-S8) 和 RSI策略 (R1-R10) 分类
-                const bbAccounts = accounts.filter(a => a.account.startsWith('S'));
-                const rsiAccounts = accounts.filter(a => a.account.startsWith('R'));
-                
-                strategiesData.bb = bbAccounts.map((a, i) => ({
-                    id: i + 1,
-                    name: a.strategy_name || 'BB策略',
-                    type: 'bb',
-                    lev: a.leverage || 30,
-                    initial: a.initial || 1000,
-                    balance: a.balance || 1000,
-                    pnl: (a.balance || 1000) - (a.initial || 1000),
-                    pnlPercent: ((a.balance || 1000) - (a.initial || 1000)) / (a.initial || 1000) * 100,
-                    trades: a.total_trades || 0,
-                    wins: a.win || 0,
-                    winRate: a.win_rate || 0,
-                    position: a.side ? { type: a.side === 'long' ? '做多' : '做空', entry: a.entry || 0, current: a.current || 0 } : null,
-                    status: a.side ? 'active' : 'idle',
-                    lastTrade: a.updated_at || ''
-                }));
-                
-                strategiesData.rsi = rsiAccounts.map((a, i) => ({
-                    id: i + 6,
-                    name: a.strategy_name || `RSI策略 ${a.account}`,
-                    type: 'rsi',
-                    params: a.strategy_name || '',
-                    initial: a.initial || 1000,
-                    balance: a.balance || 1000,
-                    pnl: (a.balance || 1000) - (a.initial || 1000),
-                    pnlPercent: ((a.balance || 1000) - (a.initial || 1000)) / (a.initial || 1000) * 100,
-                    trades: a.total_trades || 0,
-                    wins: a.win || 0,
-                    winRate: a.win_rate || 0,
-                    position: a.side ? { type: a.side === 'long' ? '做多' : '做空', entry: a.entry || 0, current: a.current || 0 } : null,
-                    status: a.side ? 'active' : 'idle',
-                    lastTrade: a.updated_at || '',
-                    recent_trades: a.recent_trades || []
-                }));
-                
-                // 更新统计
-                const totalBalance = accounts.reduce((sum, a) => sum + (a.balance || 0), 0);
-                const totalPnl = accounts.reduce((sum, a) => sum + ((a.balance || 1000) - (a.initial || 1000)), 0);
-                document.getElementById('totalBalance').textContent = '$' + Math.round(totalBalance).toLocaleString();
-                document.getElementById('totalPnl').textContent = (totalPnl >= 0 ? '+' : '') + '$' + Math.round(totalPnl).toLocaleString();
-                document.getElementById('totalPnl').style.color = totalPnl >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)';
-                
-                renderBBStrategies();
-                renderRSIStrategies();
-                renderCompareChart();
-                
-            } catch(e) {
-                console.error('Failed to fetch strategies:', e);
-            }
-        }
+    // ==================== Supabase 配置 ====================
+    const SUPABASE_URL = 'https://lpcrnbolifrzwrkxoli.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwY3Jub2JvbGlmcnp3cmt4b2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDUzMTQwMDAsImV4cCI6MTk2MDg5MDQwMH0.YOURCE_SUPABASE_SECRET';
 
-        // 渲染策略卡片
-        function renderStrategyCard(strategy) {
-            const hasPosition = strategy.position !== null;
-            const pnlColor = strategy.pnl >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)';
-            
-            return `
-                <div class="strategy-card ${hasPosition ? 'has-position' : ''}" onclick="openTradeModal(${strategy.id}, '${strategy.name}')">
-                    <div class="strategy-card-header">
-                        <span class="strategy-card-name">${strategy.name}</span>
-                        <span class="strategy-card-status ${strategy.status}">${strategy.status === 'active' ? '交易中' : '空闲'}</span>
-                    </div>
-                    <div class="strategy-card-metrics">
-                        <div class="strategy-metric">
-                            <div class="strategy-metric-label">初始资金</div>
-                            <div class="strategy-metric-value">$${strategy.initial.toLocaleString()}</div>
-                        </div>
-                        <div class="strategy-metric">
-                            <div class="strategy-metric-label">当前余额</div>
-                            <div class="strategy-metric-value">$${strategy.balance.toLocaleString()}</div>
-                        </div>
-                        <div class="strategy-metric">
-                            <div class="strategy-metric-label">浮动盈亏</div>
-                            <div class="strategy-metric-value" style="color: ${pnlColor}">${strategy.pnl >= 0 ? '+' : ''}$${strategy.pnl.toLocaleString()}</div>
-                        </div>
-                    </div>
-                    <div class="strategy-card-footer">
-                        <div class="position-info">
-                            ${hasPosition ? `
-                                <span class="position-badge ${strategy.position.type === '做多' ? 'long' : 'short'}">
-                                    ${strategy.position.type} | $${strategy.position.entry.toLocaleString()}
-                                </span>
-                            ` : '<span style="color: var(--text-secondary); font-size: 13px;">无持仓</span>'}
-                        </div>
-                        <span class="win-rate">胜率 <span>${strategy.winRate}%</span> | ${strategy.trades}笔</span>
-                    </div>
-                </div>
-            `;
-        }
-
-        // 渲染BB策略列表
-        function renderBBStrategies() {
-            const container = document.getElementById('bbStrategyList');
-            container.innerHTML = strategiesData.bb.map(s => renderStrategyCard(s)).join('');
-        }
-
-        // 渲染RSI策略列表
-        function renderRSIStrategies() {
-            const container = document.getElementById('rsiStrategyList');
-            container.innerHTML = strategiesData.rsi.map(s => renderStrategyCard(s)).join('');
-        }
-
-        // 筛选策略
-        function filterStrategies() {
-            const typeFilter = document.getElementById('strategyTypeFilter').value;
-            const statusFilter = document.getElementById('statusFilter').value;
-            
-            document.getElementById('bbStrategies').style.display = 
-                (typeFilter === 'all' || typeFilter === 'bb') ? 'block' : 'none';
-            document.getElementById('rsiStrategies').style.display = 
-                (typeFilter === 'all' || typeFilter === 'rsi') ? 'block' : 'none';
-        }
-
-        // 打开交易记录弹窗
-        function openTradeModal(strategyId, strategyName) {
-            const modal = document.getElementById('tradeModal');
-            const summary = document.getElementById('strategySummary');
-            const tradeList = document.getElementById('tradeList');
-            const modalTitle = document.getElementById('modalTitle');
-            
-            modalTitle.textContent = strategyName;
-            
-            // 查找策略
-            let strategy = null;
-            for (const s of [...strategiesData.bb, ...strategiesData.rsi]) {
-                if (s.id === strategyId) {
-                    strategy = s;
-                    break;
-                }
-            }
-            
-            if (strategy) {
-                const pnlColor = strategy.pnl >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)';
-                summary.innerHTML = `
-                    <div class="summary-item">
-                        <div class="summary-label">初始资金</div>
-                        <div class="summary-value">$${strategy.initial.toLocaleString()}</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">当前余额</div>
-                        <div class="summary-value">$${strategy.balance.toLocaleString()}</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">总盈亏</div>
-                        <div class="summary-value" style="color: ${pnlColor}">${strategy.pnl >= 0 ? '+' : ''}$${strategy.pnl.toLocaleString()}</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">收益率</div>
-                        <div class="summary-value" style="color: ${pnlColor}">${strategy.pnlPercent >= 0 ? '+' : ''}${strategy.pnlPercent.toFixed(1)}%</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">交易次数</div>
-                        <div class="summary-value">${strategy.trades}</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">胜率</div>
-                        <div class="summary-value" style="color: var(--accent-primary)">${strategy.winRate}%</div>
-                    </div>
-                `;
-                
-                // 获取交易记录
-                const trades = strategy.recent_trades || [];
-                if (trades.length > 0) {
-                    tradeList.innerHTML = trades.map(t => `
-                        <div class="trade-item">
-                            <div class="trade-item-header">
-                                <span class="trade-item-time">${t.time}</span>
-                                <span class="trade-item-pnl" style="color: ${t.pnl >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)'}">
-                                    ${t.pnl >= 0 ? '+' : ''}$${t.pnl.toFixed(2)}
-                                </span>
-                            </div>
-                            <div class="trade-item-details">
-                                <span>${t.type} ${t.entry} → ${t.exit}</span>
-                                <span>${t.reason}</span>
-                            </div>
-                        </div>
-                    `).join('');
-                } else {
-                    tradeList.innerHTML = `
-                        <div class="empty-state">
-                            <div class="empty-state-icon">📋</div>
-                            <p>暂无交易记录</p>
-                        </div>
-                    `;
-                }
-            }
-            
-            modal.classList.add('show');
-            document.body.style.overflow = 'hidden';
-        }
-
-        // 关闭弹窗
-        function closeModal() {
-            document.getElementById('tradeModal').classList.remove('show');
-            document.body.style.overflow = '';
-        }
-
-        // 点击弹窗背景关闭
-        document.getElementById('tradeModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeModal();
+    // ==================== API 工具 ====================
+    async function fetchAPI(path) {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
+            headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`
             }
         });
+        if (!res.ok) throw new Error(`API Error: ${res.status}`);
+        return res.json();
+    }
 
-        // 渲染对比图表
-        function renderCompareChart() {
-            const chart = echarts.init(document.getElementById('compareChart'));
-            const allStrategies = [...strategiesData.bb, ...strategiesData.rsi];
-            
-            const sortedByPnl = allStrategies.sort((a, b) => b.pnl - a.pnl).slice(0, 10);
-            
-            chart.setOption({
-                tooltip: {
-                    trigger: 'axis',
-                    formatter: function(params) {
-                        const data = params[0];
-                        return `${data.name}<br/>收益率: ${data.value}%`;
-                    }
-                },
-                grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
-                xAxis: {
-                    type: 'category',
-                    data: sortedByPnl.map(s => s.name.substring(0, 8)),
-                    axisLine: { lineStyle: { color: '#444' } },
-                    axisLabel: { color: '#888', fontSize: 9, rotate: 30 }
-                },
-                yAxis: {
-                    type: 'value',
-                    axisLine: { show: false },
-                    splitLine: { lineStyle: { color: '#333' } },
-                    axisLabel: { color: '#888', fontSize: 10, formatter: '{value}%' }
-                },
-                series: [{
-                    type: 'bar',
-                    data: sortedByPnl.map((s, i) => ({
-                        value: s.pnlPercent.toFixed(0),
-                        itemStyle: {
-                            color: i < 3 ? ['#ffd700', '#c0c0c0', '#cd7f32'][i] : '#0096ff',
-                            borderRadius: [4, 4, 0, 0]
-                        }
-                    })),
-                    barWidth: '60%'
-                }]
-            });
+    function fmt(n, d = 2) {
+        if (n == null || isNaN(n)) return '--';
+        return n.toFixed(d).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
 
-            window.addEventListener('resize', () => chart.resize());
+    function fmtPnl(n) {
+        if (n == null) return '--';
+        const sign = n >= 0 ? '+' : '';
+        return sign + '$' + fmt(Math.abs(n));
+    }
+
+    function fmtDate(d) {
+        if (!d) return '--';
+        return new Date(d).toLocaleString('zh-CN');
+    }
+
+    // ==================== 全局数据 ====================
+    let allBalances = [];
+    let allTrades = [];
+
+    // ==================== 加载策略数据 ====================
+    async function loadStrategies() {
+        try {
+            // 获取余额数据
+            allBalances = await fetchAPI('/virtual_balances?select=*&order=total_pnl.desc');
+            
+            // 获取交易记录
+            allTrades = await fetchAPI('/virtual_trades?select=*&order=created_at.desc&limit=500');
+
+            renderStrategies();
+            renderCompareChart();
+            
+            document.getElementById('updateTime').textContent = new Date().toLocaleTimeString('zh-CN');
+        } catch (e) {
+            console.error('Load error:', e);
+            document.getElementById('strategyList').innerHTML = 
+                '<div class="loading-text" style="color:var(--accent-danger)">数据加载失败: ' + e.message + '</div>';
+        }
+    }
+
+    // ==================== 渲染策略列表 ====================
+    function renderStrategies() {
+        const typeFilter = document.getElementById('filterType').value;
+        const statusFilter = document.getElementById('filterStatus').value;
+
+        let filtered = allBalances.filter(b => {
+            if (typeFilter && !b.strategy_name.includes(typeFilter)) return false;
+            return true;
+        });
+
+        document.getElementById('strategyCount').textContent = filtered.length;
+
+        const container = document.getElementById('strategyList');
+        container.innerHTML = filtered.map((b, i) => {
+            const hasPosition = b.current_position && b.current_position !== 'none';
+            const pnlColor = (b.total_pnl || 0) >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)';
+            const positionType = b.current_position_type || '';
+            const positionBg = positionType === 'long' ? 'rgba(46, 199, 113, 0.2)' : 
+                               positionType === 'short' ? 'rgba(231, 76, 60, 0.2)' : 'transparent';
+
+            return `
+            <div class="strategy-card" onclick="showTrades('${b.strategy_id}', '${b.strategy_name}')" style="border-left-color: ${pnlColor}">
+                <div class="strategy-card-header">
+                    <span class="strategy-rank rank-${i < 3 ? i + 1 : 0}">${i + 1}</span>
+                    <span class="strategy-name">${b.strategy_name || '策略' + (i + 1)}</span>
+                </div>
+                <div class="strategy-card-body">
+                    <div class="strategy-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">初始</span>
+                            <span class="stat-value">$${fmt(b.initial_balance || 1000)}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">余额</span>
+                            <span class="stat-value">$${fmt(b.current_balance || 1000)}</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">盈亏</span>
+                            <span class="stat-value" style="color: ${pnlColor}">${fmtPnl(b.total_pnl || 0)}</span>
+                        </div>
+                    </div>
+                    <div class="strategy-extra">
+                        <div class="extra-item">
+                            <span class="label">胜率</span>
+                            <span class="value">${b.win_rate ? fmt(b.win_rate, 1) + '%' : '--'}</span>
+                        </div>
+                        <div class="extra-item">
+                            <span class="label">交易</span>
+                            <span class="value">${b.trade_count || 0}笔</span>
+                        </div>
+                        <div class="extra-item position" style="background: ${positionBg}">
+                            <span class="label">持仓</span>
+                            <span class="value">${hasPosition ? (positionType === 'long' ? '📈做多' : '📉做空') : '空闲'}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `;
+        }).join('');
+    }
+
+    // ==================== 渲染对比图表 ====================
+    function renderCompareChart() {
+        const chartEl = document.getElementById('compareChart');
+        if (!chartEl || allBalances.length === 0) return;
+
+        const chart = echarts.init(chartEl);
+        
+        const sorted = [...allBalances].sort((a, b) => (b.total_pnl || 0) - (a.total_pnl || 0));
+        const top15 = sorted.slice(0, 15);
+
+        const option = {
+            grid: { left: 60, right: 20, top: 10, bottom: 40 },
+            xAxis: {
+                type: 'category',
+                data: top15.map(b => b.strategy_name.substring(0, 12)),
+                axisLabel: { color: '#9ca3af', fontSize: 9, rotate: 45 }
+            },
+            yAxis: {
+                type: 'value',
+                axisLabel: { color: '#9ca3af', fontSize: 10, formatter: v => '$' + (v/1000).toFixed(0) + 'k' },
+                splitLine: { lineStyle: { color: '#2d3748' } }
+            },
+            series: [{
+                type: 'bar',
+                data: top15.map(b => ({
+                    value: b.total_pnl || 0,
+                    itemStyle: { color: (b.total_pnl || 0) >= 0 ? '#00d4aa' : '#ff6b6b' }
+                }))
+            }]
+        };
+
+        chart.setOption(option);
+    }
+
+    // ==================== 显示交易记录 ====================
+    function showTrades(strategyId, strategyName) {
+        document.getElementById('modalTitle').textContent = strategyName + ' 交易记录';
+        document.getElementById('modalBody').innerHTML = '<div class="loading-text">加载中...</div>';
+        document.getElementById('tradeModal').classList.add('active');
+
+        const trades = allTrades.filter(t => t.strategy_id === strategyId || t.strategy_name === strategyName);
+
+        if (trades.length === 0) {
+            document.getElementById('modalBody').innerHTML = '<div class="loading-text">暂无交易记录</div>';
+            return;
         }
 
-        // 更新总览统计
-        function updateSummary() {
-            const all = [...strategiesData.bb, ...strategiesData.rsi];
-            const totalBalance = all.reduce((sum, s) => sum + s.balance, 0);
-            const totalPnl = all.reduce((sum, s) => sum + s.pnl, 0);
-            const todayTrades = all.reduce((sum, s) => sum + Math.floor(s.trades / 15), 0);
-            
-            document.getElementById('totalBalance').textContent = '$' + totalBalance.toLocaleString();
-            document.getElementById('totalPnl').textContent = (totalPnl >= 0 ? '+' : '') + '$' + totalPnl.toLocaleString();
-            document.getElementById('totalPnl').style.color = totalPnl >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)';
-            document.getElementById('todayTrades').textContent = todayTrades;
-        }
+        document.getElementById('modalBody').innerHTML = `
+            <table class="trade-table">
+                <thead>
+                    <tr>
+                        <th>时间</th>
+                        <th>类型</th>
+                        <th>入场</th>
+                        <th>出场</th>
+                        <th>盈亏</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${trades.slice(0, 50).map(t => `
+                    <tr class="${(t.pnl || 0) >= 0 ? 'profit' : 'loss'}">
+                        <td>${fmtDate(t.created_at)}</td>
+                        <td>${t.position_type === 'long' ? '📈做多' : '📉做空'}</td>
+                        <td>$${fmt(t.entry_price)}</td>
+                        <td>${t.exit_price ? '$' + fmt(t.exit_price) : '--'}</td>
+                        <td style="color: ${(t.pnl || 0) >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)'}">
+                            ${t.pnl != null ? fmtPnl(t.pnl) : '--'}
+                        </td>
+                    </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    }
 
-        // 初始化
-        renderBBStrategies();
-        renderRSIStrategies();
-        renderCompareChart();
-        updateSummary();
+    function closeModal() {
+        document.getElementById('tradeModal').classList.remove('active');
+    }
 
-        // 更新按钮显示
-        document.getElementById('updateTime').textContent = '更新于 ' + new Date().toLocaleTimeString();
+    // 筛选事件
+    document.getElementById('filterType').addEventListener('change', renderStrategies);
+    document.getElementById('filterStatus').addEventListener('change', renderStrategies);
+
+    // 点击弹窗背景关闭
+    document.getElementById('tradeModal').addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal')) closeModal();
+    });
+
+    // 启动
+    loadStrategies();
+    setInterval(loadStrategies, 30000);
     </script>
+
+    <style>
+    .filter-bar {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+    .filter-select {
+        flex: 1;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-card);
+        color: var(--text-primary);
+        font-size: 14px;
+    }
+    .strategy-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, min-max(160px, 1fr));
+        gap: 12px;
+    }
+    .strategy-card {
+        background: var(--bg-card);
+        border-radius: 12px;
+        padding: 12px;
+        border-left: 3px solid var(--accent-primary);
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    .strategy-card:active {
+        transform: scale(0.98);
+    }
+    .strategy-card-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+    .strategy-card-body .strategy-stats {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+    }
+    .strategy-card-body .stat-item {
+        text-align: center;
+    }
+    .strategy-card-body .stat-label {
+        font-size: 10px;
+        color: var(--text-secondary);
+    }
+    .strategy-card-body .stat-value {
+        font-size: 13px;
+        font-weight: 600;
+    }
+    .strategy-extra {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .extra-item {
+        background: var(--bg-secondary);
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+    }
+    .extra-item .label {
+        color: var(--text-secondary);
+    }
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.7);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+    .modal.active {
+        display: flex;
+    }
+    .modal-content {
+        background: var(--bg-secondary);
+        border-radius: 16px;
+        width: 100%;
+        max-height: 80vh;
+        overflow: hidden;
+    }
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .modal-title {
+        font-weight: 600;
+    }
+    .modal-close {
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        font-size: 24px;
+        cursor: pointer;
+    }
+    .modal-body {
+        padding: 15px;
+        max-height: calc(80vh - 60px);
+        overflow-y: auto;
+    }
+    .trade-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+    .trade-table th, .trade-table td {
+        padding: 8px 4px;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+    }
+    .trade-table th {
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+    .loading-text {
+        text-align: center;
+        padding: 30px;
+        color: var(--text-secondary);
+    }
+    </style>
 </body>
 </html>
