@@ -365,97 +365,69 @@
     </style>
 
     <script>
-        // 策略数据（从数据库读取的模拟数据）
-        const strategiesData = {
-            bb: [
-                { id: 1, name: 'BB策略 30x全仓', type: 'bb', lev: 30, mode: '全仓', 
-                  initial: 1000, balance: 4523, pnl: 3523, pnlPercent: 352.3,
-                  trades: 89, wins: 58, winRate: 65.2,
-                  position: { type: '做多', entry: 104500, current: 105234, size: 0.019 },
-                  status: 'active', lastTrade: '2026-05-13 14:30' },
-                { id: 2, name: 'BB策略 30x逐仓', type: 'bb', lev: 30, mode: '逐仓',
-                  initial: 1000, balance: 4156, pnl: 3156, pnlPercent: 315.6,
-                  trades: 82, wins: 52, winRate: 63.4,
-                  position: null, status: 'idle', lastTrade: '2026-05-13 12:15' },
-                { id: 3, name: 'BB策略 25x全仓', type: 'bb', lev: 25, mode: '全仓',
-                  initial: 1000, balance: 3892, pnl: 2892, pnlPercent: 289.2,
-                  trades: 78, wins: 49, winRate: 62.8,
-                  position: { type: '做空', entry: 105100, current: 105234, size: 0.019 },
-                  status: 'active', lastTrade: '2026-05-13 13:45' },
-                { id: 4, name: 'BB策略 25x逐仓', type: 'bb', lev: 25, mode: '逐仓',
-                  initial: 1000, balance: 3456, pnl: 2456, pnlPercent: 245.6,
-                  trades: 72, wins: 45, winRate: 62.5,
-                  position: null, status: 'idle', lastTrade: '2026-05-13 10:30' },
-                { id: 5, name: 'BB策略 20x', type: 'bb', lev: 20, mode: '逐仓',
-                  initial: 1000, balance: 3124, pnl: 2124, pnlPercent: 212.4,
-                  trades: 68, wins: 42, winRate: 61.8,
-                  position: { type: '做多', entry: 103890, current: 105234, size: 0.019 },
-                  status: 'active', lastTrade: '2026-05-13 11:00' }
-            ],
-            rsi: [
-                { id: 6, name: 'RSI_14_35_65_L20', type: 'rsi', params: '周期14 | 35/65',
-                  initial: 1000, balance: 72398, pnl: 71398, pnlPercent: 7139.8,
-                  trades: 420, wins: 280, winRate: 66.8,
-                  position: { type: '做多', entry: 103890, current: 105234, size: 0.019 },
-                  status: 'active', lastTrade: '2026-05-13 14:30' },
-                { id: 7, name: 'RSI_7_30_75_L20', type: 'rsi', params: '周期7 | 30/75',
-                  initial: 1000, balance: 68920, pnl: 67920, pnlPercent: 6792.0,
-                  trades: 380, wins: 248, winRate: 65.2,
-                  position: null, status: 'idle', lastTrade: '2026-05-13 13:45' },
-                { id: 8, name: 'RSI_7_35_75_L20', type: 'rsi', params: '周期7 | 35/75',
-                  initial: 1000, balance: 67410, pnl: 66410, pnlPercent: 6641.0,
-                  trades: 350, wins: 226, winRate: 64.5,
-                  position: { type: '做多', entry: 103200, current: 105234, size: 0.019 },
-                  status: 'active', lastTrade: '2026-05-13 12:00' },
-                { id: 9, name: 'RSI_7_20_75_L20', type: 'rsi', params: '周期7 | 20/75',
-                  initial: 1000, balance: 65340, pnl: 64340, pnlPercent: 6434.0,
-                  trades: 320, wins: 204, winRate: 63.8,
-                  position: null, status: 'idle', lastTrade: '2026-05-13 11:30' },
-                { id: 10, name: 'RSI_14_35_70_L20', type: 'rsi', params: '周期14 | 35/70',
-                  initial: 1000, balance: 64230, pnl: 63230, pnlPercent: 6323.0,
-                  trades: 310, wins: 197, winRate: 63.5,
-                  position: { type: '做空', entry: 104890, current: 105234, size: 0.019 },
-                  status: 'active', lastTrade: '2026-05-13 10:15' },
-                { id: 11, name: 'RSI_7_35_65_L20', type: 'rsi', params: '周期7 | 35/65',
-                  initial: 1000, balance: 63120, pnl: 62120, pnlPercent: 6212.0,
-                  trades: 295, wins: 186, winRate: 63.0,
-                  position: null, status: 'idle', lastTrade: '2026-05-13 09:45' },
-                { id: 12, name: 'RSI_7_25_75_L20', type: 'rsi', params: '周期7 | 25/75',
-                  initial: 1000, balance: 62010, pnl: 61010, pnlPercent: 6101.0,
-                  trades: 285, wins: 178, winRate: 62.4,
-                  position: { type: '做多', entry: 103500, current: 105234, size: 0.019 },
-                  status: 'active', lastTrade: '2026-05-13 08:30' },
-                { id: 13, name: 'RSI_7_35_70_L20', type: 'rsi', params: '周期7 | 35/70',
-                  initial: 1000, balance: 60890, pnl: 59890, pnlPercent: 5989.0,
-                  trades: 275, wins: 170, winRate: 61.8,
-                  position: null, status: 'idle', lastTrade: '2026-05-13 07:15' },
-                { id: 14, name: 'RSI_14_35_75_L20', type: 'rsi', params: '周期14 | 35/75',
-                  initial: 1000, balance: 59780, pnl: 58780, pnlPercent: 5878.0,
-                  trades: 265, wins: 162, winRate: 61.1,
-                  position: { type: '做多', entry: 102800, current: 105234, size: 0.019 },
-                  status: 'active', lastTrade: '2026-05-12 22:30' },
-                { id: 15, name: 'RSI_7_20_70_L20', type: 'rsi', params: '周期7 | 20/70',
-                  initial: 1000, balance: 58670, pnl: 57670, pnlPercent: 5767.0,
-                  trades: 255, wins: 154, winRate: 60.4,
-                  position: null, status: 'idle', lastTrade: '2026-05-12 20:45' }
-            ]
-        };
-
-        // 模拟交易记录
-        const tradeHistory = {
-            6: [
-                { time: '2026-05-13 14:30', type: '做多', entry: 104890, exit: 105234, pnl: 156, pnlPercent: 7.8, reason: '止盈' },
-                { time: '2026-05-13 12:00', type: '做空', entry: 104500, exit: 104890, pnl: -42, pnlPercent: -2.1, reason: '止损' },
-                { time: '2026-05-13 09:45', type: '做多', entry: 103890, exit: 104500, pnl: 234, pnlPercent: 11.7, reason: '止盈' },
-                { time: '2026-05-12 22:30', type: '做多', entry: 103200, exit: 103890, pnl: 312, pnlPercent: 15.6, reason: '止盈' },
-                { time: '2026-05-12 18:15', type: '做空', entry: 103890, exit: 103200, pnl: 289, pnlPercent: 14.5, reason: '止盈' }
-            ],
-            1: [
-                { time: '2026-05-13 14:30', type: '做多', entry: 104500, exit: 105234, pnl: 89, pnlPercent: 4.5, reason: '手动平仓' },
-                { time: '2026-05-13 12:15', type: '做空', entry: 104200, exit: 104500, pnl: -35, pnlPercent: -1.8, reason: '止损' },
-                { time: '2026-05-13 10:00', type: '做多', entry: 103800, exit: 104200, pnl: 156, pnlPercent: 7.8, reason: '止盈' }
-            ]
-        };
+        // 从Supabase获取真实策略数据
+        let strategiesData = { bb: [], rsi: [] };
+        
+        async function fetchStrategies() {
+            try {
+                const res = await fetch('https://lpcrnobolifrzwrkxoli.supabase.co/storage/v1/object/public/virt-data/virt_positions.json?t=' + Date.now());
+                const data = await res.json();
+                const accounts = data.accounts || [];
+                
+                // BB策略 (S1-S8) 和 RSI策略 (R1-R10) 分类
+                const bbAccounts = accounts.filter(a => a.account.startsWith('S'));
+                const rsiAccounts = accounts.filter(a => a.account.startsWith('R'));
+                
+                strategiesData.bb = bbAccounts.map((a, i) => ({
+                    id: i + 1,
+                    name: a.strategy_name || 'BB策略',
+                    type: 'bb',
+                    lev: a.leverage || 30,
+                    initial: a.initial || 1000,
+                    balance: a.balance || 1000,
+                    pnl: (a.balance || 1000) - (a.initial || 1000),
+                    pnlPercent: ((a.balance || 1000) - (a.initial || 1000)) / (a.initial || 1000) * 100,
+                    trades: a.total_trades || 0,
+                    wins: a.win || 0,
+                    winRate: a.win_rate || 0,
+                    position: a.side ? { type: a.side === 'long' ? '做多' : '做空', entry: a.entry || 0, current: a.current || 0 } : null,
+                    status: a.side ? 'active' : 'idle',
+                    lastTrade: a.updated_at || ''
+                }));
+                
+                strategiesData.rsi = rsiAccounts.map((a, i) => ({
+                    id: i + 6,
+                    name: a.strategy_name || `RSI策略 ${a.account}`,
+                    type: 'rsi',
+                    params: a.strategy_name || '',
+                    initial: a.initial || 1000,
+                    balance: a.balance || 1000,
+                    pnl: (a.balance || 1000) - (a.initial || 1000),
+                    pnlPercent: ((a.balance || 1000) - (a.initial || 1000)) / (a.initial || 1000) * 100,
+                    trades: a.total_trades || 0,
+                    wins: a.win || 0,
+                    winRate: a.win_rate || 0,
+                    position: a.side ? { type: a.side === 'long' ? '做多' : '做空', entry: a.entry || 0, current: a.current || 0 } : null,
+                    status: a.side ? 'active' : 'idle',
+                    lastTrade: a.updated_at || '',
+                    recent_trades: a.recent_trades || []
+                }));
+                
+                // 更新统计
+                const totalBalance = accounts.reduce((sum, a) => sum + (a.balance || 0), 0);
+                const totalPnl = accounts.reduce((sum, a) => sum + ((a.balance || 1000) - (a.initial || 1000)), 0);
+                document.getElementById('totalBalance').textContent = '$' + Math.round(totalBalance).toLocaleString();
+                document.getElementById('totalPnl').textContent = (totalPnl >= 0 ? '+' : '') + '$' + Math.round(totalPnl).toLocaleString();
+                document.getElementById('totalPnl').style.color = totalPnl >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)';
+                
+                renderBBStrategies();
+                renderRSIStrategies();
+                renderCompareChart();
+                
+            } catch(e) {
+                console.error('Failed to fetch strategies:', e);
+            }
+        }
 
         // 渲染策略卡片
         function renderStrategyCard(strategy) {
@@ -567,7 +539,7 @@
                 `;
                 
                 // 获取交易记录
-                const trades = tradeHistory[strategyId] || [];
+                const trades = strategy.recent_trades || [];
                 if (trades.length > 0) {
                     tradeList.innerHTML = trades.map(t => `
                         <div class="trade-item">
