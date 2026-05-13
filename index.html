@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BTC Dashboard</title>
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -20,13 +20,12 @@
             <section class="overview-section">
                 <div class="overview-cards">
                     <div class="card">
-                        <div class="card-label">总交易数</div>
-                        <div class="card-value" id="totalTrades">--</div>
-                    </div>
-                    <div class="card">
                         <div class="card-label">总盈亏</div>
                         <div class="card-value" id="totalPnl">--</div>
-                        <div class="card-change" id="pnlPercent">--</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">交易数</div>
+                        <div class="card-value" id="totalTrades">--</div>
                     </div>
                     <div class="card">
                         <div class="card-label">胜率</div>
@@ -35,38 +34,22 @@
                 </div>
             </section>
 
-            <section class="chart-section">
-                <div class="section-header">
-                    <h2>盈亏分布</h2>
-                </div>
-                <div class="chart-wrapper">
-                    <div id="pieChart" class="chart"></div>
-                </div>
-            </section>
-
-            <section class="chart-section">
-                <div class="section-header">
-                    <h2>收益曲线</h2>
-                    <div class="time-filters">
-                        <button class="time-btn active" data-range="7d">7天</button>
-                        <button class="time-btn" data-range="30d">30天</button>
-                        <button class="time-btn" data-range="all">全部</button>
-                    </div>
-                </div>
-                <div class="chart-wrapper">
-                    <div id="lineChart" class="chart"></div>
-                </div>
-            </section>
-
             <section class="strategies-section">
-                <div class="section-header">
-                    <h2>账户列表</h2>
-                </div>
-                <div class="strategies-grid" id="strategiesGrid">
-                    <div class="loading-spinner">加载中...</div>
-                </div>
+                <div class="section-header"><h2>账户</h2></div>
+                <div id="strategiesList"><div class="loading-spinner">加载中...</div></div>
             </section>
         </main>
+
+        <div id="tradeModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button class="back-btn" onclick="closeTradeModal()">← 返回</button>
+                    <h2 id="modalTitle">交易记录</h2>
+                    <div style="width:50px"></div>
+                </div>
+                <div id="tradeList"><div class="loading-spinner">加载中...</div></div>
+            </div>
+        </div>
 
         <nav class="bottom-nav">
             <a href="index.html" class="nav-item active"><span class="nav-icon">📊</span><span>首页</span></a>
@@ -77,189 +60,118 @@
         </nav>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <script src="api.js"></script>
     <script>
-        var pieChart, lineChart;
-        var allTrades = [];
+        var allTrades = [], strategyStats = [];
 
-        async function loadDashboardData() {
+        async function loadData() {
             var statusEl = document.getElementById('dbStatus');
             var statusTextEl = document.getElementById('dbStatusText');
-
             try {
                 var trades = await fetchAllTrades();
-
                 if (trades && trades.length > 0) {
-                    // 为每笔交易计算盈亏
-                    allTrades = trades.map(function(t) {
-                        return enrichTradeWithPnL(t);
-                    });
-                    
+                    allTrades = trades.map(function(t) { return enrichTradeWithPnL(t); });
+                    strategyStats = transformTradesData(allTrades);
                     statusEl.className = 'status-dot online';
                     statusTextEl.textContent = API_CONFIG.isLocal ? '本地' : '云端';
-                    
-                    updateOverview(allTrades);
-                    updateStrategiesGrid(transformTradesData(allTrades));
-                    updatePieChart(transformTradesData(allTrades));
-                    updateLineChart(allTrades);
+                    updateOverview();
+                    renderStrategies();
                 } else {
                     useSampleData();
                 }
             } catch (error) {
-                console.error('Load error:', error);
                 statusEl.className = 'status-dot offline';
-                statusTextEl.textContent = '离线模式';
+                statusTextEl.textContent = '离线';
                 useSampleData();
             }
         }
 
         function useSampleData() {
-            updateOverview(SAMPLE_BALANCES);
-            updateStrategiesGrid(SAMPLE_BALANCES);
-            updatePieChart(SAMPLE_BALANCES);
-            updateLineChart([]);
-            document.getElementById('dbStatusText').textContent = '示例数据';
+            strategyStats = SAMPLE_BALANCES;
+            allTrades = [];
+            updateOverview();
+            renderStrategies();
+            document.getElementById('dbStatusText').textContent = '示例';
         }
 
-        function updateOverview(data) {
-            var total, totalPnl, winRate;
-            
-            if (Array.isArray(data) && data.length > 0) {
-                // 如果是交易记录
-                if (data[0].entry_price !== undefined) {
-                    total = data.length;
-                    totalPnl = data.reduce(function(s, t) { return s + (t.realized_pnl || 0); }, 0);
-                    var wins = data.filter(function(t) { return t.realized_pnl > 0; }).length;
-                    winRate = total > 0 ? (wins / total) * 100 : 0;
-                } else {
-                    // 如果是策略统计
-                    total = data.reduce(function(s, t) { return s + (t.trade_count || 0); }, 0);
-                    totalPnl = data.reduce(function(s, t) { return s + (t.total_pnl || 0); }, 0);
-                    var totalWins = data.reduce(function(s, t) { return s + (t.wins || 0); }, 0);
-                    var totalTrades2 = data.reduce(function(s, t) { return s + (t.trade_count || 0); }, 0);
-                    winRate = totalTrades2 > 0 ? (totalWins / totalTrades2) * 100 : 0;
-                }
-            } else {
-                total = 0;
-                totalPnl = 0;
-                winRate = 0;
-            }
-
-            document.getElementById('totalTrades').textContent = total;
-            
+        function updateOverview() {
+            var totalPnl = 0, totalTrades = allTrades.length, wins = 0;
+            allTrades.forEach(function(t) {
+                totalPnl += t.realized_pnl || 0;
+                if ((t.realized_pnl || 0) > 0) wins++;
+            });
+            var winRate = totalTrades > 0 ? (wins / totalTrades) * 100 : 0;
             var pnlEl = document.getElementById('totalPnl');
-            pnlEl.textContent = formatNumber(totalPnl);
+            pnlEl.textContent = (totalPnl >= 0 ? '+' : '') + formatNumber(totalPnl);
             pnlEl.className = 'card-value ' + getPnLClass(totalPnl);
-            
-            var pctEl = document.getElementById('pnlPercent');
-            pctEl.textContent = formatPercent((totalPnl / Math.max(total * 1000, 1)) * 100);
-            pctEl.className = 'card-change ' + getPnLClass(totalPnl);
-            
+            document.getElementById('totalTrades').textContent = totalTrades;
             document.getElementById('winRate').textContent = winRate.toFixed(1) + '%';
         }
 
-        function updateStrategiesGrid(stats) {
-            var grid = document.getElementById('strategiesGrid');
-            
-            if (!stats || stats.length === 0) {
-                grid.innerHTML = '<div class="loading-spinner">暂无数据</div>';
+        function renderStrategies() {
+            var container = document.getElementById('strategiesList');
+            if (strategyStats.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div>暂无数据</div>';
                 return;
             }
-
-            grid.innerHTML = stats.map(function(s) {
+            container.innerHTML = strategyStats.map(function(s) {
+                var pnlClass = getPnLClass(s.total_pnl);
                 return '<div class="strategy-card">' +
                     '<div class="strategy-header">' +
                     '<span class="strategy-name">' + s.strategy_name + '</span>' +
-                    '<span class="strategy-badge ' + getPnLClass(s.total_pnl) + '">' + formatPercent(s.total_pnl_percent) + '</span>' +
+                    '<span class="strategy-badge ' + pnlClass + '">' + formatPercent(s.total_pnl_percent) + '</span>' +
                     '</div>' +
                     '<div class="strategy-stats">' +
-                    '<div class="stat"><span class="stat-label">交易数</span><span class="stat-value">' + s.trade_count + '</span></div>' +
-                    '<div class="stat"><span class="stat-label">总盈亏</span><span class="stat-value ' + getPnLClass(s.total_pnl) + '">' + formatNumber(s.total_pnl) + '</span></div>' +
-                    '<div class="stat"><span class="stat-label">胜率</span><span class="stat-value">' + s.win_rate.toFixed(1) + '%</span></div>' +
+                    '<div class="stat"><span class="stat-label">盈亏</span><span class="stat-value ' + pnlClass + '">' + (s.total_pnl >= 0 ? '+' : '') + formatNumber(s.total_pnl) + '</span></div>' +
+                    '<div class="stat"><span class="stat-label">交易</span><span class="stat-value">' + s.trade_count + '</span></div>' +
+                    '<div class="stat"><span class="stat-label">胜率</span><span class="stat-value">' + s.win_rate.toFixed(0) + '%</span></div>' +
+                    '</div>' +
+                    '<div class="strategy-actions">' +
+                    '<button class="btn btn-primary" onclick="showTradeModal(\'' + s.strategy_name + '\')">📋 交易记录</button>' +
                     '</div></div>';
             }).join('');
         }
 
-        function updatePieChart(stats) {
-            if (!pieChart) pieChart = echarts.init(document.getElementById('pieChart'));
-            
-            var data = stats.map(function(s) { 
-                return { 
-                    name: s.strategy_name, 
-                    value: Math.abs(s.total_pnl) || 1 
-                }; 
+        function showTradeModal(strategyName) {
+            var modal = document.getElementById('tradeModal');
+            document.getElementById('modalTitle').textContent = strategyName;
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            var trades = allTrades.filter(function(t) {
+                return (t.strategy || t.account_id || 'Unknown') === strategyName;
             });
-            
-            pieChart.setOption({
-                tooltip: { trigger: 'item', formatter: '{b}: ${c}' },
-                legend: { orient: 'vertical', right: 10, top: 'center', textStyle: { color: '#8892b0', fontSize: 12 } },
-                series: [{
-                    type: 'pie', 
-                    radius: ['40%', '70%'], 
-                    center: ['35%', '50%'],
-                    itemStyle: { borderRadius: 10, borderColor: '#0a192f', borderWidth: 2 },
-                    label: { show: false },
-                    emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
-                    data: data,
-                    color: ['#00d4aa', '#5c7cfa', '#ff6b6b', '#fcc419', '#845ef7', '#20c997', '#f06595', '#ff922b']
-                }]
-            });
-        }
-
-        function updateLineChart(trades) {
-            if (!lineChart) lineChart = echarts.init(document.getElementById('lineChart'));
-            
-            var dailyPnL = {};
-            trades.forEach(function(t) {
-                if (t.opened_at) {
-                    var date = t.opened_at.substring(0, 10);
-                    dailyPnL[date] = (dailyPnL[date] || 0) + (t.realized_pnl || 0);
-                }
-            });
-
-            var dates = Object.keys(dailyPnL).sort().slice(-30);
-            var cumulative = 0;
-            var cumulativeData = dates.map(function(d) {
-                cumulative += dailyPnL[d];
-                return cumulative;
-            });
-
-            if (dates.length === 0) {
-                var days = 30, sampleDates = [], sampleData = [];
-                var value = 0;
-                for (var i = days; i >= 0; i--) {
-                    var d = new Date();
-                    d.setDate(d.getDate() - i);
-                    sampleDates.push((d.getMonth() + 1) + '/' + d.getDate());
-                    value += (Math.random() - 0.48) * 100;
-                    sampleData.push(value);
-                }
-                dates = sampleDates;
-                cumulativeData = sampleData;
+            var list = document.getElementById('tradeList');
+            if (trades.length === 0) {
+                list.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div>暂无交易记录</div>';
+                return;
             }
-
-            lineChart.setOption({
-                tooltip: { trigger: 'axis', formatter: '{b}: ${c}' },
-                grid: { left: 50, right: 20, top: 20, bottom: 30 },
-                xAxis: { type: 'category', data: dates, boundaryGap: false, axisLine: { lineStyle: { color: '#233554' } }, axisLabel: { color: '#8892b0', fontSize: 10 } },
-                yAxis: { type: 'value', axisLine: { show: false }, splitLine: { lineStyle: { color: '#233554' } }, axisLabel: { color: '#8892b0', formatter: '${value}' } },
-                series: [{ 
-                    data: cumulativeData, 
-                    type: 'line', 
-                    smooth: true, 
-                    lineStyle: { width: 3, color: '#00d4aa' }, 
-                    areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(0,212,170,0.3)' }, { offset: 1, color: 'rgba(0,212,170,0)' }] } } 
-                }]
-            });
+            list.innerHTML = trades.slice(0, 50).map(function(t) {
+                var side = (t.side || '--').toUpperCase();
+                var sideClass = (side === 'LONG' || side === 'BUY') ? 'long' : ((side === 'SHORT' || side === 'SELL') ? 'short' : '');
+                var pnlClass = getPnLClass(t.realized_pnl);
+                var date = t.opened_at ? t.opened_at.replace('T', ' ').substring(0, 16) : '--';
+                return '<div class="trade-item">' +
+                    '<div class="trade-header">' +
+                    '<span class="trade-type ' + sideClass + '">' + side + '</span>' +
+                    '<span class="trade-pnl ' + pnlClass + '">' + (t.realized_pnl >= 0 ? '+' : '') + formatNumber(t.realized_pnl) + '</span>' +
+                    '</div>' +
+                    '<div class="trade-details">' +
+                    '<div>开仓: <span>' + formatNumber(t.entry_price) + '</span></div>' +
+                    '<div>平仓: <span>' + formatNumber(t.close_price) + '</span></div>' +
+                    '<div>数量: <span>' + formatNumber(t.size, 4) + '</span></div>' +
+                    '<div>杠杆: <span>' + (t.leverage || 0) + 'x</span></div>' +
+                    '</div>' +
+                    '<div class="trade-time">' + date + '</div>' +
+                    '</div>';
+            }).join('');
         }
 
-        window.addEventListener('resize', function() {
-            if (pieChart) pieChart.resize();
-            if (lineChart) lineChart.resize();
-        });
+        function closeTradeModal() {
+            document.getElementById('tradeModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
 
-        document.addEventListener('DOMContentLoaded', loadDashboardData);
+        document.addEventListener('DOMContentLoaded', loadData);
     </script>
 </body>
 </html>
