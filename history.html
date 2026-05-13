@@ -14,50 +14,36 @@
             <span>历史记录</span>
         </div>
         <div class="live-badge">
-            <span>15天数据</span>
+            <span class="live-dot"></span>
+            <span id="updateTime">--</span>
         </div>
     </div>
 
     <div class="container">
-        <!-- 筛选 -->
-        <div class="filter-bar">
-            <select class="filter-select" id="typeFilter">
-                <option value="all">全部</option>
-                <option value="trade">交易</option>
-                <option value="signal">信号</option>
-                <option value="backtest">回测</option>
-            </select>
-            <select class="filter-select" id="dateRange">
-                <option value="all">全部时间</option>
-                <option value="7d">最近7天</option>
-                <option value="30d">最近30天</option>
-            </select>
-        </div>
-
         <!-- 统计概览 -->
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-label">交易天数</div>
-                <div class="stat-value">15</div>
+                <div class="stat-label">总交易</div>
+                <div class="stat-value" id="totalTrades">--</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">总交易次数</div>
-                <div class="stat-value">1,247</div>
+                <div class="stat-label">盈利交易</div>
+                <div class="stat-value" id="winTrades">--</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">盈利天数</div>
-                <div class="stat-value positive" style="color: var(--accent-primary)">12 天</div>
+                <div class="stat-label">总盈亏</div>
+                <div class="stat-value" id="totalPnl">--</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">最大单日收益</div>
-                <div class="stat-value positive" style="color: var(--accent-primary)">+23.5%</div>
+                <div class="stat-label">平均盈亏</div>
+                <div class="stat-value" id="avgPnl">--</div>
             </div>
         </div>
 
         <!-- 每日收益图表 -->
         <div class="card">
             <div class="card-header">
-                <span class="card-title">📈 每日收益</span>
+                <span class="card-title">📊 每日收益</span>
             </div>
             <div class="chart-container" id="dailyChart"></div>
         </div>
@@ -67,156 +53,33 @@
             <div class="card-header">
                 <span class="card-title">📅 月度统计</span>
             </div>
-            <div class="list-item">
-                <div class="list-item-content">
-                    <div class="list-item-title">2026年5月</div>
-                    <div class="list-item-subtitle">1,247 笔交易</div>
-                </div>
-                <span class="strategy-profit">+$71,398</span>
-            </div>
-            <div class="list-item">
-                <div class="list-item-content">
-                    <div class="list-item-title">2026年4月</div>
-                    <div class="list-item-subtitle">980 笔交易</div>
-                </div>
-                <span class="strategy-profit">+$58,234</span>
-            </div>
-            <div class="list-item">
-                <div class="list-item-content">
-                    <div class="list-item-title">2026年3月</div>
-                    <div class="list-item-subtitle">756 笔交易</div>
-                </div>
-                <span class="strategy-profit">+$42,891</span>
+            <div class="monthly-grid" id="monthlyGrid">
+                <div class="loading-text">加载中...</div>
             </div>
         </div>
 
-        <!-- 策略使用统计 -->
+        <!-- 策略使用占比 -->
         <div class="card">
             <div class="card-header">
-                <span class="card-title">🎯 策略使用占比</span>
+                <span class="card-title">🥧 策略使用占比</span>
             </div>
-            <div class="stats-row">
-                <div class="stat-mini">
-                    <div class="label">RSI_14_35_65_L20</div>
-                    <div class="value">45%</div>
-                    <div class="strength-bar" style="margin-top: 6px;">
-                        <div class="strength-fill" style="width: 45%"></div>
-                    </div>
-                </div>
-                <div class="stat-mini">
-                    <div class="label">RSI_7_30_75_L20</div>
-                    <div class="value">28%</div>
-                    <div class="strength-bar" style="margin-top: 6px;">
-                        <div class="strength-fill" style="width: 28%"></div>
-                    </div>
-                </div>
-                <div class="stat-mini">
-                    <div class="label">RSI_7_35_75_L20</div>
-                    <div class="value">18%</div>
-                    <div class="strength-bar" style="margin-top: 6px;">
-                        <div class="strength-fill" style="width: 18%"></div>
-                    </div>
-                </div>
-                <div class="stat-mini">
-                    <div class="label">其他策略</div>
-                    <div class="value">9%</div>
-                    <div class="strength-bar" style="margin-top: 6px;">
-                        <div class="strength-fill" style="width: 9%"></div>
-                    </div>
-                </div>
-            </div>
+            <div class="chart-container" id="pieChart"></div>
         </div>
 
-        <!-- 回测记录 -->
-        <div class="card">
-            <div class="card-header">
-                <span class="card-title">🔬 回测记录</span>
-                <span class="badge badge-pending">4次回测</span>
-            </div>
-            <div class="list-item">
-                <div class="list-item-content">
-                    <div class="list-item-title">最近15天回测</div>
-                    <div class="list-item-subtitle">RSI_14_35_65_L20 | 胜率 66.8%</div>
-                </div>
-                <span class="strategy-profit">+7,139%</span>
-            </div>
-            <div class="list-item">
-                <div class="list-item-content">
-                    <div class="list-item-title">最近30天回测</div>
-                    <div class="list-item-subtitle">RSI_14_35_65_L20 | 胜率 68.2%</div>
-                </div>
-                <span class="strategy-profit">+12,450%</span>
-            </div>
-            <div class="list-item">
-                <div class="list-item-content">
-                    <div class="list-item-title">最近7天回测</div>
-                    <div class="list-item-subtitle">RSI_14_35_65_L20 | 胜率 65.5%</div>
-                </div>
-                <span class="strategy-profit">+3,890%</span>
-            </div>
-        </div>
-
-        <!-- 交易记录 -->
+        <!-- 交易记录列表 -->
         <div class="card">
             <div class="card-header">
                 <span class="card-title">📋 交易记录</span>
+                <span id="tradeCount">0</span>
             </div>
-            <div class="list-item">
-                <div class="list-item-content">
-                    <div class="list-item-title">
-                        RSI_14_35_65_L20
-                        <span class="badge badge-long">做多</span>
-                    </div>
-                    <div class="list-item-subtitle">14:30 | $104,890 → $105,234 | 持仓2h15m</div>
-                </div>
-                <span class="strategy-profit">+$156</span>
+            <div class="tab-bar">
+                <button class="tab-btn active" onclick="showTab('all')">全部</button>
+                <button class="tab-btn" onclick="showTab('profit')">盈利</button>
+                <button class="tab-btn" onclick="showTab('loss')">亏损</button>
             </div>
-            <div class="list-item">
-                <div class="list-item-content">
-                    <div class="list-item-title">
-                        RSI_7_30_75_L20
-                        <span class="badge badge-short">做空</span>
-                    </div>
-                    <div class="list-item-subtitle">12:00 | $104,500 → $104,890 | 止损</div>
-                </div>
-                <span style="color: var(--accent-danger)">-$42</span>
+            <div class="trade-record-list" id="tradeRecordList">
+                <div class="loading-text">加载中...</div>
             </div>
-            <div class="list-item">
-                <div class="list-item-content">
-                    <div class="list-item-title">
-                        RSI_14_35_65_L20
-                        <span class="badge badge-long">做多</span>
-                    </div>
-                    <div class="list-item-subtitle">09:45 | $103,890 → $104,500 | 止盈</div>
-                </div>
-                <span class="strategy-profit">+$234</span>
-            </div>
-            <div class="list-item">
-                <div class="list-item-content">
-                    <div class="list-item-title">
-                        RSI_7_35_75_L20
-                        <span class="badge badge-long">做多</span>
-                    </div>
-                    <div class="list-item-subtitle">22:30 | $103,200 → $103,890 | 止盈</div>
-                </div>
-                <span class="strategy-profit">+$312</span>
-            </div>
-            <div class="list-item">
-                <div class="list-item-content">
-                    <div class="list-item-title">
-                        RSI_14_35_65_L20
-                        <span class="badge badge-short">做空</span>
-                    </div>
-                    <div class="list-item-subtitle">18:15 | $103,890 → $103,200 | 止盈</div>
-                </div>
-                <span class="strategy-profit">+$289</span>
-            </div>
-        </div>
-
-        <div class="pagination">
-            <button class="page-btn" disabled>上一页</button>
-            <span class="page-info">1 / 156</span>
-            <button class="page-btn">下一页</button>
         </div>
     </div>
 
@@ -244,44 +107,215 @@
     </nav>
 
     <script>
-        const dailyChart = echarts.init(document.getElementById('dailyChart'));
-        dailyChart.setOption({
-            tooltip: { trigger: 'axis' },
-            grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
-            xAxis: {
-                type: 'category',
-                data: ['5/1', '5/2', '5/3', '5/4', '5/5', '5/6', '5/7', '5/8', '5/9', '5/10', '5/11', '5/12', '5/13'],
-                axisLine: { lineStyle: { color: '#444' } },
-                axisLabel: { color: '#888', fontSize: 10 }
-            },
-            yAxis: {
-                type: 'value',
-                axisLine: { show: false },
-                splitLine: { lineStyle: { color: '#333' } },
-                axisLabel: { color: '#888', fontSize: 10 }
-            },
-            series: [{
-                type: 'bar',
-                data: [
-                    { value: 450, itemStyle: { color: '#00d4aa' } },
-                    { value: 320, itemStyle: { color: '#00d4aa' } },
-                    { value: -120, itemStyle: { color: '#ff6b6b' } },
-                    { value: 580, itemStyle: { color: '#00d4aa' } },
-                    { value: 890, itemStyle: { color: '#00d4aa' } },
-                    { value: -80, itemStyle: { color: '#ff6b6b' } },
-                    { value: 1200, itemStyle: { color: '#00d4aa' } },
-                    { value: 650, itemStyle: { color: '#00d4aa' } },
-                    { value: 420, itemStyle: { color: '#00d4aa' } },
-                    { value: -90, itemStyle: { color: '#ff6b6b' } },
-                    { value: 1100, itemStyle: { color: '#00d4aa' } },
-                    { value: 890, itemStyle: { color: '#00d4aa' } },
-                    { value: 156, itemStyle: { color: '#00d4aa' } }
-                ],
-                barWidth: '60%'
-            }]
+    // Supabase 配置
+    const SUPABASE_URL = 'https://lpcrnbolifrzwrkxoli.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwY3Jub2JvbGlmcnp3cmt4b2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDUzMTQwMDAsImV4cCI6MTk2MDg5MDQwMH0.YOURCE_SUPABASE_SECRET';
+
+    async function fetchAPI(path) {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+        });
+        if (!res.ok) throw new Error(`API Error: ${res.status}`);
+        return res.json();
+    }
+
+    function fmt(n, d = 2) { return n != null ? n.toFixed(d).replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '--'; }
+    function fmtPnl(n) {
+        if (n == null) return '--';
+        return (n >= 0 ? '+' : '') + '$' + fmt(Math.abs(n));
+    }
+    function fmtDate(d) {
+        if (!d) return '--';
+        return new Date(d).toLocaleString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    let allTrades = [];
+    let currentTab = 'all';
+
+    async function loadHistory() {
+        try {
+            allTrades = await fetchAPI('/virtual_trades?select=*&order=created_at.desc&limit=500');
+
+            const closedTrades = allTrades.filter(t => t.status === 'closed');
+            const totalPnl = closedTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
+            const winTrades = closedTrades.filter(t => (t.pnl || 0) > 0).length;
+
+            document.getElementById('totalTrades').textContent = closedTrades.length;
+            document.getElementById('winTrades').textContent = winTrades;
+            document.getElementById('totalPnl').textContent = fmtPnl(totalPnl);
+            document.getElementById('totalPnl').style.color = totalPnl >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)';
+            document.getElementById('avgPnl').textContent = fmtPnl(closedTrades.length > 0 ? totalPnl / closedTrades.length : 0);
+
+            renderDailyChart(closedTrades);
+            renderMonthlyStats(closedTrades);
+            renderPieChart();
+            renderTradeRecords();
+
+            document.getElementById('updateTime').textContent = new Date().toLocaleTimeString('zh-CN');
+        } catch (e) { console.error('Load error:', e); }
+    }
+
+    function renderDailyChart(trades) {
+        const chart = echarts.init(document.getElementById('dailyChart'));
+        const dailyData = {};
+
+        trades.forEach(t => {
+            const date = new Date(t.created_at).toLocaleDateString('zh-CN');
+            dailyData[date] = (dailyData[date] || 0) + (t.pnl || 0);
         });
 
-        window.addEventListener('resize', () => dailyChart.resize());
+        const sortedDates = Object.keys(dailyData).sort();
+        const values = sortedDates.map(d => dailyData[d]);
+
+        chart.setOption({
+            grid: { left: 50, right: 20, top: 10, bottom: 30 },
+            xAxis: { type: 'category', data: sortedDates.slice(-14), axisLabel: { color: '#9ca3af', fontSize: 10, rotate: 45 } },
+            yAxis: { type: 'value', axisLabel: { color: '#9ca3af', fontSize: 10, formatter: v => '$' + (v/1000).toFixed(0) + 'k' }, splitLine: { lineStyle: { color: '#2d3748' } } },
+            series: [{
+                type: 'bar',
+                data: values.slice(-14).map(v => ({
+                    value: v,
+                    itemStyle: { color: v >= 0 ? '#00d4aa' : '#ff6b6b' }
+                }))
+            }]
+        });
+    }
+
+    function renderMonthlyStats(trades) {
+        const monthlyData = {};
+        trades.forEach(t => {
+            const date = new Date(t.created_at);
+            const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            if (!monthlyData[month]) monthlyData[month] = { pnl: 0, count: 0, wins: 0 };
+            monthlyData[month].pnl += t.pnl || 0;
+            monthlyData[month].count++;
+            if ((t.pnl || 0) > 0) monthlyData[month].wins++;
+        });
+
+        const container = document.getElementById('monthlyGrid');
+        const months = Object.keys(monthlyData).sort().reverse().slice(0, 6);
+
+        container.innerHTML = months.map(m => {
+            const data = monthlyData[m];
+            return `
+                <div class="monthly-item">
+                    <div class="monthly-month">${m}</div>
+                    <div class="monthly-pnl" style="color: ${data.pnl >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)'}">
+                        ${fmtPnl(data.pnl)}
+                    </div>
+                    <div class="monthly-count">${data.count}笔 | ${data.count > 0 ? Math.round(data.wins / data.count * 100) : 0}%胜</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderPieChart() {
+        const chart = echarts.init(document.getElementById('pieChart'));
+        const strategyData = {};
+
+        allTrades.filter(t => t.status === 'closed').forEach(t => {
+            strategyData[t.strategy_name] = (strategyData[t.strategy_name] || 0) + 1;
+        });
+
+        const top5 = Object.entries(strategyData).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+        chart.setOption({
+            tooltip: { trigger: 'item' },
+            series: [{
+                type: 'pie',
+                radius: ['40%', '70%'],
+                label: { color: '#9ca3af', fontSize: 10 },
+                data: top5.map(([name, value], i) => ({
+                    name, value,
+                    itemStyle: { color: ['#00d4aa', '#0096ff', '#ff9800', '#ff6b6b', '#9c27b0'][i] }
+                }))
+            }]
+        });
+    }
+
+    function renderTradeRecords() {
+        const container = document.getElementById('tradeRecordList');
+        let filtered = allTrades.filter(t => t.status === 'closed');
+
+        if (currentTab === 'profit') filtered = filtered.filter(t => (t.pnl || 0) > 0);
+        if (currentTab === 'loss') filtered = filtered.filter(t => (t.pnl || 0) < 0);
+
+        document.getElementById('tradeCount').textContent = filtered.length;
+
+        if (filtered.length === 0) {
+            container.innerHTML = '<div class="loading-text">暂无记录</div>';
+            return;
+        }
+
+        container.innerHTML = filtered.slice(0, 50).map(t => `
+            <div class="record-item">
+                <div class="record-icon">${t.position_type === 'long' ? '📈' : '📉'}</div>
+                <div class="record-info">
+                    <div class="record-name">${t.strategy_name}</div>
+                    <div class="record-time">${fmtDate(t.created_at)}</div>
+                    <div class="record-prices">
+                        ${fmt(t.entry_price)} → ${t.exit_price ? fmt(t.exit_price) : '--'}
+                    </div>
+                </div>
+                <div class="record-pnl ${(t.pnl || 0) >= 0 ? 'profit' : 'loss'}">
+                    ${fmtPnl(t.pnl)}
+                    <div class="record-percent">${t.pnl_percent ? fmt(t.pnl_percent, 1) + '%' : ''}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function showTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        renderTradeRecords();
+    }
+
+    loadHistory();
+    setInterval(loadHistory, 30000);
     </script>
+
+    <style>
+    .monthly-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .monthly-item {
+        background: var(--bg-card);
+        padding: 12px;
+        border-radius: 10px;
+        text-align: center;
+    }
+    .monthly-month { font-weight: 600; margin-bottom: 5px; }
+    .monthly-pnl { font-size: 16px; font-weight: 700; }
+    .monthly-count { font-size: 11px; color: var(--text-secondary); margin-top: 3px; }
+    .tab-bar { display: flex; gap: 10px; margin: 15px 0; }
+    .tab-btn {
+        flex: 1;
+        padding: 8px;
+        border: none;
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        border-radius: 8px;
+        cursor: pointer;
+    }
+    .tab-btn.active { background: var(--accent-primary); color: #000; }
+    .trade-record-list { display: flex; flex-direction: column; gap: 10px; }
+    .record-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: var(--bg-card);
+        border-radius: 10px;
+    }
+    .record-icon { font-size: 24px; }
+    .record-info { flex: 1; }
+    .record-name { font-weight: 600; }
+    .record-time { font-size: 11px; color: var(--text-secondary); }
+    .record-prices { font-size: 12px; color: var(--text-secondary); }
+    .record-pnl { text-align: right; font-weight: 700; font-size: 14px; }
+    .record-pnl.profit { color: var(--accent-primary); }
+    .record-pnl.loss { color: var(--accent-danger); }
+    .record-percent { font-size: 11px; font-weight: normal; }
+    </style>
 </body>
 </html>
