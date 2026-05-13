@@ -2,14 +2,13 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BTC Dashboard</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <!-- 顶部状态栏 -->
         <header class="header">
             <h1>BTC Dashboard</h1>
             <div class="connection-status">
@@ -17,10 +16,7 @@
                 <span id="dbStatusText">连接中...</span>
             </div>
         </header>
-
-        <!-- 主内容 -->
         <main class="main-content">
-            <!-- 概览卡片 -->
             <section class="overview-section">
                 <div class="overview-cards">
                     <div class="card total-balance">
@@ -40,18 +36,10 @@
                     </div>
                 </div>
             </section>
-
-            <!-- 策略分布 -->
             <section class="chart-section">
-                <div class="section-header">
-                    <h2>策略分布</h2>
-                </div>
-                <div class="chart-wrapper">
-                    <div id="pieChart" class="chart"></div>
-                </div>
+                <div class="section-header"><h2>策略分布</h2></div>
+                <div class="chart-wrapper"><div id="pieChart" class="chart"></div></div>
             </section>
-
-            <!-- 收益曲线 -->
             <section class="chart-section">
                 <div class="section-header">
                     <h2>收益曲线</h2>
@@ -61,122 +49,67 @@
                         <button class="time-btn" data-range="all">全部</button>
                     </div>
                 </div>
-                <div class="chart-wrapper">
-                    <div id="lineChart" class="chart"></div>
-                </div>
+                <div class="chart-wrapper"><div id="lineChart" class="chart"></div></div>
             </section>
-
-            <!-- 策略列表 -->
             <section class="strategies-section">
-                <div class="section-header">
-                    <h2>策略列表</h2>
-                </div>
-                <div class="strategies-grid" id="strategiesGrid">
-                    <div class="loading-spinner">加载中...</div>
-                </div>
+                <div class="section-header"><h2>策略列表</h2></div>
+                <div class="strategies-grid" id="strategiesGrid"><div class="loading-spinner">加载中...</div></div>
             </section>
         </main>
-
-        <!-- 底部导航 -->
         <nav class="bottom-nav">
-            <a href="index.html" class="nav-item active">
-                <span class="nav-icon">📊</span>
-                <span>首页</span>
-            </a>
-            <a href="strategies.html" class="nav-item">
-                <span class="nav-icon">⚙️</span>
-                <span>策略</span>
-            </a>
-            <a href="virtual.html" class="nav-item">
-                <span class="nav-icon">💰</span>
-                <span>交易</span>
-            </a>
-            <a href="signals.html" class="nav-item">
-                <span class="nav-icon">📡</span>
-                <span>信号</span>
-            </a>
-            <a href="history.html" class="nav-item">
-                <span class="nav-icon">📜</span>
-                <span>历史</span>
-            </a>
+            <a href="index.html" class="nav-item active"><span class="nav-icon">📊</span><span>首页</span></a>
+            <a href="strategies.html" class="nav-item"><span class="nav-icon">⚙️</span><span>策略</span></a>
+            <a href="virtual.html" class="nav-item"><span class="nav-icon">💰</span><span>交易</span></a>
+            <a href="signals.html" class="nav-item"><span class="nav-icon">📡</span><span>信号</span></a>
+            <a href="history.html" class="nav-item"><span class="nav-icon">📜</span><span>历史</span></a>
         </nav>
     </div>
-
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <script>
-        // ========== 配置 ==========
         const SUPABASE_URL = 'https://lpcrnbolifrzwrkxoli.supabase.co';
-        // 替换为你的 Supabase Anon Key (以 eyJ... 开头)
-        const SUPABASE_KEY = 'YOUR_ANON_KEY_HERE';
-
-        // ========== 全局变量 ==========
+        const SUPABASE_KEY = 'sb_publishable_8gEsCRNRc7py6BmypYuRIw_sNtKooug';
         let pieChart, lineChart;
-        let allBalances = [];
 
-        // ========== 工具函数 ==========
         function formatNumber(num, decimals = 2) {
             if (num === null || num === undefined || isNaN(num)) return '--';
-            return Number(num).toLocaleString('en-US', {
-                minimumFractionDigits: decimals,
-                maximumFractionDigits: decimals
-            });
+            return Number(num).toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
         }
-
         function formatPercent(num) {
             if (num === null || num === undefined || isNaN(num)) return '--';
-            const sign = num >= 0 ? '+' : '';
-            return sign + num.toFixed(2) + '%';
+            return (num >= 0 ? '+' : '') + num.toFixed(2) + '%';
         }
-
         function getPnLClass(value) {
             if (value === null || value === undefined || isNaN(value)) return '';
             return value >= 0 ? 'profit' : 'loss';
         }
 
-        // ========== API 请求 ==========
         async function fetchFromSupabase(table) {
             try {
                 const response = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=*`, {
-                    headers: {
-                        'apikey': SUPABASE_KEY,
-                        'Authorization': `Bearer ${SUPABASE_KEY}`,
-                        'Content-Type': 'application/json'
-                    }
+                    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' }
                 });
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 return await response.json();
-            } catch (error) {
-                console.error(`Error fetching ${table}:`, error);
-                return null;
-            }
+            } catch (error) { console.error(`Error:`, error); return null; }
         }
 
-        // ========== 数据加载 ==========
         async function loadDashboardData() {
             const statusEl = document.getElementById('dbStatus');
             const statusTextEl = document.getElementById('dbStatusText');
-
             try {
-                // 从 Supabase 获取余额数据
                 const balances = await fetchFromSupabase('virtual_balances');
-
                 if (balances && balances.length > 0) {
-                    allBalances = balances;
                     statusEl.className = 'status-dot online';
                     statusTextEl.textContent = '已连接';
-
                     updateOverview(balances);
                     updateStrategiesGrid(balances);
                     updatePieChart(balances);
-                    updateLineChart(balances);
+                    updateLineChart();
                 } else {
-                    // 如果数据库为空，使用示例数据
+                    statusTextEl.textContent = '示例数据';
                     useSampleData();
                 }
             } catch (error) {
-                console.error('Load error:', error);
                 statusEl.className = 'status-dot offline';
                 statusTextEl.textContent = '离线模式';
                 useSampleData();
@@ -184,7 +117,6 @@
         }
 
         function useSampleData() {
-            // 示例数据（当数据库为空时显示）
             const sampleBalances = [
                 { strategy_name: 'BB策略 30x全仓', balance: 1000, initial_balance: 1000, total_pnl: 150.5, total_pnl_percent: 15.05, win_rate: 65, trade_count: 45 },
                 { strategy_name: 'BB策略 30x逐仓', balance: 1200, initial_balance: 1000, total_pnl: 200.0, total_pnl_percent: 20.0, win_rate: 68, trade_count: 52 },
@@ -192,17 +124,12 @@
                 { strategy_name: 'RSI_7_30_75_L20', balance: 1100, initial_balance: 1000, total_pnl: 100.0, total_pnl_percent: 10.0, win_rate: 55, trade_count: 42 },
                 { strategy_name: 'RSI_7_35_75_L20', balance: 950, initial_balance: 1000, total_pnl: -50.0, total_pnl_percent: -5.0, win_rate: 50, trade_count: 35 }
             ];
-
-            allBalances = sampleBalances;
             updateOverview(sampleBalances);
             updateStrategiesGrid(sampleBalances);
             updatePieChart(sampleBalances);
-            updateLineChart(sampleBalances);
-
-            document.getElementById('dbStatusText').textContent = '示例数据';
+            updateLineChart();
         }
 
-        // ========== 更新页面 ==========
         function updateOverview(balances) {
             const total = balances.reduce((sum, b) => sum + (b.balance || 0), 0);
             const totalInitial = balances.reduce((sum, b) => sum + (b.initial_balance || 1000), 0);
@@ -211,169 +138,53 @@
             const totalWins = balances.reduce((sum, b) => sum + (b.win_rate || 0) * (b.trade_count || 0), 0);
             const totalTrades = balances.reduce((sum, b) => sum + (b.trade_count || 0), 0);
             const overallWinRate = totalTrades > 0 ? (totalWins / totalTrades) : 0;
-
             document.getElementById('totalBalance').textContent = formatNumber(total);
-            document.getElementById('totalBalance').className = `card-value ${getPnLClass(totalPnl)}`;
-
-            const pnlEl = document.getElementById('todayPnl');
-            pnlEl.textContent = formatNumber(totalPnl);
-            pnlEl.className = `card-value ${getPnLClass(totalPnl)}`;
-
+            document.getElementById('totalBalance').className = 'card-value ' + getPnLClass(totalPnl);
+            document.getElementById('todayPnl').textContent = formatNumber(totalPnl);
+            document.getElementById('todayPnl').className = 'card-value ' + getPnLClass(totalPnl);
             document.getElementById('balanceChange').textContent = formatPercent(totalPnlPercent);
-            document.getElementById('balanceChange').className = `card-change ${getPnLClass(totalPnl)}`;
-
+            document.getElementById('balanceChange').className = 'card-change ' + getPnLClass(totalPnl);
             document.getElementById('pnlPercent').textContent = formatPercent(totalPnlPercent);
-            document.getElementById('pnlPercent').className = `card-change ${getPnLClass(totalPnl)}`;
-
+            document.getElementById('pnlPercent').className = 'card-change ' + getPnLClass(totalPnl);
             document.getElementById('winRate').textContent = overallWinRate.toFixed(1) + '%';
-            document.getElementById('tradeCount').textContent = `${totalTrades} 笔交易`;
+            document.getElementById('tradeCount').textContent = totalTrades + ' 笔交易';
         }
 
         function updateStrategiesGrid(balances) {
-            const grid = document.getElementById('strategiesGrid');
-            grid.innerHTML = balances.map(b => `
-                <div class="strategy-card">
-                    <div class="strategy-header">
-                        <span class="strategy-name">${b.strategy_name || 'Unknown'}</span>
-                        <span class="strategy-badge ${getPnLClass(b.total_pnl)}">${formatPercent(b.total_pnl_percent)}</span>
-                    </div>
-                    <div class="strategy-stats">
-                        <div class="stat">
-                            <span class="stat-label">余额</span>
-                            <span class="stat-value">${formatNumber(b.balance)}</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-label">盈亏</span>
-                            <span class="stat-value ${getPnLClass(b.total_pnl)}">${formatNumber(b.total_pnl)}</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-label">胜率</span>
-                            <span class="stat-value">${(b.win_rate || 0).toFixed(1)}%</span>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
+            document.getElementById('strategiesGrid').innerHTML = balances.map(b => 
+                '<div class="strategy-card"><div class="strategy-header"><span class="strategy-name">' + (b.strategy_name || 'Unknown') + '</span><span class="strategy-badge ' + getPnLClass(b.total_pnl) + '">' + formatPercent(b.total_pnl_percent) + '</span></div><div class="strategy-stats"><div class="stat"><span class="stat-label">余额</span><span class="stat-value">' + formatNumber(b.balance) + '</span></div><div class="stat"><span class="stat-label">盈亏</span><span class="stat-value ' + getPnLClass(b.total_pnl) + '">' + formatNumber(b.total_pnl) + '</span></div><div class="stat"><span class="stat-label">胜率</span><span class="stat-value">' + (b.win_rate || 0).toFixed(1) + '%</span></div></div></div>'
+            ).join('');
         }
 
         function updatePieChart(balances) {
-            if (!pieChart) {
-                pieChart = echarts.init(document.getElementById('pieChart'));
-            }
-
-            const data = balances.map(b => ({
-                name: b.strategy_name || 'Unknown',
-                value: b.balance || 0
-            }));
-
+            if (!pieChart) pieChart = echarts.init(document.getElementById('pieChart'));
             pieChart.setOption({
-                tooltip: {
-                    trigger: 'item',
-                    formatter: '{b}: ${c} ({d}%)'
-                },
-                legend: {
-                    orient: 'vertical',
-                    right: 10,
-                    top: 'center',
-                    textStyle: { color: '#8892b0', fontSize: 12 }
-                },
-                series: [{
-                    type: 'pie',
-                    radius: ['40%', '70%'],
-                    center: ['35%', '50%'],
-                    avoidLabelOverlap: false,
-                    itemStyle: {
-                        borderRadius: 10,
-                        borderColor: '#0a192f',
-                        borderWidth: 2
-                    },
-                    label: { show: false },
-                    emphasis: {
-                        label: { show: true, fontSize: 14, fontWeight: 'bold' }
-                    },
-                    data: data
-                }],
-                color: ['#00d4aa', '#5c7cfa', '#ff6b6b', '#fcc419', '#845ef7', '#20c997', '#f06595', '#ff922b', '#36cfc9', '#7cb305']
-            });
-        }
-
-        function updateLineChart(balances) {
-            if (!lineChart) {
-                lineChart = echarts.init(document.getElementById('lineChart'));
-            }
-
-            // 生成模拟历史数据
-            const days = 30;
-            const dates = [];
-            const cumulative = [];
-            let value = 5000;
-
-            for (let i = days; i >= 0; i--) {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
-                dates.push(`${date.getMonth() + 1}/${date.getDate()}`);
-                value *= (1 + (Math.random() - 0.48) * 0.05);
-                cumulative.push(value);
-            }
-
-            lineChart.setOption({
-                tooltip: {
-                    trigger: 'axis',
-                    formatter: '{b}: ${c}'
-                },
-                grid: { left: 50, right: 20, top: 20, bottom: 30 },
-                xAxis: {
-                    type: 'category',
-                    data: dates,
-                    boundaryGap: false,
-                    axisLine: { lineStyle: { color: '#233554' } },
-                    axisLabel: { color: '#8892b0', fontSize: 10 }
-                },
-                yAxis: {
-                    type: 'value',
-                    axisLine: { show: false },
-                    splitLine: { lineStyle: { color: '#233554' } },
-                    axisLabel: { color: '#8892b0', formatter: '${value}' }
-                },
-                series: [{
-                    type: 'line',
-                    smooth: true,
-                    symbol: 'none',
-                    lineStyle: { width: 3, color: '#00d4aa' },
-                    areaStyle: {
-                        color: {
-                            type: 'linear',
-                            x: 0, y: 0, x2: 0, y2: 1,
-                            colorStops: [
-                                { offset: 0, color: 'rgba(0, 212, 170, 0.4)' },
-                                { offset: 1, color: 'rgba(0, 212, 170, 0)' }
-                            ]
-                        }
-                    },
-                    data: cumulative
+                tooltip: { trigger: 'item', formatter: '{b}: ${c} ({d}%)' },
+                legend: { orient: 'vertical', right: 10, top: 'center', textStyle: { color: '#8892b0', fontSize: 12 } },
+                series: [{ type: 'pie', radius: ['40%', '70%'], center: ['35%', '50%'], itemStyle: { borderRadius: 10, borderColor: '#0a192f', borderWidth: 2 }, label: { show: false }, emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
+                    data: balances.map(b => ({ name: b.strategy_name || 'Unknown', value: b.balance || 0 })),
+                    color: ['#00d4aa', '#5c7cfa', '#ff6b6b', '#fcc419', '#845ef7', '#20c997', '#f06595', '#ff922b', '#36cfc9', '#7cb305']
                 }]
             });
         }
 
-        // ========== 初始化 ==========
-        document.addEventListener('DOMContentLoaded', () => {
-            loadDashboardData();
-
-            // 响应式
-            window.addEventListener('resize', () => {
-                if (pieChart) pieChart.resize();
-                if (lineChart) lineChart.resize();
+        function updateLineChart() {
+            if (!lineChart) lineChart = echarts.init(document.getElementById('lineChart'));
+            const days = 30, dates = [], cumulative = [];
+            let value = 5000;
+            for (let i = days; i >= 0; i--) { const date = new Date(); date.setDate(date.getDate() - i); dates.push((date.getMonth() + 1) + '/' + date.getDate()); value *= (1 + (Math.random() - 0.48) * 0.05); cumulative.push(value); }
+            lineChart.setOption({
+                tooltip: { trigger: 'axis', formatter: '{b}: ${c}' },
+                grid: { left: 50, right: 20, top: 20, bottom: 30 },
+                xAxis: { type: 'category', data: dates, boundaryGap: false, axisLine: { lineStyle: { color: '#233554' } }, axisLabel: { color: '#8892b0', fontSize: 10 } },
+                yAxis: { type: 'value', axisLine: { show: false }, splitLine: { lineStyle: { color: '#233554' } }, axisLabel: { color: '#8892b0', formatter: '${value}' } },
+                series: [{ type: 'line', smooth: true, symbol: 'none', lineStyle: { width: 3, color: '#00d4aa' },
+                    areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(0, 212, 170, 0.4)' }, { offset: 1, color: 'rgba(0, 212, 170, 0)' }] } },
+                    data: cumulative }]
             });
+        }
 
-            // 时间筛选
-            document.querySelectorAll('.time-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    // 重新加载对应时间范围的数据
-                    loadDashboardData();
-                });
-            });
-        });
+        document.addEventListener('DOMContentLoaded', () => { loadDashboardData(); window.addEventListener('resize', () => { if (pieChart) pieChart.resize(); if (lineChart) lineChart.resize(); }); });
     </script>
 </body>
 </html>
