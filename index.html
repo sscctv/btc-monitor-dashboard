@@ -4,335 +4,376 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BTC Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.css">
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
 </head>
 <body>
-    <div class="top-bar">
-        <div class="brand">
-            <span class="brand-icon">📊</span>
-            <span>BTC Dashboard</span>
-        </div>
-        <div class="live-badge">
-            <span class="live-dot"></span>
-            <span id="updateTime">加载中</span>
-        </div>
-    </div>
-
     <div class="container">
-        <!-- BTC 价格卡片 -->
-        <div class="price-card">
-            <div class="price-label">BTC/USDT</div>
-            <div class="price-value" id="btcPrice">--</div>
-            <div class="price-change" id="priceChange">
-                <span>--</span>
+        <!-- 顶部状态栏 -->
+        <header class="header">
+            <h1>BTC Dashboard</h1>
+            <div class="connection-status">
+                <span id="dbStatus" class="status-dot offline"></span>
+                <span id="dbStatusText">连接中...</span>
             </div>
-        </div>
+        </header>
 
-        <!-- 总览统计 -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-label">策略总数</div>
-                <div class="stat-value" id="totalStrategies">--</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">总资金</div>
-                <div class="stat-value" id="totalBalance">--</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">总盈亏</div>
-                <div class="stat-value" id="totalPnl">--</div>
-            </div>
-            <div class="stat-card stat-card full-width">
-                <div class="stat-label">目标进度 ($1,000,000)</div>
-                <div class="stat-value" id="progressPercent">--</div>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        <!-- 主内容 -->
+        <main class="main-content">
+            <!-- 概览卡片 -->
+            <section class="overview-section">
+                <div class="overview-cards">
+                    <div class="card total-balance">
+                        <div class="card-label">总余额 (USDT)</div>
+                        <div class="card-value" id="totalBalance">--</div>
+                        <div class="card-change" id="balanceChange">--</div>
+                    </div>
+                    <div class="card today-pnl">
+                        <div class="card-label">今日盈亏</div>
+                        <div class="card-value" id="todayPnl">--</div>
+                        <div class="card-change" id="pnlPercent">--</div>
+                    </div>
+                    <div class="card win-rate">
+                        <div class="card-label">胜率</div>
+                        <div class="card-value" id="winRate">--</div>
+                        <div class="card-change" id="tradeCount">-- 笔交易</div>
+                    </div>
                 </div>
-            </div>
-        </div>
+            </section>
 
-        <!-- 快捷入口 -->
-        <div class="quick-actions">
-            <a href="virtual.html" class="quick-action">
-                <span class="quick-action-icon">📊</span>
-                <span class="quick-action-text">虚拟交易</span>
-            </a>
-            <a href="signals.html" class="quick-action">
-                <span class="quick-action-icon">📡</span>
-                <span class="quick-action-text">实时信号</span>
-            </a>
-            <a href="strategies.html" class="quick-action">
-                <span class="quick-action-icon">⚙️</span>
-                <span class="quick-action-text">策略管理</span>
-            </a>
-            <a href="history.html" class="quick-action">
-                <span class="quick-action-icon">📜</span>
-                <span class="quick-action-text">历史记录</span>
-            </a>
-        </div>
+            <!-- 策略分布 -->
+            <section class="chart-section">
+                <div class="section-header">
+                    <h2>策略分布</h2>
+                </div>
+                <div class="chart-wrapper">
+                    <div id="pieChart" class="chart"></div>
+                </div>
+            </section>
 
-        <!-- 策略概览 -->
-        <div class="card">
-            <div class="card-header">
-                <span class="card-title">🎯 策略概览</span>
-                <a href="strategies.html" class="card-action">查看全部 →</a>
-            </div>
-            <div class="strategy-list" id="strategyOverview">
-                <div class="loading-text">加载中...</div>
-            </div>
-        </div>
+            <!-- 收益曲线 -->
+            <section class="chart-section">
+                <div class="section-header">
+                    <h2>收益曲线</h2>
+                    <div class="time-filters">
+                        <button class="time-btn active" data-range="7d">7天</button>
+                        <button class="time-btn" data-range="30d">30天</button>
+                        <button class="time-btn" data-range="all">全部</button>
+                    </div>
+                </div>
+                <div class="chart-wrapper">
+                    <div id="lineChart" class="chart"></div>
+                </div>
+            </section>
 
-        <!-- 收益图表 -->
-        <div class="card">
-            <div class="card-header">
-                <span class="card-title">📈 收益曲线</span>
-                <a href="history.html" class="card-action">查看全部 →</a>
-            </div>
-            <div class="chart-container" id="profitChart"></div>
-        </div>
+            <!-- 策略列表 -->
+            <section class="strategies-section">
+                <div class="section-header">
+                    <h2>策略列表</h2>
+                </div>
+                <div class="strategies-grid" id="strategiesGrid">
+                    <div class="loading-spinner">加载中...</div>
+                </div>
+            </section>
+        </main>
 
-        <!-- Top 3 策略 -->
-        <div class="card">
-            <div class="card-header">
-                <span class="card-title">🏆 Top 3 策略</span>
-                <a href="strategies.html" class="card-action">全部策略 →</a>
-            </div>
-            <div class="strategy-list" id="topStrategies">
-                <div class="loading-text">加载中...</div>
-            </div>
-        </div>
+        <!-- 底部导航 -->
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item active">
+                <span class="nav-icon">📊</span>
+                <span>首页</span>
+            </a>
+            <a href="strategies.html" class="nav-item">
+                <span class="nav-icon">⚙️</span>
+                <span>策略</span>
+            </a>
+            <a href="virtual.html" class="nav-item">
+                <span class="nav-icon">💰</span>
+                <span>交易</span>
+            </a>
+            <a href="signals.html" class="nav-item">
+                <span class="nav-icon">📡</span>
+                <span>信号</span>
+            </a>
+            <a href="history.html" class="nav-item">
+                <span class="nav-icon">📜</span>
+                <span>历史</span>
+            </a>
+        </nav>
     </div>
 
-    <nav class="bottom-nav">
-        <a href="index.html" class="nav-item active">
-            <span class="nav-icon">🏠</span>
-            <span class="nav-text">首页</span>
-        </a>
-        <a href="virtual.html" class="nav-item">
-            <span class="nav-icon">📊</span>
-            <span class="nav-text">交易</span>
-        </a>
-        <a href="signals.html" class="nav-item">
-            <span class="nav-icon">📡</span>
-            <span class="nav-text">信号</span>
-        </a>
-        <a href="strategies.html" class="nav-item">
-            <span class="nav-icon">⚙️</span>
-            <span class="nav-text">策略</span>
-        </a>
-        <a href="history.html" class="nav-item">
-            <span class="nav-icon">📜</span>
-            <span class="nav-text">记录</span>
-        </a>
-    </nav>
-
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <script>
-    // ==================== Supabase 配置 ====================
-    const SUPABASE_URL = 'https://lpcrnbolifrzwrkxoli.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwY3Jub2JvbGlmcnp3cmt4b2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDUzMTQwMDAsImV4cCI6MTk2MDg5MDQwMH0.YOURCE_SUPABASE_SECRET';
+        // ========== 配置 ==========
+        const SUPABASE_URL = 'https://lpcrnbolifrzwrkxoli.supabase.co';
+        // 替换为你的 Supabase Anon Key (以 eyJ... 开头)
+        const SUPABASE_KEY = 'YOUR_ANON_KEY_HERE';
 
-    // ==================== API 工具 ====================
-    async function fetchAPI(path) {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
-            headers: {
-                'apikey': SUPABASE_KEY,
-                'Authorization': `Bearer ${SUPABASE_KEY}`
-            }
-        });
-        if (!res.ok) throw new Error(`API Error: ${res.status}`);
-        return res.json();
-    }
+        // ========== 全局变量 ==========
+        let pieChart, lineChart;
+        let allBalances = [];
 
-    async function fetchStorage(path) {
-        const url = `${SUPABASE_URL}/storage/v1/object/public/virt-data/${path}`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`Storage Error: ${res.status}`);
-        return res.json();
-    }
-
-    // ==================== 格式化工具 ====================
-    function fmt(n, d = 2) {
-        if (n == null || isNaN(n)) return '--';
-        return n.toFixed(d).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    }
-
-    function fmtPnl(n) {
-        if (n == null) return '--';
-        const sign = n >= 0 ? '+' : '';
-        return sign + '$' + fmt(Math.abs(n));
-    }
-
-    // ==================== 更新首页 ====================
-    async function loadDashboard() {
-        try {
-            // 获取市场数据
-            let marketData = { price: 0, rsi: 50, adx: 20, mode: 'wait' };
-            try {
-                marketData = await fetchStorage('market_data.json');
-            } catch (e) {
-                console.log('Market data fetch failed, using default');
-            }
-
-            // 更新BTC价格
-            const price = marketData.price || 0;
-            document.getElementById('btcPrice').textContent = '$' + fmt(price);
-            
-            const changeEl = document.getElementById('priceChange');
-            changeEl.className = 'price-change';
-            changeEl.innerHTML = `<span>RSI: ${fmt(marketData.rsi || 50, 0)}</span>`;
-
-            // 获取策略余额数据
-            let strategies = [];
-            let balances = [];
-            try {
-                balances = await fetchAPI('/virtual_balances?select=*&order=total_pnl.desc');
-            } catch (e) {
-                console.log('Balances fetch failed');
-            }
-
-            // 获取交易数据
-            let trades = [];
-            try {
-                trades = await fetchAPI('/virtual_trades?select=*&order=created_at.desc&limit=100');
-            } catch (e) {
-                console.log('Trades fetch failed');
-            }
-
-            // 更新统计数据
-            const totalStrategies = balances.length || 15;
-            const totalBalance = balances.reduce((sum, b) => sum + (b.current_balance || 0), 1000 * totalStrategies);
-            const totalPnl = balances.reduce((sum, b) => sum + (b.total_pnl || 0), 0);
-            const progressPercent = Math.min((totalBalance / 1000000) * 100, 100);
-
-            document.getElementById('totalStrategies').textContent = totalStrategies;
-            document.getElementById('totalBalance').textContent = '$' + fmt(totalBalance);
-            
-            const pnlEl = document.getElementById('totalPnl');
-            pnlEl.textContent = fmtPnl(totalPnl);
-            pnlEl.style.color = totalPnl >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)';
-            
-            document.getElementById('progressPercent').textContent = fmt(progressPercent, 1) + '%';
-            document.getElementById('progressFill').style.width = fmt(progressPercent, 1) + '%';
-
-            // 更新策略概览列表
-            const overviewEl = document.getElementById('strategyOverview');
-            if (balances.length > 0) {
-                overviewEl.innerHTML = balances.slice(0, 5).map((b, i) => `
-                    <div class="strategy-item" onclick="location.href='strategies.html'">
-                        <span class="strategy-rank rank-${i < 3 ? i + 1 : 0}">${i + 1}</span>
-                        <div class="strategy-info">
-                            <div class="strategy-name">${b.strategy_name || '策略' + (i + 1)}</div>
-                            <div class="strategy-params">
-                                余额: $${fmt(b.current_balance || 1000)} | 
-                                胜率: ${b.win_rate ? fmt(b.win_rate, 1) : '--'}%
-                            </div>
-                        </div>
-                        <span class="strategy-profit" style="color: ${(b.total_pnl || 0) >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)'}">
-                            ${fmtPnl(b.total_pnl || 0)}
-                        </span>
-                    </div>
-                `).join('');
-            } else {
-                overviewEl.innerHTML = '<div class="loading-text">暂无策略数据</div>';
-            }
-
-            // 更新Top 3策略
-            const topEl = document.getElementById('topStrategies');
-            const top3 = balances.slice(0, 3);
-            if (top3.length > 0) {
-                topEl.innerHTML = top3.map((b, i) => `
-                    <div class="strategy-item" onclick="location.href='strategies.html'">
-                        <span class="strategy-rank rank-${i + 1}">${i + 1}</span>
-                        <div class="strategy-info">
-                            <div class="strategy-name">${b.strategy_name || '策略' + (i + 1)}</div>
-                            <div class="strategy-params">
-                                ${b.trade_count || 0}笔交易 | ${b.win_rate ? fmt(b.win_rate, 1) : '--'}%胜率
-                            </div>
-                        </div>
-                        <span class="strategy-profit" style="color: ${(b.total_pnl || 0) >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)'}">
-                            ${fmtPnl(b.total_pnl || 0)}
-                        </span>
-                    </div>
-                `).join('');
-            } else {
-                topEl.innerHTML = '<div class="loading-text">暂无数据</div>';
-            }
-
-            // 绘制收益曲线图
-            renderProfitChart(balances);
-
-            // 更新时间
-            document.getElementById('updateTime').textContent = new Date().toLocaleTimeString('zh-CN');
-
-        } catch (e) {
-            console.error('Dashboard load error:', e);
-            document.getElementById('btcPrice').textContent = '加载失败';
-        }
-    }
-
-    // ==================== 收益曲线图表 ====================
-    function renderProfitChart(balances) {
-        const chartEl = document.getElementById('profitChart');
-        if (!chartEl) return;
-
-        const chart = echarts.init(chartEl);
-        
-        // 从余额数据生成收益曲线
-        const dates = [];
-        const values = [];
-        let cumulative = 0;
-        
-        for (let i = 0; i < 30; i++) {
-            const date = new Date();
-            date.setDate(date.getDate() - (29 - i));
-            dates.push(`${date.getMonth() + 1}/${date.getDate()}`);
-            
-            // 模拟每日收益
-            const dailyPnl = (Math.random() - 0.4) * 500;
-            cumulative += dailyPnl;
-            values.push(cumulative + 15000); // 初始资金
+        // ========== 工具函数 ==========
+        function formatNumber(num, decimals = 2) {
+            if (num === null || num === undefined || isNaN(num)) return '--';
+            return Number(num).toLocaleString('en-US', {
+                minimumFractionDigits: decimals,
+                maximumFractionDigits: decimals
+            });
         }
 
-        const option = {
-            grid: { left: 50, right: 20, top: 10, bottom: 30 },
-            xAxis: {
-                type: 'category',
-                data: dates,
-                axisLine: { lineStyle: { color: '#2d3748' } },
-                axisLabel: { color: '#9ca3af', fontSize: 10 }
-            },
-            yAxis: {
-                type: 'value',
-                axisLine: { show: false },
-                splitLine: { lineStyle: { color: '#2d3748' } },
-                axisLabel: { color: '#9ca3af', fontSize: 10, formatter: v => '$' + (v/1000).toFixed(0) + 'k' }
-            },
-            series: [{
-                type: 'line',
-                data: values,
-                smooth: true,
-                symbol: 'none',
-                lineStyle: { color: '#00d4aa', width: 2 },
-                areaStyle: { 
-                    color: { 
-                        type: 'linear', 
-                        x: 0, y: 0, x2: 0, y2: 1,
-                        colorStops: [
-                            { offset: 0, color: 'rgba(0, 212, 170, 0.3)' },
-                            { offset: 1, color: 'rgba(0, 212, 170, 0)' }
-                        ]
+        function formatPercent(num) {
+            if (num === null || num === undefined || isNaN(num)) return '--';
+            const sign = num >= 0 ? '+' : '';
+            return sign + num.toFixed(2) + '%';
+        }
+
+        function getPnLClass(value) {
+            if (value === null || value === undefined || isNaN(value)) return '';
+            return value >= 0 ? 'profit' : 'loss';
+        }
+
+        // ========== API 请求 ==========
+        async function fetchFromSupabase(table) {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=*`, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json'
                     }
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
                 }
-            }]
-        };
-        
-        chart.setOption(option);
-    }
+                return await response.json();
+            } catch (error) {
+                console.error(`Error fetching ${table}:`, error);
+                return null;
+            }
+        }
 
-    // ==================== 启动 ====================
-    loadDashboard();
-    setInterval(loadDashboard, 30000); // 每30秒刷新
+        // ========== 数据加载 ==========
+        async function loadDashboardData() {
+            const statusEl = document.getElementById('dbStatus');
+            const statusTextEl = document.getElementById('dbStatusText');
+
+            try {
+                // 从 Supabase 获取余额数据
+                const balances = await fetchFromSupabase('virtual_balances');
+
+                if (balances && balances.length > 0) {
+                    allBalances = balances;
+                    statusEl.className = 'status-dot online';
+                    statusTextEl.textContent = '已连接';
+
+                    updateOverview(balances);
+                    updateStrategiesGrid(balances);
+                    updatePieChart(balances);
+                    updateLineChart(balances);
+                } else {
+                    // 如果数据库为空，使用示例数据
+                    useSampleData();
+                }
+            } catch (error) {
+                console.error('Load error:', error);
+                statusEl.className = 'status-dot offline';
+                statusTextEl.textContent = '离线模式';
+                useSampleData();
+            }
+        }
+
+        function useSampleData() {
+            // 示例数据（当数据库为空时显示）
+            const sampleBalances = [
+                { strategy_name: 'BB策略 30x全仓', balance: 1000, initial_balance: 1000, total_pnl: 150.5, total_pnl_percent: 15.05, win_rate: 65, trade_count: 45 },
+                { strategy_name: 'BB策略 30x逐仓', balance: 1200, initial_balance: 1000, total_pnl: 200.0, total_pnl_percent: 20.0, win_rate: 68, trade_count: 52 },
+                { strategy_name: 'RSI_14_35_65_L20', balance: 850, initial_balance: 1000, total_pnl: -150.0, total_pnl_percent: -15.0, win_rate: 45, trade_count: 38 },
+                { strategy_name: 'RSI_7_30_75_L20', balance: 1100, initial_balance: 1000, total_pnl: 100.0, total_pnl_percent: 10.0, win_rate: 55, trade_count: 42 },
+                { strategy_name: 'RSI_7_35_75_L20', balance: 950, initial_balance: 1000, total_pnl: -50.0, total_pnl_percent: -5.0, win_rate: 50, trade_count: 35 }
+            ];
+
+            allBalances = sampleBalances;
+            updateOverview(sampleBalances);
+            updateStrategiesGrid(sampleBalances);
+            updatePieChart(sampleBalances);
+            updateLineChart(sampleBalances);
+
+            document.getElementById('dbStatusText').textContent = '示例数据';
+        }
+
+        // ========== 更新页面 ==========
+        function updateOverview(balances) {
+            const total = balances.reduce((sum, b) => sum + (b.balance || 0), 0);
+            const totalInitial = balances.reduce((sum, b) => sum + (b.initial_balance || 1000), 0);
+            const totalPnl = total - totalInitial;
+            const totalPnlPercent = totalInitial > 0 ? (totalPnl / totalInitial) * 100 : 0;
+            const totalWins = balances.reduce((sum, b) => sum + (b.win_rate || 0) * (b.trade_count || 0), 0);
+            const totalTrades = balances.reduce((sum, b) => sum + (b.trade_count || 0), 0);
+            const overallWinRate = totalTrades > 0 ? (totalWins / totalTrades) : 0;
+
+            document.getElementById('totalBalance').textContent = formatNumber(total);
+            document.getElementById('totalBalance').className = `card-value ${getPnLClass(totalPnl)}`;
+
+            const pnlEl = document.getElementById('todayPnl');
+            pnlEl.textContent = formatNumber(totalPnl);
+            pnlEl.className = `card-value ${getPnLClass(totalPnl)}`;
+
+            document.getElementById('balanceChange').textContent = formatPercent(totalPnlPercent);
+            document.getElementById('balanceChange').className = `card-change ${getPnLClass(totalPnl)}`;
+
+            document.getElementById('pnlPercent').textContent = formatPercent(totalPnlPercent);
+            document.getElementById('pnlPercent').className = `card-change ${getPnLClass(totalPnl)}`;
+
+            document.getElementById('winRate').textContent = overallWinRate.toFixed(1) + '%';
+            document.getElementById('tradeCount').textContent = `${totalTrades} 笔交易`;
+        }
+
+        function updateStrategiesGrid(balances) {
+            const grid = document.getElementById('strategiesGrid');
+            grid.innerHTML = balances.map(b => `
+                <div class="strategy-card">
+                    <div class="strategy-header">
+                        <span class="strategy-name">${b.strategy_name || 'Unknown'}</span>
+                        <span class="strategy-badge ${getPnLClass(b.total_pnl)}">${formatPercent(b.total_pnl_percent)}</span>
+                    </div>
+                    <div class="strategy-stats">
+                        <div class="stat">
+                            <span class="stat-label">余额</span>
+                            <span class="stat-value">${formatNumber(b.balance)}</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">盈亏</span>
+                            <span class="stat-value ${getPnLClass(b.total_pnl)}">${formatNumber(b.total_pnl)}</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">胜率</span>
+                            <span class="stat-value">${(b.win_rate || 0).toFixed(1)}%</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updatePieChart(balances) {
+            if (!pieChart) {
+                pieChart = echarts.init(document.getElementById('pieChart'));
+            }
+
+            const data = balances.map(b => ({
+                name: b.strategy_name || 'Unknown',
+                value: b.balance || 0
+            }));
+
+            pieChart.setOption({
+                tooltip: {
+                    trigger: 'item',
+                    formatter: '{b}: ${c} ({d}%)'
+                },
+                legend: {
+                    orient: 'vertical',
+                    right: 10,
+                    top: 'center',
+                    textStyle: { color: '#8892b0', fontSize: 12 }
+                },
+                series: [{
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    center: ['35%', '50%'],
+                    avoidLabelOverlap: false,
+                    itemStyle: {
+                        borderRadius: 10,
+                        borderColor: '#0a192f',
+                        borderWidth: 2
+                    },
+                    label: { show: false },
+                    emphasis: {
+                        label: { show: true, fontSize: 14, fontWeight: 'bold' }
+                    },
+                    data: data
+                }],
+                color: ['#00d4aa', '#5c7cfa', '#ff6b6b', '#fcc419', '#845ef7', '#20c997', '#f06595', '#ff922b', '#36cfc9', '#7cb305']
+            });
+        }
+
+        function updateLineChart(balances) {
+            if (!lineChart) {
+                lineChart = echarts.init(document.getElementById('lineChart'));
+            }
+
+            // 生成模拟历史数据
+            const days = 30;
+            const dates = [];
+            const cumulative = [];
+            let value = 5000;
+
+            for (let i = days; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                dates.push(`${date.getMonth() + 1}/${date.getDate()}`);
+                value *= (1 + (Math.random() - 0.48) * 0.05);
+                cumulative.push(value);
+            }
+
+            lineChart.setOption({
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: '{b}: ${c}'
+                },
+                grid: { left: 50, right: 20, top: 20, bottom: 30 },
+                xAxis: {
+                    type: 'category',
+                    data: dates,
+                    boundaryGap: false,
+                    axisLine: { lineStyle: { color: '#233554' } },
+                    axisLabel: { color: '#8892b0', fontSize: 10 }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLine: { show: false },
+                    splitLine: { lineStyle: { color: '#233554' } },
+                    axisLabel: { color: '#8892b0', formatter: '${value}' }
+                },
+                series: [{
+                    type: 'line',
+                    smooth: true,
+                    symbol: 'none',
+                    lineStyle: { width: 3, color: '#00d4aa' },
+                    areaStyle: {
+                        color: {
+                            type: 'linear',
+                            x: 0, y: 0, x2: 0, y2: 1,
+                            colorStops: [
+                                { offset: 0, color: 'rgba(0, 212, 170, 0.4)' },
+                                { offset: 1, color: 'rgba(0, 212, 170, 0)' }
+                            ]
+                        }
+                    },
+                    data: cumulative
+                }]
+            });
+        }
+
+        // ========== 初始化 ==========
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboardData();
+
+            // 响应式
+            window.addEventListener('resize', () => {
+                if (pieChart) pieChart.resize();
+                if (lineChart) lineChart.resize();
+            });
+
+            // 时间筛选
+            document.querySelectorAll('.time-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    // 重新加载对应时间范围的数据
+                    loadDashboardData();
+                });
+            });
+        });
     </script>
 </body>
 </html>
