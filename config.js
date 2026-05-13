@@ -2,9 +2,9 @@
 const CONFIG = {
     // Supabase 配置
     SUPABASE_URL: 'https://lpcrnbolifrzwrkxoli.supabase.co',
-    SUPABASE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwY3JuYm9saWZyd3JreG9saSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQ1MTkyMDAwLCJleHAiOjE5NjA3NjgwMDB9.placeholder',
+    SUPABASE_KEY: 'sb_publishable_8gEsCRNRc7py6BmypYuRIw_sNtKooug',
 
-    // PostgreSQL 本地配置
+    // PostgreSQL 配置
     DB_CONFIG: {
         host: 'db.lpcrnbolifrzwrkxoli.supabase.co',
         port: 5432,
@@ -16,7 +16,6 @@ const CONFIG = {
 
 // 策略配置
 const STRATEGIES_CONFIG = {
-    // 原项目的5个策略 (BB策略)
     original: [
         { name: 'BB策略 30x全仓', sig: 'bb_squeeze', tp: 'triple', lev: 30, type: '全仓' },
         { name: 'BB策略 30x逐仓', sig: 'bb_squeeze', tp: 'partial', lev: 30, type: '逐仓' },
@@ -24,7 +23,6 @@ const STRATEGIES_CONFIG = {
         { name: 'BB策略 25x逐仓', sig: 'bb_squeeze', tp: 'partial', lev: 25, type: '逐仓' },
         { name: 'BB策略 20x', sig: 'bb_squeeze', tp: 'partial', lev: 20, type: '逐仓' }
     ],
-    // 新增的Top 10策略 (RSI策略)
     new: [
         { name: 'RSI_14_35_65_L20', rsi_period: 14, oversold: 35, overbought: 65, lev: 20 },
         { name: 'RSI_7_30_75_L20', rsi_period: 7, oversold: 30, overbought: 75, lev: 20 },
@@ -39,7 +37,6 @@ const STRATEGIES_CONFIG = {
     ]
 };
 
-// 导出供其他模块使用
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { CONFIG, STRATEGIES_CONFIG };
 }
