@@ -1,6 +1,6 @@
 // 数据库配置
 const CONFIG = {
-    // Supabase 配置
+    // Supabase 配置 (云端)
     SUPABASE_URL: 'https://lpcrnobolifrzwrkxoli.supabase.co',
     SUPABASE_KEY: 'sb_publishable_8gEsCRNRc7py6BmypYuRIw_sNtKooug',
 
