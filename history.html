@@ -24,11 +24,11 @@
                         <div class="card-value" id="totalTrades">--</div>
                     </div>
                     <div class="card">
-                        <div class="card-label">盈利交易</div>
+                        <div class="card-label">盈利</div>
                         <div class="card-value profit" id="winningTrades">--</div>
                     </div>
                     <div class="card">
-                        <div class="card-label">亏损交易</div>
+                        <div class="card-label">亏损</div>
                         <div class="card-value loss" id="losingTrades">--</div>
                     </div>
                 </div>
@@ -56,18 +56,18 @@
     <script src="api.js"></script>
     <script>
         async function loadHistory() {
-            const statusEl = document.getElementById('dbStatus');
-            const statusTextEl = document.getElementById('dbStatusText');
+            var statusEl = document.getElementById('dbStatus');
+            var statusTextEl = document.getElementById('dbStatusText');
 
             try {
-                const trades = await fetchData('virtual_trades');
+                var trades = await fetchAllTrades();
 
                 statusEl.className = 'status-dot online';
                 statusTextEl.textContent = API_CONFIG.isLocal ? '本地' : '云端';
 
-                const list = trades || [];
-                const wins = list.filter(t => t.pnl > 0).length;
-                const losses = list.filter(t => t.pnl < 0).length;
+                var list = trades || [];
+                var wins = list.filter(function(t) { return t.realized_pnl > 0; }).length;
+                var losses = list.filter(function(t) { return t.realized_pnl < 0; }).length;
 
                 document.getElementById('totalTrades').textContent = list.length;
                 document.getElementById('winningTrades').textContent = wins;
@@ -75,6 +75,7 @@
 
                 renderHistory(list);
             } catch (error) {
+                console.error('Load error:', error);
                 statusEl.className = 'status-dot offline';
                 statusTextEl.textContent = '离线';
                 renderHistory([]);
@@ -82,41 +83,40 @@
         }
 
         function renderHistory(trades) {
-            const grid = document.getElementById('historyGrid');
+            var grid = document.getElementById('historyGrid');
 
             if (trades.length === 0) {
                 grid.innerHTML = '<div class="loading-spinner">暂无历史记录</div>';
                 return;
             }
 
-            grid.innerHTML = trades.slice(0, 50).map(t => {
-                const date = t.created_at ? t.created_at.replace('T', ' ').substring(0, 16) : '--';
-                const actionClass = t.action === 'LONG' || t.action === 'BUY' ? 'profit' : (t.action === 'SHORT' || t.action === 'SELL' ? 'loss' : '');
+            grid.innerHTML = trades.slice(0, 50).map(function(t) {
+                var date = t.opened_at ? t.opened_at.replace('T', ' ').substring(0, 16) : '--';
+                var closeDate = t.closed_at ? t.closed_at.replace('T', ' ').substring(0, 16) : '--';
+                var sideClass = (t.side === 'long' || t.side === 'buy' || t.side === 'BUY') ? 'profit' : ((t.side === 'short' || t.side === 'sell' || t.side === 'SELL') ? 'loss' : '');
+                var pnlClass = getPnLClass(t.realized_pnl);
 
-                return `
-                    <div class="strategy-card">
-                        <div class="strategy-header">
-                            <span class="strategy-name">${t.strategy_name || 'Unknown'}</span>
-                            <span class="strategy-badge ${getPnLClass(t.pnl)}">
-                                ${t.pnl >= 0 ? '+' : ''}${formatNumber(t.pnl)}
-                            </span>
-                        </div>
-                        <div class="strategy-stats">
-                            <div class="stat">
-                                <span class="stat-label">类型</span>
-                                <span class="stat-value ${actionClass}">${t.action || '--'}</span>
-                            </div>
-                            <div class="stat">
-                                <span class="stat-label">数量</span>
-                                <span class="stat-value">${formatNumber(t.quantity, 4)}</span>
-                            </div>
-                            <div class="stat">
-                                <span class="stat-label">时间</span>
-                                <span class="stat-value" style="font-size: 12px;">${date}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                return '<div class="strategy-card">' +
+                    '<div class="strategy-header">' +
+                    '<span class="strategy-name">' + (t.strategy || t.account_id || 'Unknown') + '</span>' +
+                    '<span class="strategy-badge ' + pnlClass + '">' +
+                    (t.realized_pnl >= 0 ? '+' : '') + formatNumber(t.realized_pnl) +
+                    '</span>' +
+                    '</div>' +
+                    '<div class="strategy-stats">' +
+                    '<div class="stat"><span class="stat-label">方向</span><span class="stat-value ' + sideClass + '">' + (t.side || '--').toUpperCase() + '</span></div>' +
+                    '<div class="stat"><span class="stat-label">杠杆</span><span class="stat-value">' + (t.leverage || 0) + 'x</span></div>' +
+                    '<div class="stat"><span class="stat-label">开仓价</span><span class="stat-value">' + formatNumber(t.entry_price) + '</span></div>' +
+                    '</div>' +
+                    '<div class="strategy-stats">' +
+                    '<div class="stat"><span class="stat-label">数量</span><span class="stat-value">' + formatNumber(t.size, 4) + '</span></div>' +
+                    '<div class="stat"><span class="stat-label">平仓价</span><span class="stat-value">' + formatNumber(t.close_price) + '</span></div>' +
+                    '<div class="stat"><span class="stat-label">状态</span><span class="stat-value">' + (t.status || '--') + '</span></div>' +
+                    '</div>' +
+                    '<div style="margin-top: 12px; text-align: center;">' +
+                    '<span style="font-size: 11px; color: var(--text-secondary);">' + date + ' 开仓</span>' +
+                    '</div>' +
+                    '</div>';
             }).join('');
         }
 
