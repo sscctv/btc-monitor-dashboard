@@ -214,11 +214,25 @@
 
         window.addEventListener('resize', () => profitChart.resize());
 
-        // 模拟价格更新
-        setInterval(() => {
-            const price = 105000 + Math.random() * 800 - 400;
-            document.getElementById('btcPrice').textContent = '$' + Math.round(price).toLocaleString();
-        }, 5000);
+        // 从Supabase获取真实BTC价格
+        async function updateRealPrice() {
+            try {
+                const res = await fetch('https://lpcrnobolifrzwrkxoli.supabase.co/storage/v1/object/public/virt-data/virt_positions.json?t=' + Date.now());
+                const data = await res.json();
+                const price = data.market?.price;
+                if (price) {
+                    document.getElementById('btcPrice').textContent = '$' + Math.round(price).toLocaleString();
+                }
+            } catch(e) {
+                console.log('Price fetch error:', e);
+            }
+        }
+
+        updateRealPrice();
+        setInterval(updateRealPrice, 10000);
+
+        // 初始化
+        renderStrategyOverview();
 
         // 初始化
         renderStrategyOverview();
