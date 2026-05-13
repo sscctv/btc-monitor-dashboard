@@ -162,10 +162,18 @@ function enrichTradeWithPnL(trade) {
     return trade;
 }
 
-// 示例数据
+// 示例数据 - 与api.py保持一致
 const SAMPLE_BALANCES = [
-    { strategy_name: '实盘账户', balance: 10500, initial_balance: 10000, total_pnl: 500, total_pnl_percent: 5.0, win_rate: 60, trade_count: 20 },
-    { strategy_name: '测试账户', balance: 9500, initial_balance: 10000, total_pnl: -500, total_pnl_percent: -5.0, win_rate: 45, trade_count: 15 }
+    { strategy_name: 'BB策略 30x全仓', balance: 4523, initial_balance: 1000, total_pnl: 3523, total_pnl_percent: 352.3, win_rate: 65.2, trade_count: 89 },
+    { strategy_name: 'BB策略 30x逐仓', balance: 4156, initial_balance: 1000, total_pnl: 3156, total_pnl_percent: 315.6, win_rate: 63.4, trade_count: 82 },
+    { strategy_name: 'BB策略 25x全仓', balance: 3892, initial_balance: 1000, total_pnl: 2892, total_pnl_percent: 289.2, win_rate: 62.8, trade_count: 78 },
+    { strategy_name: 'BB策略 25x逐仓', balance: 3456, initial_balance: 1000, total_pnl: 2456, total_pnl_percent: 245.6, win_rate: 62.5, trade_count: 72 },
+    { strategy_name: 'BB策略 20x', balance: 3124, initial_balance: 1000, total_pnl: 2124, total_pnl_percent: 212.4, win_rate: 61.8, trade_count: 68 },
+    { strategy_name: 'RSI_14_35_65_L20', balance: 72398, initial_balance: 1000, total_pnl: 71398, total_pnl_percent: 7139.8, win_rate: 66.8, trade_count: 420 },
+    { strategy_name: 'RSI_7_30_75_L20', balance: 68920, initial_balance: 1000, total_pnl: 67920, total_pnl_percent: 6792.0, win_rate: 65.2, trade_count: 380 },
+    { strategy_name: 'RSI_7_35_75_L20', balance: 67410, initial_balance: 1000, total_pnl: 66410, total_pnl_percent: 6641.0, win_rate: 64.5, trade_count: 350 },
+    { strategy_name: 'RSI_7_20_75_L20', balance: 65340, initial_balance: 1000, total_pnl: 64340, total_pnl_percent: 6434.0, win_rate: 63.8, trade_count: 320 },
+    { strategy_name: 'RSI_14_35_70_L20', balance: 64230, initial_balance: 1000, total_pnl: 63230, total_pnl_percent: 6323.0, win_rate: 63.5, trade_count: 310 }
 ];
 
 // 导出
