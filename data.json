@@ -1,0 +1,22 @@
+{
+  "btc": {
+    "price": 104500,
+    "change_24h": 2.35,
+    "volume": 28500000000,
+    "high": 105200,
+    "low": 102800
+  },
+  "signals": [
+    {"name": "BB策略 30x全仓", "signal": "buy", "rsi": 42, "strength": 72, "bb_width": 0.025, "action": "买入"},
+    {"name": "BB策略 30x逐仓", "signal": "neutral", "rsi": 48, "strength": 55, "bb_width": 0.032, "action": "观望"},
+    {"name": "BB策略 25x全仓", "signal": "sell", "rsi": 58, "strength": 45, "bb_width": 0.028, "action": "卖出"},
+    {"name": "BB策略 25x逐仓", "signal": "neutral", "rsi": 50, "strength": 52, "bb_width": 0.030, "action": "观望"},
+    {"name": "BB策略 20x", "signal": "buy", "rsi": 38, "strength": 68, "bb_width": 0.022, "action": "买入"},
+    {"name": "RSI_14_35_65_L20", "signal": "buy", "rsi": 32, "strength": 75, "action": "买入"},
+    {"name": "RSI_7_30_75_L20", "signal": "neutral", "rsi": 45, "strength": 58, "action": "观望"},
+    {"name": "RSI_7_35_75_L20", "signal": "sell", "rsi": 62, "strength": 42, "action": "卖出"},
+    {"name": "RSI_7_20_75_L20", "signal": "buy", "rsi": 28, "strength": 82, "action": "买入"},
+    {"name": "RSI_14_35_70_L20", "signal": "neutral", "rsi": 50, "strength": 50, "action": "观望"}
+  ],
+  "updated": "2026-05-14T00:00:00Z"
+}
