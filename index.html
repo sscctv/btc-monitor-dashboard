@@ -80,24 +80,29 @@
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <script src="api.js"></script>
     <script>
-        let pieChart, lineChart;
-        let allTrades = [];
+        var pieChart, lineChart;
+        var allTrades = [];
 
         async function loadDashboardData() {
-            const statusEl = document.getElementById('dbStatus');
-            const statusTextEl = document.getElementById('dbStatusText');
+            var statusEl = document.getElementById('dbStatus');
+            var statusTextEl = document.getElementById('dbStatusText');
 
             try {
-                const trades = await fetchAllTrades();
+                var trades = await fetchAllTrades();
 
                 if (trades && trades.length > 0) {
-                    allTrades = trades;
+                    // 为每笔交易计算盈亏
+                    allTrades = trades.map(function(t) {
+                        return enrichTradeWithPnL(t);
+                    });
+                    
                     statusEl.className = 'status-dot online';
                     statusTextEl.textContent = API_CONFIG.isLocal ? '本地' : '云端';
-                    updateOverview(trades);
-                    updateStrategiesGrid(trades);
-                    updatePieChart(trades);
-                    updateLineChart(trades);
+                    
+                    updateOverview(allTrades);
+                    updateStrategiesGrid(transformTradesData(allTrades));
+                    updatePieChart(transformTradesData(allTrades));
+                    updateLineChart(allTrades);
                 } else {
                     useSampleData();
                 }
@@ -110,35 +115,54 @@
         }
 
         function useSampleData() {
-            const sampleTrades = SAMPLE_BALANCES;
-            updateOverview(sampleTrades);
-            updateStrategiesGrid(sampleTrades);
-            updatePieChart(sampleTrades);
+            updateOverview(SAMPLE_BALANCES);
+            updateStrategiesGrid(SAMPLE_BALANCES);
+            updatePieChart(SAMPLE_BALANCES);
             updateLineChart([]);
             document.getElementById('dbStatusText').textContent = '示例数据';
         }
 
-        function updateOverview(trades) {
-            const total = trades.length;
-            const totalPnl = trades.reduce((sum, t) => sum + (t.realized_pnl || 0), 0);
-            const wins = trades.filter(t => t.realized_pnl > 0).length;
-            const winRate = total > 0 ? (wins / total) * 100 : 0;
+        function updateOverview(data) {
+            var total, totalPnl, winRate;
+            
+            if (Array.isArray(data) && data.length > 0) {
+                // 如果是交易记录
+                if (data[0].entry_price !== undefined) {
+                    total = data.length;
+                    totalPnl = data.reduce(function(s, t) { return s + (t.realized_pnl || 0); }, 0);
+                    var wins = data.filter(function(t) { return t.realized_pnl > 0; }).length;
+                    winRate = total > 0 ? (wins / total) * 100 : 0;
+                } else {
+                    // 如果是策略统计
+                    total = data.reduce(function(s, t) { return s + (t.trade_count || 0); }, 0);
+                    totalPnl = data.reduce(function(s, t) { return s + (t.total_pnl || 0); }, 0);
+                    var totalWins = data.reduce(function(s, t) { return s + (t.wins || 0); }, 0);
+                    var totalTrades2 = data.reduce(function(s, t) { return s + (t.trade_count || 0); }, 0);
+                    winRate = totalTrades2 > 0 ? (totalWins / totalTrades2) * 100 : 0;
+                }
+            } else {
+                total = 0;
+                totalPnl = 0;
+                winRate = 0;
+            }
 
             document.getElementById('totalTrades').textContent = total;
-            const pnlEl = document.getElementById('totalPnl');
+            
+            var pnlEl = document.getElementById('totalPnl');
             pnlEl.textContent = formatNumber(totalPnl);
             pnlEl.className = 'card-value ' + getPnLClass(totalPnl);
-            const pctEl = document.getElementById('pnlPercent');
-            pctEl.textContent = formatPercent((totalPnl / (total * 1000)) * 100);
+            
+            var pctEl = document.getElementById('pnlPercent');
+            pctEl.textContent = formatPercent((totalPnl / Math.max(total * 1000, 1)) * 100);
             pctEl.className = 'card-change ' + getPnLClass(totalPnl);
+            
             document.getElementById('winRate').textContent = winRate.toFixed(1) + '%';
         }
 
-        function updateStrategiesGrid(trades) {
-            const grid = document.getElementById('strategiesGrid');
-            const stats = transformTradesData(trades);
+        function updateStrategiesGrid(stats) {
+            var grid = document.getElementById('strategiesGrid');
             
-            if (stats.length === 0) {
+            if (!stats || stats.length === 0) {
                 grid.innerHTML = '<div class="loading-spinner">暂无数据</div>';
                 return;
             }
@@ -157,22 +181,28 @@
             }).join('');
         }
 
-        function updatePieChart(trades) {
+        function updatePieChart(stats) {
             if (!pieChart) pieChart = echarts.init(document.getElementById('pieChart'));
-            const stats = transformTradesData(trades);
-            const data = stats.map(function(s, i) { 
-                return { name: s.strategy_name, value: Math.abs(s.total_pnl) || 1 }; 
+            
+            var data = stats.map(function(s) { 
+                return { 
+                    name: s.strategy_name, 
+                    value: Math.abs(s.total_pnl) || 1 
+                }; 
             });
+            
             pieChart.setOption({
                 tooltip: { trigger: 'item', formatter: '{b}: ${c}' },
                 legend: { orient: 'vertical', right: 10, top: 'center', textStyle: { color: '#8892b0', fontSize: 12 } },
                 series: [{
-                    type: 'pie', radius: ['40%', '70%'], center: ['35%', '50%'],
+                    type: 'pie', 
+                    radius: ['40%', '70%'], 
+                    center: ['35%', '50%'],
                     itemStyle: { borderRadius: 10, borderColor: '#0a192f', borderWidth: 2 },
                     label: { show: false },
                     emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
                     data: data,
-                    color: ['#00d4aa', '#5c7cfa', '#ff6b6b', '#fcc419', '#845ef7', '#20c997', '#f06595', '#ff922b', '#36cfc9', '#7cb305']
+                    color: ['#00d4aa', '#5c7cfa', '#ff6b6b', '#fcc419', '#845ef7', '#20c997', '#f06595', '#ff922b']
                 }]
             });
         }
@@ -199,9 +229,9 @@
                 var days = 30, sampleDates = [], sampleData = [];
                 var value = 0;
                 for (var i = days; i >= 0; i--) {
-                    var date2 = new Date();
-                    date2.setDate(date2.getDate() - i);
-                    sampleDates.push((date2.getMonth() + 1) + '/' + date2.getDate());
+                    var d = new Date();
+                    d.setDate(d.getDate() - i);
+                    sampleDates.push((d.getMonth() + 1) + '/' + d.getDate());
                     value += (Math.random() - 0.48) * 100;
                     sampleData.push(value);
                 }
@@ -214,11 +244,16 @@
                 grid: { left: 50, right: 20, top: 20, bottom: 30 },
                 xAxis: { type: 'category', data: dates, boundaryGap: false, axisLine: { lineStyle: { color: '#233554' } }, axisLabel: { color: '#8892b0', fontSize: 10 } },
                 yAxis: { type: 'value', axisLine: { show: false }, splitLine: { lineStyle: { color: '#233554' } }, axisLabel: { color: '#8892b0', formatter: '${value}' } },
-                series: [{ data: cumulativeData, type: 'line', smooth: true, lineStyle: { width: 3, color: '#00d4aa' }, areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(0,212,170,0.3)' }, { offset: 1, color: 'rgba(0,212,170,0)' }] } } }]
+                series: [{ 
+                    data: cumulativeData, 
+                    type: 'line', 
+                    smooth: true, 
+                    lineStyle: { width: 3, color: '#00d4aa' }, 
+                    areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(0,212,170,0.3)' }, { offset: 1, color: 'rgba(0,212,170,0)' }] } } 
+                }]
             });
         }
 
-        // 响应窗口大小变化
         window.addEventListener('resize', function() {
             if (pieChart) pieChart.resize();
             if (lineChart) lineChart.resize();
