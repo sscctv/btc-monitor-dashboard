@@ -2,172 +2,63 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>实时信号 - BTC Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>信号 - BTC Dashboard</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
         <header class="header">
-            <h1>实时信号</h1>
+            <h1>交易信号</h1>
             <div class="connection-status">
-                <span class="status-dot online"></span>
-                <span>实时</span>
+                <span id="dbStatus" class="status-dot offline"></span>
+                <span id="dbStatusText">加载中...</span>
             </div>
         </header>
 
         <main class="main-content">
-            <!-- 价格卡片 -->
-            <section class="chart-section">
-                <div class="chart-wrapper">
-                    <div id="priceChart" class="chart" style="height: 200px;"></div>
-                </div>
-            </section>
-
-            <section class="overview-section">
-                <div class="overview-cards">
-                    <div class="card">
-                        <div class="card-label">当前价格</div>
-                        <div class="card-value" id="currentPrice">--</div>
-                    </div>
-                    <div class="card">
-                        <div class="card-label">24h 涨跌</div>
-                        <div class="card-value" id="priceChange">--</div>
-                    </div>
-                    <div class="card">
-                        <div class="card-label">24h 成交量</div>
-                        <div class="card-value" id="volume">--</div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 技术指标 -->
             <section class="strategies-section">
-                <div class="section-header">
-                    <h2>技术指标</h2>
-                </div>
-                <div class="strategies-grid" id="indicatorsGrid">
-                    <div class="loading-spinner">加载中...</div>
+                <div class="section-header"><h2>指标信号</h2></div>
+                <div id="signalList">
+                    <div class="strategy-card">
+                        <div class="strategy-header">
+                            <span class="strategy-name">BTC/USDT</span>
+                            <span class="strategy-badge profit">做多信号</span>
+                        </div>
+                        <div class="strategy-stats">
+                            <div class="stat"><span class="stat-label">RSI 14</span><span class="stat-value">32.5</span></div>
+                            <div class="stat"><span class="stat-label">MA 20</span><span class="stat-value profit">↑ 突破</span></div>
+                            <div class="stat"><span class="stat-label">MACD</span><span class="stat-value profit">金叉</span></div>
+                        </div>
+                    </div>
+
+                    <div class="strategy-card">
+                        <div class="strategy-header">
+                            <span class="strategy-name">ETH/USDT</span>
+                            <span class="strategy-badge loss">观望</span>
+                        </div>
+                        <div class="strategy-stats">
+                            <div class="stat"><span class="stat-label">RSI 14</span><span class="stat-value">58.2</span></div>
+                            <div class="stat"><span class="stat-label">MA 20</span><span class="stat-value">横盘</span></div>
+                            <div class="stat"><span class="stat-label">MACD</span><span class="stat-value loss">死叉</span></div>
+                        </div>
+                    </div>
                 </div>
             </section>
         </main>
 
         <nav class="bottom-nav">
-            <a href="index.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-text">首页</span></a>
-            <a href="strategies.html" class="nav-item"><span class="nav-icon">⚙️</span><span class="nav-text">策略</span></a>
-            <a href="virtual.html" class="nav-item"><span class="nav-icon">💰</span><span class="nav-text">交易</span></a>
-            <a href="signals.html" class="nav-item active"><span class="nav-icon">📡</span><span class="nav-text">信号</span></a>
-            <a href="history.html" class="nav-item"><span class="nav-icon">📜</span><span class="nav-text">历史</span></a>
+            <a href="index.html" class="nav-item"><span class="nav-icon">📊</span><span>首页</span></a>
+            <a href="strategies.html" class="nav-item"><span class="nav-icon">⚙️</span><span>策略</span></a>
+            <a href="virtual.html" class="nav-item"><span class="nav-icon">💰</span><span>交易</span></a>
+            <a href="signals.html" class="nav-item active"><span class="nav-icon">📡</span><span>信号</span></a>
+            <a href="history.html" class="nav-item"><span class="nav-icon">📜</span><span>历史</span></a>
         </nav>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
-    <script src="api.js"></script>
     <script>
-        let priceChart = echarts.init(document.getElementById('priceChart'));
-
-        async function loadSignals() {
-            const data = await fetchData('market_data');
-
-            if (data && data.length > 0) {
-                const latest = data[0];
-
-                // 更新价格
-                document.getElementById('currentPrice').textContent = formatNumber(latest.price, 2);
-                document.getElementById('currentPrice').className = 'card-value';
-
-                const changeEl = document.getElementById('priceChange');
-                changeEl.textContent = (latest.change_24h >= 0 ? '+' : '') + formatPercent(latest.change_24h);
-                changeEl.className = 'card-value ' + getPnLClass(latest.change_24h);
-
-                document.getElementById('volume').textContent = formatNumber(latest.volume / 1000000, 2) + 'M';
-
-                // 更新图表
-                const chartData = data.slice().reverse();
-                priceChart.setOption({
-                    tooltip: { trigger: 'axis' },
-                    grid: { left: 50, right: 20, top: 10, bottom: 30 },
-                    xAxis: {
-                        type: 'category',
-                        data: chartData.map(d => d.created_at ? d.created_at.substring(5, 10) : ''),
-                        axisLine: { lineStyle: { color: '#2d3748' } },
-                        axisLabel: { color: '#9ca3af', fontSize: 10 }
-                    },
-                    yAxis: {
-                        type: 'value',
-                        axisLine: { show: false },
-                        splitLine: { lineStyle: { color: '#2d3748' } },
-                        axisLabel: { color: '#9ca3af', formatter: '${value}' }
-                    },
-                    series: [{
-                        type: 'line',
-                        data: chartData.map(d => d.price),
-                        smooth: true,
-                        lineStyle: { width: 2, color: '#00d4aa' },
-                        areaStyle: {
-                            color: {
-                                type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
-                                colorStops: [{ offset: 0, color: 'rgba(0,212,170,0.3)' }, { offset: 1, color: 'rgba(0,212,170,0)' }]
-                            }
-                        }
-                    }]
-                });
-
-                // 更新指标
-                const indicators = [
-                    { name: 'RSI (14)', value: latest.rsi ? latest.rsi.toFixed(1) : '--', status: latest.rsi > 70 ? 'overbought' : latest.rsi < 30 ? 'oversold' : 'neutral' },
-                    { name: 'MACD', value: latest.macd ? latest.macd.toFixed(2) : '--', status: latest.macd > 0 ? 'bullish' : 'bearish' },
-                    { name: '布林带位置', value: latest.bb_position ? (latest.bb_position * 100).toFixed(0) + '%' : '--', status: 'neutral' }
-                ];
-
-                document.getElementById('indicatorsGrid').innerHTML = indicators.map(i => `
-                    <div class="strategy-card">
-                        <div class="strategy-header">
-                            <span class="strategy-name">${i.name}</span>
-                            <span class="strategy-badge ${getPnLClass(i.status === 'overbought' || i.status === 'bearish' ? -1 : 1)}">${i.value}</span>
-                        </div>
-                    </div>
-                `).join('');
-            } else {
-                document.getElementById('indicatorsGrid').innerHTML = '<div class="loading-spinner">暂无数据</div>';
-                // 显示模拟数据
-                showSampleData();
-            }
-        }
-
-        function showSampleData() {
-            document.getElementById('currentPrice').textContent = '65,432.50';
-            document.getElementById('priceChange').textContent = '+2.35%';
-            document.getElementById('priceChange').className = 'card-value profit';
-            document.getElementById('volume').textContent = '1.25B';
-
-            const dates = [], prices = [];
-            let p = 65000;
-            for (let i = 30; i >= 0; i--) {
-                const d = new Date();
-                d.setDate(d.getDate() - i);
-                dates.push((d.getMonth() + 1) + '/' + d.getDate());
-                p *= (1 + (Math.random() - 0.48) * 0.03);
-                prices.push(p);
-            }
-
-            priceChart.setOption({
-                tooltip: { trigger: 'axis' },
-                grid: { left: 50, right: 20, top: 10, bottom: 30 },
-                xAxis: { type: 'category', data: dates, boundaryGap: false, axisLine: { lineStyle: { color: '#2d3748' } }, axisLabel: { color: '#9ca3af', fontSize: 10 } },
-                yAxis: { type: 'value', axisLine: { show: false }, splitLine: { lineStyle: { color: '#2d3748' } }, axisLabel: { color: '#9ca3af', formatter: '${value}' } },
-                series: [{ type: 'line', data: prices, smooth: true, lineStyle: { width: 2, color: '#00d4aa' }, areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(0,212,170,0.3)' }, { offset: 1, color: 'rgba(0,212,170,0)' }] } } }]
-            });
-
-            document.getElementById('indicatorsGrid').innerHTML = `
-                <div class="strategy-card"><div class="strategy-header"><span class="strategy-name">RSI (14)</span><span class="strategy-badge profit">55.2</span></div></div>
-                <div class="strategy-card"><div class="strategy-header"><span class="strategy-name">MACD</span><span class="strategy-badge profit">125.50</span></div></div>
-                <div class="strategy-card"><div class="strategy-header"><span class="strategy-name">布林带位置</span><span class="strategy-badge">50%</span></div></div>
-            `;
-        }
-
-        window.addEventListener('resize', () => priceChart.resize());
-        document.addEventListener('DOMContentLoaded', loadSignals);
+        document.getElementById('dbStatus').className = 'status-dot online';
+        document.getElementById('dbStatusText').textContent = '示例数据';
     </script>
 </body>
 </html>
