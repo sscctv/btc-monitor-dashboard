@@ -1,8 +1,6 @@
 [build]
 builder = "NIXPACKS"
-buildCommand = "npx serve -s . -l 3000"
 
 [deploy]
 startCommand = "npx serve -s . -l 3000"
 healthcheckPath = "/"
-healthcheckTimeout = 10
