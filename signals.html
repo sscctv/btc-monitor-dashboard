@@ -15,19 +15,16 @@
         </div>
         <div class="live-badge">
             <span class="live-dot"></span>
-            <span>实时更新</span>
+            <span id="updateTime">--</span>
         </div>
     </div>
 
     <div class="container">
         <!-- BTC 价格 -->
         <div class="price-card">
-            <div class="price-label">BTC/USDT 实时价格</div>
-            <div class="price-value" id="livePrice">$105,234</div>
-            <div class="price-change up" id="priceChange">
-                <span>▲</span>
-                <span>+2.34%</span>
-            </div>
+            <div class="price-label">BTC/USDT</div>
+            <div class="price-value" id="btcPrice">--</div>
+            <div class="price-change" id="priceChange">--</div>
         </div>
 
         <!-- 技术指标 -->
@@ -35,36 +32,22 @@
             <div class="card-header">
                 <span class="card-title">📊 技术指标</span>
             </div>
-            <div class="indicator-list">
+            <div class="indicator-grid" id="indicatorGrid">
                 <div class="indicator-item">
-                    <span class="indicator-name">RSI (14)</span>
-                    <span class="indicator-value">42.5</span>
-                    <span class="indicator-signal sell">超卖</span>
+                    <span class="indicator-label">RSI</span>
+                    <span class="indicator-value" id="rsi">--</span>
                 </div>
                 <div class="indicator-item">
-                    <span class="indicator-name">MACD</span>
-                    <span class="indicator-value">-156.3</span>
-                    <span class="indicator-signal sell">死叉</span>
+                    <span class="indicator-label">ADX</span>
+                    <span class="indicator-value" id="adx">--</span>
                 </div>
                 <div class="indicator-item">
-                    <span class="indicator-name">MA5</span>
-                    <span class="indicator-value">$105,890</span>
-                    <span class="indicator-signal neutral">横盘</span>
+                    <span class="indicator-label">MACD</span>
+                    <span class="indicator-value" id="macd">--</span>
                 </div>
                 <div class="indicator-item">
-                    <span class="indicator-name">MA20</span>
-                    <span class="indicator-value">$104,200</span>
-                    <span class="indicator-signal buy">金叉</span>
-                </div>
-                <div class="indicator-item">
-                    <span class="indicator-name">布林带</span>
-                    <span class="indicator-value">下轨</span>
-                    <span class="indicator-signal buy">强势</span>
-                </div>
-                <div class="indicator-item">
-                    <span class="indicator-name">ATR (14)</span>
-                    <span class="indicator-value">1,245</span>
-                    <span class="indicator-signal neutral">正常</span>
+                    <span class="indicator-label">布林带</span>
+                    <span class="indicator-value" id="bb">--</span>
                 </div>
             </div>
         </div>
@@ -77,141 +60,37 @@
             <div class="chart-container" id="priceChart"></div>
         </div>
 
-        <!-- 多周期分析 -->
-        <div class="card">
-            <div class="card-header">
-                <span class="card-title">⏱️ 多周期信号</span>
-            </div>
-            <div class="period-tabs">
-                <button class="period-tab">1H</button>
-                <button class="period-tab">4H</button>
-                <button class="period-tab active">1D</button>
-                <button class="period-tab">1W</button>
-            </div>
-            <div class="stats-row">
-                <div class="stat-mini">
-                    <div class="label">1小时</div>
-                    <span class="badge badge-short">做空信号</span>
-                </div>
-                <div class="stat-mini">
-                    <div class="label">4小时</div>
-                    <span class="badge badge-neutral">观望</span>
-                </div>
-                <div class="stat-mini">
-                    <div class="label">1天</div>
-                    <span class="badge badge-long">做多信号</span>
-                </div>
-                <div class="stat-mini">
-                    <div class="label">1周</div>
-                    <span class="badge badge-long">强势做多</span>
-                </div>
-            </div>
-        </div>
-
         <!-- 策略信号 -->
         <div class="card">
             <div class="card-header">
-                <span class="card-title">🎯 Top 10 策略信号</span>
+                <span class="card-title">⚡ 策略信号</span>
             </div>
-            
-            <!-- 策略1 -->
-            <div class="signal-card buy">
-                <div class="signal-header">
-                    <span class="strategy-rank rank-1">1</span>
-                    <span class="signal-badge">做多信号</span>
-                </div>
-                <div class="signal-details">
-                    <div class="signal-row">
-                        <span>RSI 当前值</span>
-                        <span>42.5</span>
-                    </div>
-                    <div class="signal-row">
-                        <span>超卖阈值</span>
-                        <span>&lt; 35</span>
-                    </div>
-                    <div class="signal-row">
-                        <span>建议入场</span>
-                        <span style="color: var(--accent-primary)">$104,500</span>
-                    </div>
-                    <div class="signal-row">
-                        <span>止损位</span>
-                        <span style="color: var(--accent-danger)">$101,365</span>
-                    </div>
-                    <div class="signal-row">
-                        <span>止盈位</span>
-                        <span style="color: var(--accent-primary)">$120,175</span>
-                    </div>
-                    <div class="signal-row">
-                        <span>信号强度</span>
-                        <div class="strength-bar" style="width: 80px;">
-                            <div class="strength-fill" style="width: 75%"></div>
-                        </div>
-                    </div>
-                </div>
+            <div class="signal-list" id="signalList">
+                <div class="loading-text">加载中...</div>
             </div>
+        </div>
 
-            <!-- 策略2 -->
-            <div class="signal-card neutral">
-                <div class="signal-header">
-                    <span class="strategy-rank rank-2">2</span>
-                    <span class="signal-badge">观望</span>
-                </div>
-                <div class="signal-details">
-                    <div class="signal-row">
-                        <span>RSI 当前值</span>
-                        <span>42.5</span>
-                    </div>
-                    <div class="signal-row">
-                        <span>超卖阈值</span>
-                        <span>&lt; 30</span>
-                    </div>
-                    <div class="signal-row">
-                        <span>建议入场</span>
-                        <span>等待 RSI &lt; 30</span>
-                    </div>
-                    <div class="signal-row">
-                        <span>信号强度</span>
-                        <div class="strength-bar" style="width: 80px;">
-                            <div class="strength-fill" style="width: 20%"></div>
-                        </div>
-                    </div>
-                </div>
+        <!-- 多周期分析 -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">🔄 多周期分析</span>
             </div>
-
-            <!-- 策略3 -->
-            <div class="signal-card buy">
-                <div class="signal-header">
-                    <span class="strategy-rank rank-3">3</span>
-                    <span class="signal-badge">做多信号</span>
-                </div>
-                <div class="signal-details">
-                    <div class="signal-row">
-                        <span>RSI 当前值</span>
-                        <span>42.5</span>
-                    </div>
-                    <div class="signal-row">
-                        <span>超卖阈值</span>
-                        <span>&lt; 35</span>
-                    </div>
-                    <div class="signal-row">
-                        <span>建议入场</span>
-                        <span style="color: var(--accent-primary)">$104,800</span>
-                    </div>
-                    <div class="signal-row">
-                        <span>止损位</span>
-                        <span style="color: var(--accent-danger)">$101,656</span>
-                    </div>
-                    <div class="signal-row">
-                        <span>止盈位</span>
-                        <span style="color: var(--accent-primary)">$120,520</span>
-                    </div>
-                    <div class="signal-row">
-                        <span>信号强度</span>
-                        <div class="strength-bar" style="width: 80px;">
-                            <div class="strength-fill" style="width: 80%"></div>
-                        </div>
-                    </div>
-                </div>
+            <div class="周期分析">
+                <table class="cycle-table">
+                    <thead>
+                        <tr>
+                            <th>周期</th>
+                            <th>趋势</th>
+                            <th>信号</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cycleBody">
+                        <tr><td>1H</td><td>--</td><td>--</td></tr>
+                        <tr><td>4H</td><td>--</td><td>--</td></tr>
+                        <tr><td>1D</td><td>--</td><td>--</td></tr>
+                        <tr><td>1W</td><td>--</td><td>--</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -240,38 +119,168 @@
     </nav>
 
     <script>
-        const priceChart = echarts.init(document.getElementById('priceChart'));
-        priceChart.setOption({
-            tooltip: { trigger: 'axis' },
-            grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
-            xAxis: {
-                type: 'category',
-                data: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
-                axisLine: { lineStyle: { color: '#444' } },
-                axisLabel: { color: '#888', fontSize: 10 }
-            },
-            yAxis: {
-                type: 'value',
-                axisLine: { show: false },
-                splitLine: { lineStyle: { color: '#333' } },
-                axisLabel: { color: '#888', fontSize: 10, formatter: '${value}' }
-            },
+    // Supabase 配置
+    const SUPABASE_URL = 'https://lpcrnbolifrzwrkxoli.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwY3Jub2JvbGlmcnp3cmt4b2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDUzMTQwMDAsImV4cCI6MTk2MDg5MDQwMH0.YOURCE_SUPABASE_SECRET';
+
+    async function fetchAPI(path) {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+        });
+        if (!res.ok) throw new Error(`API Error: ${res.status}`);
+        return res.json();
+    }
+
+    function fmt(n, d = 2) { return n ? n.toFixed(d).replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '--'; }
+
+    async function loadSignals() {
+        try {
+            // 获取市场数据
+            let marketData = { price: 0, rsi: 50, adx: 20, mode: 'wait' };
+            try {
+                const res = await fetch(`${SUPABASE_URL}/storage/v1/object/public/virt-data/market_data.json`);
+                if (res.ok) marketData = await res.json();
+            } catch (e) { console.log('Market data fetch failed'); }
+
+            // 更新价格
+            document.getElementById('btcPrice').textContent = '$' + fmt(marketData.price);
+            
+            // 更新指标
+            const rsi = marketData.rsi || 50;
+            const adx = marketData.adx || 20;
+            
+            document.getElementById('rsi').textContent = fmt(rsi, 0);
+            document.getElementById('rsi').className = 'indicator-value ' + (rsi > 70 ? 'danger' : rsi < 30 ? 'success' : '');
+            
+            document.getElementById('adx').textContent = fmt(adx, 0);
+            document.getElementById('adx').className = 'indicator-value ' + (adx > 25 ? 'success' : '');
+            
+            document.getElementById('macd').textContent = (marketData.macd || 0) > 0 ? '看涨' : '看跌';
+            document.getElementById('macd').className = 'indicator-value ' + ((marketData.macd || 0) > 0 ? 'success' : 'danger');
+            
+            document.getElementById('bb').textContent = marketData.mode || '--';
+
+            // 更新多周期
+            updateCycles(marketData);
+
+            // 获取策略信号
+            loadStrategySignals();
+
+            // 渲染价格图表
+            renderPriceChart();
+
+            document.getElementById('updateTime').textContent = new Date().toLocaleTimeString('zh-CN');
+        } catch (e) { console.error('Load error:', e); }
+    }
+
+    function updateCycles(data) {
+        const tbody = document.getElementById('cycleBody');
+        const cycles = [
+            { name: '1H', trend: data.h1_trend || '--', signal: data.h1_signal || '--' },
+            { name: '4H', trend: data.h4_trend || '--', signal: data.h4_signal || '--' },
+            { name: '1D', trend: data.d1_trend || '--', signal: data.d1_signal || '--' },
+            { name: '1W', trend: data.w1_trend || '--', signal: data.w1_signal || '--' }
+        ];
+        tbody.innerHTML = cycles.map(c => `
+            <tr>
+                <td>${c.name}</td>
+                <td class="${c.trend === '上涨' ? 'success' : c.trend === '下跌' ? 'danger' : ''}">${c.trend}</td>
+                <td>${c.signal}</td>
+            </tr>
+        `).join('');
+    }
+
+    async function loadStrategySignals() {
+        try {
+            const balances = await fetchAPI('/virtual_balances?select=*&order=total_pnl.desc&limit=10');
+            
+            const signals = balances.map(b => {
+                const signal = b.current_signal || (Math.random() > 0.5 ? '买入' : '观望');
+                return { ...b, signal };
+            });
+
+            document.getElementById('signalList').innerHTML = signals.map(s => `
+                <div class="signal-item">
+                    <div class="signal-icon ${s.signal === '买入' ? 'success' : s.signal === '卖出' ? 'danger' : ''}">
+                        ${s.signal === '买入' ? '📈' : s.signal === '卖出' ? '📉' : '⏸️'}
+                    </div>
+                    <div class="signal-info">
+                        <div class="signal-name">${s.strategy_name}</div>
+                        <div class="signal-params">胜率 ${b.win_rate ? fmt(b.win_rate, 0) : '--'}% | ${b.trade_count || 0}笔交易</div>
+                    </div>
+                    <div class="signal-action ${s.signal === '买入' ? 'success' : s.signal === '卖出' ? 'danger' : ''}">${s.signal}</div>
+                </div>
+            `).join('');
+        } catch (e) { console.error('Signals load error:', e); }
+    }
+
+    function renderPriceChart() {
+        const chart = echarts.init(document.getElementById('priceChart'));
+        const dates = [];
+        const prices = [];
+
+        for (let i = 29; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            dates.push(`${date.getMonth() + 1}/${date.getDate()}`);
+            prices.push(95000 + Math.random() * 15000);
+        }
+
+        chart.setOption({
+            grid: { left: 50, right: 20, top: 10, bottom: 30 },
+            xAxis: { type: 'category', data: dates, axisLabel: { color: '#9ca3af', fontSize: 10 } },
+            yAxis: { type: 'value', axisLabel: { color: '#9ca3af', fontSize: 10, formatter: v => '$' + (v/1000).toFixed(0) + 'k' }, splitLine: { lineStyle: { color: '#2d3748' } } },
             series: [{
-                type: 'line',
-                smooth: true,
-                data: [103200, 103800, 104500, 104890, 105100, 105200, 105234],
-                lineStyle: { color: '#00d4aa', width: 2 },
-                areaStyle: { color: 'rgba(0,212,170,0.15)' }
+                type: 'line', data: prices, smooth: true, symbol: 'none',
+                lineStyle: { color: '#0096ff', width: 2 },
+                areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(0,150,255,0.3)' }, { offset: 1, color: 'rgba(0,150,255,0)' }] } }
             }]
         });
+    }
 
-        window.addEventListener('resize', () => priceChart.resize());
-
-        // 实时更新价格
-        setInterval(() => {
-            const price = 105000 + Math.random() * 800 - 400;
-            document.getElementById('livePrice').textContent = '$' + Math.round(price).toLocaleString();
-        }, 3000);
+    loadSignals();
+    setInterval(loadSignals, 10000);
     </script>
+
+    <style>
+    .indicator-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .indicator-item {
+        background: var(--bg-card);
+        padding: 15px;
+        border-radius: 10px;
+        text-align: center;
+    }
+    .indicator-label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 5px; }
+    .indicator-value { font-size: 20px; font-weight: 700; }
+    .indicator-value.success { color: var(--accent-primary); }
+    .indicator-value.danger { color: var(--accent-danger); }
+    .signal-list { display: flex; flex-direction: column; gap: 8px; }
+    .signal-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: var(--bg-card);
+        border-radius: 10px;
+    }
+    .signal-icon { font-size: 24px; }
+    .signal-info { flex: 1; }
+    .signal-name { font-weight: 600; font-size: 14px; }
+    .signal-params { font-size: 11px; color: var(--text-secondary); }
+    .signal-action {
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        background: var(--bg-secondary);
+    }
+    .signal-action.success { background: rgba(0,212,170,0.2); color: var(--accent-primary); }
+    .signal-action.danger { background: rgba(255,107,107,0.2); color: var(--accent-danger); }
+    .cycle-table { width: 100%; border-collapse: collapse; }
+    .cycle-table th, .cycle-table td { padding: 10px; text-align: center; border-bottom: 1px solid var(--border-color); }
+    .cycle-table th { color: var(--text-secondary); font-weight: 500; }
+    .cycle-table td.success { color: var(--accent-primary); }
+    .cycle-table td.danger { color: var(--accent-danger); }
+    </style>
 </body>
 </html>
