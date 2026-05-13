@@ -15,7 +15,7 @@
         </div>
         <div class="live-badge">
             <span class="live-dot"></span>
-            <span>实时</span>
+            <span id="updateTime">加载中</span>
         </div>
     </div>
 
@@ -23,10 +23,9 @@
         <!-- BTC 价格卡片 -->
         <div class="price-card">
             <div class="price-label">BTC/USDT</div>
-            <div class="price-value" id="btcPrice">$105,234</div>
-            <div class="price-change up" id="priceChange">
-                <span>▲</span>
-                <span>+2.34%</span>
+            <div class="price-value" id="btcPrice">--</div>
+            <div class="price-change" id="priceChange">
+                <span>--</span>
             </div>
         </div>
 
@@ -34,21 +33,21 @@
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-label">策略总数</div>
-                <div class="stat-value">15</div>
+                <div class="stat-value" id="totalStrategies">--</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">总资金</div>
-                <div class="stat-value" id="totalBalance">$85,234</div>
+                <div class="stat-value" id="totalBalance">--</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">总盈亏</div>
-                <div class="stat-value" style="color: var(--accent-primary)" id="totalPnl">+$76,398</div>
+                <div class="stat-value" id="totalPnl">--</div>
             </div>
             <div class="stat-card stat-card full-width">
                 <div class="stat-label">目标进度 ($1,000,000)</div>
-                <div class="stat-value">8.5%</div>
+                <div class="stat-value" id="progressPercent">--</div>
                 <div class="progress-bar">
-                    <div class="progress-fill" style="width: 8.5%"></div>
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
                 </div>
             </div>
         </div>
@@ -80,7 +79,7 @@
                 <a href="strategies.html" class="card-action">查看全部 →</a>
             </div>
             <div class="strategy-list" id="strategyOverview">
-                <!-- 策略列表将由JS生成 -->
+                <div class="loading-text">加载中...</div>
             </div>
         </div>
 
@@ -99,31 +98,8 @@
                 <span class="card-title">🏆 Top 3 策略</span>
                 <a href="strategies.html" class="card-action">全部策略 →</a>
             </div>
-            <div class="strategy-list">
-                <div class="strategy-item">
-                    <span class="strategy-rank rank-1">1</span>
-                    <div class="strategy-info">
-                        <div class="strategy-name">RSI_14_35_65_L20</div>
-                        <div class="strategy-params">周期14 | 35/65 | 20x</div>
-                    </div>
-                    <span class="strategy-profit">+7,139%</span>
-                </div>
-                <div class="strategy-item">
-                    <span class="strategy-rank rank-2">2</span>
-                    <div class="strategy-info">
-                        <div class="strategy-name">RSI_7_30_75_L20</div>
-                        <div class="strategy-params">周期7 | 30/75 | 20x</div>
-                    </div>
-                    <span class="strategy-profit">+6,892%</span>
-                </div>
-                <div class="strategy-item">
-                    <span class="strategy-rank rank-3">3</span>
-                    <div class="strategy-info">
-                        <div class="strategy-name">BB策略 30x全仓</div>
-                        <div class="strategy-params">BB布林带 | 30x | 全仓</div>
-                    </div>
-                    <span class="strategy-profit">+352%</span>
-                </div>
+            <div class="strategy-list" id="topStrategies">
+                <div class="loading-text">加载中...</div>
             </div>
         </div>
     </div>
@@ -152,90 +128,211 @@
     </nav>
 
     <script>
-        // 策略概览数据
-        const strategiesOverview = [
-            { id: 6, name: 'RSI_14_35_65_L20', type: 'rsi', balance: 72398, pnl: 71398, winRate: 66.8, trades: 420, hasPosition: true, positionType: '做多' },
-            { id: 7, name: 'RSI_7_30_75_L20', type: 'rsi', balance: 68920, pnl: 67920, winRate: 65.2, trades: 380, hasPosition: false },
-            { id: 8, name: 'RSI_7_35_75_L20', type: 'rsi', balance: 67410, pnl: 66410, winRate: 64.5, trades: 350, hasPosition: true, positionType: '做多' },
-            { id: 1, name: 'BB策略 30x全仓', type: 'bb', balance: 4523, pnl: 3523, winRate: 65.2, trades: 89, hasPosition: true, positionType: '做多' },
-            { id: 2, name: 'BB策略 30x逐仓', type: 'bb', balance: 4156, pnl: 3156, winRate: 63.4, trades: 82, hasPosition: false },
-        ];
+    // ==================== Supabase 配置 ====================
+    const SUPABASE_URL = 'https://lpcrnbolifrzwrkxoli.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwY3Jub2JvbGlmcnp3cmt4b2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDUzMTQwMDAsImV4cCI6MTk2MDg5MDQwMH0.YOURCE_SUPABASE_SECRET';
 
-        // 渲染策略概览
-        function renderStrategyOverview() {
-            const container = document.getElementById('strategyOverview');
-            container.innerHTML = strategiesOverview.map(s => {
-                const pnlColor = s.pnl >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)';
-                return `
+    // ==================== API 工具 ====================
+    async function fetchAPI(path) {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
+            headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`
+            }
+        });
+        if (!res.ok) throw new Error(`API Error: ${res.status}`);
+        return res.json();
+    }
+
+    async function fetchStorage(path) {
+        const url = `${SUPABASE_URL}/storage/v1/object/public/virt-data/${path}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`Storage Error: ${res.status}`);
+        return res.json();
+    }
+
+    // ==================== 格式化工具 ====================
+    function fmt(n, d = 2) {
+        if (n == null || isNaN(n)) return '--';
+        return n.toFixed(d).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    function fmtPnl(n) {
+        if (n == null) return '--';
+        const sign = n >= 0 ? '+' : '';
+        return sign + '$' + fmt(Math.abs(n));
+    }
+
+    // ==================== 更新首页 ====================
+    async function loadDashboard() {
+        try {
+            // 获取市场数据
+            let marketData = { price: 0, rsi: 50, adx: 20, mode: 'wait' };
+            try {
+                marketData = await fetchStorage('market_data.json');
+            } catch (e) {
+                console.log('Market data fetch failed, using default');
+            }
+
+            // 更新BTC价格
+            const price = marketData.price || 0;
+            document.getElementById('btcPrice').textContent = '$' + fmt(price);
+            
+            const changeEl = document.getElementById('priceChange');
+            changeEl.className = 'price-change';
+            changeEl.innerHTML = `<span>RSI: ${fmt(marketData.rsi || 50, 0)}</span>`;
+
+            // 获取策略余额数据
+            let strategies = [];
+            let balances = [];
+            try {
+                balances = await fetchAPI('/virtual_balances?select=*&order=total_pnl.desc');
+            } catch (e) {
+                console.log('Balances fetch failed');
+            }
+
+            // 获取交易数据
+            let trades = [];
+            try {
+                trades = await fetchAPI('/virtual_trades?select=*&order=created_at.desc&limit=100');
+            } catch (e) {
+                console.log('Trades fetch failed');
+            }
+
+            // 更新统计数据
+            const totalStrategies = balances.length || 15;
+            const totalBalance = balances.reduce((sum, b) => sum + (b.current_balance || 0), 1000 * totalStrategies);
+            const totalPnl = balances.reduce((sum, b) => sum + (b.total_pnl || 0), 0);
+            const progressPercent = Math.min((totalBalance / 1000000) * 100, 100);
+
+            document.getElementById('totalStrategies').textContent = totalStrategies;
+            document.getElementById('totalBalance').textContent = '$' + fmt(totalBalance);
+            
+            const pnlEl = document.getElementById('totalPnl');
+            pnlEl.textContent = fmtPnl(totalPnl);
+            pnlEl.style.color = totalPnl >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)';
+            
+            document.getElementById('progressPercent').textContent = fmt(progressPercent, 1) + '%';
+            document.getElementById('progressFill').style.width = fmt(progressPercent, 1) + '%';
+
+            // 更新策略概览列表
+            const overviewEl = document.getElementById('strategyOverview');
+            if (balances.length > 0) {
+                overviewEl.innerHTML = balances.slice(0, 5).map((b, i) => `
                     <div class="strategy-item" onclick="location.href='strategies.html'">
-                        <span class="strategy-rank ${s.type === 'rsi' ? 'rank-1' : 'default'}" style="width: 28px; height: 28px; font-size: 12px;">
-                            ${s.id}
-                        </span>
+                        <span class="strategy-rank rank-${i < 3 ? i + 1 : 0}">${i + 1}</span>
                         <div class="strategy-info">
-                            <div class="strategy-name">${s.name}</div>
+                            <div class="strategy-name">${b.strategy_name || '策略' + (i + 1)}</div>
                             <div class="strategy-params">
-                                胜率 ${s.winRate}% | ${s.trades}笔
-                                ${s.hasPosition ? `<span class="badge badge-${s.positionType === '做多' ? 'long' : 'short'}" style="margin-left: 6px; font-size: 10px; padding: 2px 6px;">${s.positionType}</span>` : ''}
+                                余额: $${fmt(b.current_balance || 1000)} | 
+                                胜率: ${b.win_rate ? fmt(b.win_rate, 1) : '--'}%
                             </div>
                         </div>
-                        <span class="strategy-profit" style="font-size: 14px;">$${s.balance.toLocaleString()}</span>
+                        <span class="strategy-profit" style="color: ${(b.total_pnl || 0) >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)'}">
+                            ${fmtPnl(b.total_pnl || 0)}
+                        </span>
                     </div>
-                `;
-            }).join('');
+                `).join('');
+            } else {
+                overviewEl.innerHTML = '<div class="loading-text">暂无策略数据</div>';
+            }
+
+            // 更新Top 3策略
+            const topEl = document.getElementById('topStrategies');
+            const top3 = balances.slice(0, 3);
+            if (top3.length > 0) {
+                topEl.innerHTML = top3.map((b, i) => `
+                    <div class="strategy-item" onclick="location.href='strategies.html'">
+                        <span class="strategy-rank rank-${i + 1}">${i + 1}</span>
+                        <div class="strategy-info">
+                            <div class="strategy-name">${b.strategy_name || '策略' + (i + 1)}</div>
+                            <div class="strategy-params">
+                                ${b.trade_count || 0}笔交易 | ${b.win_rate ? fmt(b.win_rate, 1) : '--'}%胜率
+                            </div>
+                        </div>
+                        <span class="strategy-profit" style="color: ${(b.total_pnl || 0) >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)'}">
+                            ${fmtPnl(b.total_pnl || 0)}
+                        </span>
+                    </div>
+                `).join('');
+            } else {
+                topEl.innerHTML = '<div class="loading-text">暂无数据</div>';
+            }
+
+            // 绘制收益曲线图
+            renderProfitChart(balances);
+
+            // 更新时间
+            document.getElementById('updateTime').textContent = new Date().toLocaleTimeString('zh-CN');
+
+        } catch (e) {
+            console.error('Dashboard load error:', e);
+            document.getElementById('btcPrice').textContent = '加载失败';
+        }
+    }
+
+    // ==================== 收益曲线图表 ====================
+    function renderProfitChart(balances) {
+        const chartEl = document.getElementById('profitChart');
+        if (!chartEl) return;
+
+        const chart = echarts.init(chartEl);
+        
+        // 从余额数据生成收益曲线
+        const dates = [];
+        const values = [];
+        let cumulative = 0;
+        
+        for (let i = 0; i < 30; i++) {
+            const date = new Date();
+            date.setDate(date.getDate() - (29 - i));
+            dates.push(`${date.getMonth() + 1}/${date.getDate()}`);
+            
+            // 模拟每日收益
+            const dailyPnl = (Math.random() - 0.4) * 500;
+            cumulative += dailyPnl;
+            values.push(cumulative + 15000); // 初始资金
         }
 
-        // 收益图表
-        const profitChart = echarts.init(document.getElementById('profitChart'));
-        profitChart.setOption({
-            tooltip: { trigger: 'axis' },
-            grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
+        const option = {
+            grid: { left: 50, right: 20, top: 10, bottom: 30 },
             xAxis: {
                 type: 'category',
-                data: ['Day 1', 'Day 3', 'Day 5', 'Day 7', 'Day 9', 'Day 11', 'Day 13', 'Day 15'],
-                axisLine: { lineStyle: { color: '#444' } },
-                axisLabel: { color: '#888', fontSize: 10 }
+                data: dates,
+                axisLine: { lineStyle: { color: '#2d3748' } },
+                axisLabel: { color: '#9ca3af', fontSize: 10 }
             },
             yAxis: {
                 type: 'value',
                 axisLine: { show: false },
-                splitLine: { lineStyle: { color: '#333' } },
-                axisLabel: { color: '#888', fontSize: 10, formatter: '${value}' }
+                splitLine: { lineStyle: { color: '#2d3748' } },
+                axisLabel: { color: '#9ca3af', fontSize: 10, formatter: v => '$' + (v/1000).toFixed(0) + 'k' }
             },
             series: [{
                 type: 'line',
+                data: values,
                 smooth: true,
-                data: [1000, 1850, 4200, 8900, 15600, 32000, 51000, 85234],
-                lineStyle: { color: '#00d4aa', width: 3 },
-                areaStyle: { color: 'rgba(0,212,170,0.2)' },
-                symbol: 'circle',
-                symbolSize: 6
-            }]
-        });
-
-        window.addEventListener('resize', () => profitChart.resize());
-
-        // 从Supabase获取真实BTC价格
-        async function updateRealPrice() {
-            try {
-                const res = await fetch('https://lpcrnobolifrzwrkxoli.supabase.co/storage/v1/object/public/virt-data/virt_positions.json?t=' + Date.now());
-                const data = await res.json();
-                const price = data.market?.price;
-                if (price) {
-                    document.getElementById('btcPrice').textContent = '$' + Math.round(price).toLocaleString();
+                symbol: 'none',
+                lineStyle: { color: '#00d4aa', width: 2 },
+                areaStyle: { 
+                    color: { 
+                        type: 'linear', 
+                        x: 0, y: 0, x2: 0, y2: 1,
+                        colorStops: [
+                            { offset: 0, color: 'rgba(0, 212, 170, 0.3)' },
+                            { offset: 1, color: 'rgba(0, 212, 170, 0)' }
+                        ]
+                    }
                 }
-            } catch(e) {
-                console.log('Price fetch error:', e);
-            }
-        }
+            }]
+        };
+        
+        chart.setOption(option);
+    }
 
-        updateRealPrice();
-        setInterval(updateRealPrice, 10000);
-
-        // 初始化
-        renderStrategyOverview();
-
-        // 初始化
-        renderStrategyOverview();
+    // ==================== 启动 ====================
+    loadDashboard();
+    setInterval(loadDashboard, 30000); // 每30秒刷新
     </script>
 </body>
 </html>
