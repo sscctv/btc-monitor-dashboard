@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>历史记录 - BTC Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="brand">
+            <span class="brand-icon">📜</span>
+            <span>历史记录</span>
+        </div>
+        <div class="live-badge">
+            <span>15天数据</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- 筛选 -->
+        <div class="filter-bar">
+            <select class="filter-select" id="typeFilter">
+                <option value="all">全部</option>
+                <option value="trade">交易</option>
+                <option value="signal">信号</option>
+                <option value="backtest">回测</option>
+            </select>
+            <select class="filter-select" id="dateRange">
+                <option value="all">全部时间</option>
+                <option value="7d">最近7天</option>
+                <option value="30d">最近30天</option>
+            </select>
+        </div>
+
+        <!-- 统计概览 -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">交易天数</div>
+                <div class="stat-value">15</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">总交易次数</div>
+                <div class="stat-value">1,247</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">盈利天数</div>
+                <div class="stat-value positive" style="color: var(--accent-primary)">12 天</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">最大单日收益</div>
+                <div class="stat-value positive" style="color: var(--accent-primary)">+23.5%</div>
+            </div>
+        </div>
+
+        <!-- 每日收益图表 -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">📈 每日收益</span>
+            </div>
+            <div class="chart-container" id="dailyChart"></div>
+        </div>
+
+        <!-- 月度统计 -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">📅 月度统计</span>
+            </div>
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-title">2026年5月</div>
+                    <div class="list-item-subtitle">1,247 笔交易</div>
+                </div>
+                <span class="strategy-profit">+$71,398</span>
+            </div>
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-title">2026年4月</div>
+                    <div class="list-item-subtitle">980 笔交易</div>
+                </div>
+                <span class="strategy-profit">+$58,234</span>
+            </div>
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-title">2026年3月</div>
+                    <div class="list-item-subtitle">756 笔交易</div>
+                </div>
+                <span class="strategy-profit">+$42,891</span>
+            </div>
+        </div>
+
+        <!-- 策略使用统计 -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">🎯 策略使用占比</span>
+            </div>
+            <div class="stats-row">
+                <div class="stat-mini">
+                    <div class="label">RSI_14_35_65_L20</div>
+                    <div class="value">45%</div>
+                    <div class="strength-bar" style="margin-top: 6px;">
+                        <div class="strength-fill" style="width: 45%"></div>
+                    </div>
+                </div>
+                <div class="stat-mini">
+                    <div class="label">RSI_7_30_75_L20</div>
+                    <div class="value">28%</div>
+                    <div class="strength-bar" style="margin-top: 6px;">
+                        <div class="strength-fill" style="width: 28%"></div>
+                    </div>
+                </div>
+                <div class="stat-mini">
+                    <div class="label">RSI_7_35_75_L20</div>
+                    <div class="value">18%</div>
+                    <div class="strength-bar" style="margin-top: 6px;">
+                        <div class="strength-fill" style="width: 18%"></div>
+                    </div>
+                </div>
+                <div class="stat-mini">
+                    <div class="label">其他策略</div>
+                    <div class="value">9%</div>
+                    <div class="strength-bar" style="margin-top: 6px;">
+                        <div class="strength-fill" style="width: 9%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 回测记录 -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">🔬 回测记录</span>
+                <span class="badge badge-pending">4次回测</span>
+            </div>
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-title">最近15天回测</div>
+                    <div class="list-item-subtitle">RSI_14_35_65_L20 | 胜率 66.8%</div>
+                </div>
+                <span class="strategy-profit">+7,139%</span>
+            </div>
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-title">最近30天回测</div>
+                    <div class="list-item-subtitle">RSI_14_35_65_L20 | 胜率 68.2%</div>
+                </div>
+                <span class="strategy-profit">+12,450%</span>
+            </div>
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-title">最近7天回测</div>
+                    <div class="list-item-subtitle">RSI_14_35_65_L20 | 胜率 65.5%</div>
+                </div>
+                <span class="strategy-profit">+3,890%</span>
+            </div>
+        </div>
+
+        <!-- 交易记录 -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">📋 交易记录</span>
+            </div>
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-title">
+                        RSI_14_35_65_L20
+                        <span class="badge badge-long">做多</span>
+                    </div>
+                    <div class="list-item-subtitle">14:30 | $104,890 → $105,234 | 持仓2h15m</div>
+                </div>
+                <span class="strategy-profit">+$156</span>
+            </div>
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-title">
+                        RSI_7_30_75_L20
+                        <span class="badge badge-short">做空</span>
+                    </div>
+                    <div class="list-item-subtitle">12:00 | $104,500 → $104,890 | 止损</div>
+                </div>
+                <span style="color: var(--accent-danger)">-$42</span>
+            </div>
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-title">
+                        RSI_14_35_65_L20
+                        <span class="badge badge-long">做多</span>
+                    </div>
+                    <div class="list-item-subtitle">09:45 | $103,890 → $104,500 | 止盈</div>
+                </div>
+                <span class="strategy-profit">+$234</span>
+            </div>
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-title">
+                        RSI_7_35_75_L20
+                        <span class="badge badge-long">做多</span>
+                    </div>
+                    <div class="list-item-subtitle">22:30 | $103,200 → $103,890 | 止盈</div>
+                </div>
+                <span class="strategy-profit">+$312</span>
+            </div>
+            <div class="list-item">
+                <div class="list-item-content">
+                    <div class="list-item-title">
+                        RSI_14_35_65_L20
+                        <span class="badge badge-short">做空</span>
+                    </div>
+                    <div class="list-item-subtitle">18:15 | $103,890 → $103,200 | 止盈</div>
+                </div>
+                <span class="strategy-profit">+$289</span>
+            </div>
+        </div>
+
+        <div class="pagination">
+            <button class="page-btn" disabled>上一页</button>
+            <span class="page-info">1 / 156</span>
+            <button class="page-btn">下一页</button>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="index.html" class="nav-item">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-text">首页</span>
+        </a>
+        <a href="virtual.html" class="nav-item">
+            <span class="nav-icon">📊</span>
+            <span class="nav-text">交易</span>
+        </a>
+        <a href="signals.html" class="nav-item">
+            <span class="nav-icon">📡</span>
+            <span class="nav-text">信号</span>
+        </a>
+        <a href="strategies.html" class="nav-item">
+            <span class="nav-icon">⚙️</span>
+            <span class="nav-text">策略</span>
+        </a>
+        <a href="history.html" class="nav-item active">
+            <span class="nav-icon">📜</span>
+            <span class="nav-text">记录</span>
+        </a>
+    </nav>
+
+    <script>
+        const dailyChart = echarts.init(document.getElementById('dailyChart'));
+        dailyChart.setOption({
+            tooltip: { trigger: 'axis' },
+            grid: { left: '3%', right: '4%', bottom: '3%', top: '10%', containLabel: true },
+            xAxis: {
+                type: 'category',
+                data: ['5/1', '5/2', '5/3', '5/4', '5/5', '5/6', '5/7', '5/8', '5/9', '5/10', '5/11', '5/12', '5/13'],
+                axisLine: { lineStyle: { color: '#444' } },
+                axisLabel: { color: '#888', fontSize: 10 }
+            },
+            yAxis: {
+                type: 'value',
+                axisLine: { show: false },
+                splitLine: { lineStyle: { color: '#333' } },
+                axisLabel: { color: '#888', fontSize: 10 }
+            },
+            series: [{
+                type: 'bar',
+                data: [
+                    { value: 450, itemStyle: { color: '#00d4aa' } },
+                    { value: 320, itemStyle: { color: '#00d4aa' } },
+                    { value: -120, itemStyle: { color: '#ff6b6b' } },
+                    { value: 580, itemStyle: { color: '#00d4aa' } },
+                    { value: 890, itemStyle: { color: '#00d4aa' } },
+                    { value: -80, itemStyle: { color: '#ff6b6b' } },
+                    { value: 1200, itemStyle: { color: '#00d4aa' } },
+                    { value: 650, itemStyle: { color: '#00d4aa' } },
+                    { value: 420, itemStyle: { color: '#00d4aa' } },
+                    { value: -90, itemStyle: { color: '#ff6b6b' } },
+                    { value: 1100, itemStyle: { color: '#00d4aa' } },
+                    { value: 890, itemStyle: { color: '#00d4aa' } },
+                    { value: 156, itemStyle: { color: '#00d4aa' } }
+                ],
+                barWidth: '60%'
+            }]
+        });
+
+        window.addEventListener('resize', () => dailyChart.resize());
+    </script>
+</body>
+</html>
