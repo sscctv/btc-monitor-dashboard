@@ -8,49 +8,116 @@
 </head>
 <body>
     <div class="container">
-        <header class="header"><h1>虚拟交易</h1><div class="connection-status"><span id="dbStatus" class="status-dot offline"></span><span id="dbStatusText">连接中...</span></div></header>
+        <header class="header">
+            <h1>虚拟交易</h1>
+            <div class="connection-status">
+                <span id="dbStatus" class="status-dot offline"></span>
+                <span id="dbStatusText">连接中...</span>
+            </div>
+        </header>
+
         <main class="main-content">
             <section class="overview-section">
                 <div class="overview-cards">
-                    <div class="card"><div class="card-label">总余额</div><div class="card-value" id="totalBalance">--</div></div>
-                    <div class="card"><div class="card-label">总盈亏</div><div class="card-value" id="totalPnl">--</div></div>
-                    <div class="card"><div class="card-label">交易次数</div><div class="card-value" id="tradeCount">--</div></div>
+                    <div class="card">
+                        <div class="card-label">总余额</div>
+                        <div class="card-value" id="totalBalance">--</div>
+                        <div class="card-change">USDT</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">总盈亏</div>
+                        <div class="card-value" id="totalPnl">--</div>
+                        <div class="card-change" id="pnlPercent">--</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">交易次数</div>
+                        <div class="card-value" id="tradeCount">--</div>
+                        <div class="card-change">笔</div>
+                    </div>
                 </div>
             </section>
+
             <section class="strategies-section">
-                <div class="section-header"><h2>当前持仓</h2></div>
-                <div class="strategies-grid" id="positionsGrid"><p>加载中...</p></div>
+                <div class="section-header">
+                    <h2>策略余额</h2>
+                </div>
+                <div class="strategies-grid" id="positionsGrid">
+                    <div class="loading-spinner">加载中...</div>
+                </div>
             </section>
         </main>
+
         <nav class="bottom-nav">
-            <a href="index.html" class="nav-item"><span class="nav-icon">📊</span><span>首页</span></a>
-            <a href="strategies.html" class="nav-item"><span class="nav-icon">⚙️</span><span>策略</span></a>
-            <a href="virtual.html" class="nav-item active"><span class="nav-icon">💰</span><span>交易</span></a>
-            <a href="signals.html" class="nav-item"><span class="nav-icon">📡</span><span>信号</span></a>
-            <a href="history.html" class="nav-item"><span class="nav-icon">📜</span><span>历史</span></a>
+            <a href="index.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-text">首页</span></a>
+            <a href="strategies.html" class="nav-item"><span class="nav-icon">⚙️</span><span class="nav-text">策略</span></a>
+            <a href="virtual.html" class="nav-item active"><span class="nav-icon">💰</span><span class="nav-text">交易</span></a>
+            <a href="signals.html" class="nav-item"><span class="nav-icon">📡</span><span class="nav-text">信号</span></a>
+            <a href="history.html" class="nav-item"><span class="nav-icon">📜</span><span class="nav-text">历史</span></a>
         </nav>
     </div>
+
+    <script src="api.js"></script>
     <script>
-        const SUPABASE_URL = 'https://lpcrnobolifrzwrkxoli.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_8gEsCRNRc7py6BmypYuRIw_sNtKooug';
-        async function fetchFromSupabase(table) {
-            try { const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=*`, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }); return r.ok ? await r.json() : null; }
-            catch (e) { console.error(e); return null; }
-        }
         async function loadData() {
             const statusEl = document.getElementById('dbStatus');
-            const [balances, trades] = await Promise.all([fetchFromSupabase('virtual_balances'), fetchFromSupabase('virtual_trades')]);
-            statusEl.className = 'status-dot ' + (balances ? 'online' : 'offline');
-            document.getElementById('dbStatusText').textContent = balances ? '已连接' : '离线';
-            const total = (balances || []).reduce((s, b) => s + (b.balance || 0), 0);
-            const pnl = (balances || []).reduce((s, b) => s + (b.total_pnl || 0), 0);
-            document.getElementById('totalBalance').textContent = total.toFixed(2);
-            document.getElementById('totalPnl').textContent = (pnl >= 0 ? '+' : '') + pnl.toFixed(2);
-            document.getElementById('totalPnl').className = 'card-value ' + (pnl >= 0 ? 'profit' : 'loss');
-            document.getElementById('tradeCount').textContent = (trades || []).length;
-            const positions = (trades || []).filter(t => !t.closed);
-            document.getElementById('positionsGrid').innerHTML = positions.length ? positions.map(p => '<div class=\"strategy-card\"><div class=\"strategy-header\"><span>' + (p.strategy_name || '') + '</span><span class=\"' + (p.action === 'LONG' ? 'profit' : 'loss') + '\">' + (p.action || '') + '</span></div><div class=\"strategy-stats\"><div class=\"stat\"><span class=\"stat-label\">数量</span><span>' + (p.quantity || '') + '</span></div><div class=\"stat\"><span class=\"stat-label\">开仓价</span><span>' + (p.entry_price || '') + '</span></div></div></div>').join('') : '<p>暂无持仓</p>';
+            const statusTextEl = document.getElementById('dbStatusText');
+
+            try {
+                const [balances, trades] = await Promise.all([
+                    fetchData('virtual_balances'),
+                    fetchData('virtual_trades')
+                ]);
+
+                statusEl.className = 'status-dot online';
+                statusTextEl.textContent = API_CONFIG.isLocal ? '本地' : '云端';
+
+                // 更新概览
+                const total = (balances || []).reduce((s, b) => s + (b.balance || 0), 0);
+                const pnl = (balances || []).reduce((s, b) => s + (b.total_pnl || 0), 0);
+                const pnlPercent = total > 0 ? (pnl / (total - pnl)) * 100 : 0;
+
+                document.getElementById('totalBalance').textContent = formatNumber(total);
+                document.getElementById('totalPnl').textContent = (pnl >= 0 ? '+' : '') + formatNumber(pnl);
+                document.getElementById('totalPnl').className = 'card-value ' + getPnLClass(pnl);
+                document.getElementById('pnlPercent').textContent = formatPercent(pnlPercent);
+                document.getElementById('pnlPercent').className = 'card-change ' + getPnLClass(pnl);
+                document.getElementById('tradeCount').textContent = (trades || []).length;
+
+                // 显示余额列表
+                renderBalances(balances || SAMPLE_BALANCES);
+            } catch (error) {
+                statusEl.className = 'status-dot offline';
+                statusTextEl.textContent = '离线';
+                renderBalances(SAMPLE_BALANCES);
+            }
         }
+
+        function renderBalances(balances) {
+            const grid = document.getElementById('positionsGrid');
+            grid.innerHTML = balances.map(b => `
+                <div class="strategy-card">
+                    <div class="strategy-header">
+                        <span class="strategy-name">${b.strategy_name || 'Unknown'}</span>
+                        <span class="strategy-badge ${getPnLClass(b.total_pnl)}">${formatPercent(b.total_pnl_percent)}</span>
+                    </div>
+                    <div class="strategy-stats">
+                        <div class="stat">
+                            <span class="stat-label">余额</span>
+                            <span class="stat-value">${formatNumber(b.balance)}</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">盈亏</span>
+                            <span class="stat-value ${getPnLClass(b.total_pnl)}">${formatNumber(b.total_pnl)}</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">交易</span>
+                            <span class="stat-value">${b.trade_count || 0}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
         document.addEventListener('DOMContentLoaded', loadData);
     </script>
 </body>
