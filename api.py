@@ -4,8 +4,9 @@ API 服务 - 提供策略数据给前端
 Flask 轻量级 API
 """
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory, send_file
 import json
+import os
 from datetime import datetime
 from db_config import (
     get_all_strategies_data, 
@@ -15,7 +16,17 @@ from db_config import (
     NEW_STRATEGIES
 )
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='.', static_url_path='')
+
+# ============== 静态文件 ==============
+
+@app.route('/')
+def index():
+    return send_file('index.html')
+
+@app.route('/<path:filename>')
+def serve_static(filename):
+    return send_from_directory('.', filename)
 
 # ============== API 端点 ==============
 
