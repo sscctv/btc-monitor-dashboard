@@ -91,16 +91,75 @@ async function fetchData(table, params = '') {
     }
 }
 
+// 根据实际数据库结构转换数据
+function transformTradesData(rawData) {
+    if (!rawData || !Array.isArray(rawData)) return [];
+    
+    // 按策略分组计算统计数据
+    const strategyMap = {};
+    
+    rawData.forEach(trade => {
+        const strategy = trade.strategy || trade.account_id || 'Unknown';
+        if (!strategyMap[strategy]) {
+            strategyMap[strategy] = {
+                strategy_name: strategy,
+                balance: 0,
+                initial_balance: 1000,
+                total_pnl: 0,
+                total_pnl_percent: 0,
+                win_rate: 0,
+                trade_count: 0,
+                wins: 0
+            };
+        }
+        
+        strategyMap[strategy].trade_count++;
+        const pnl = trade.realized_pnl || 0;
+        strategyMap[strategy].total_pnl += pnl;
+        if (pnl > 0) strategyMap[strategy].wins++;
+    });
+    
+    // 计算胜率和百分比
+    Object.values(strategyMap).forEach(s => {
+        s.win_rate = s.trade_count > 0 ? (s.wins / s.trade_count) * 100 : 0;
+        s.balance = s.initial_balance + s.total_pnl;
+        s.total_pnl_percent = s.initial_balance > 0 ? (s.total_pnl / s.initial_balance) * 100 : 0;
+    });
+    
+    return Object.values(strategyMap);
+}
+
+// 获取所有交易记录（按时间排序）
+async function fetchAllTrades() {
+    const data = await fetchData('btc_trades', '&order=opened_at.desc&limit=500');
+    return data || [];
+}
+
+// 获取策略统计数据
+async function fetchStrategyStats() {
+    const data = await fetchData('btc_trades');
+    return transformTradesData(data);
+}
+
 // 示例数据
 const SAMPLE_BALANCES = [
-    { strategy_name: 'BB策略 30x全仓', balance: 1000, initial_balance: 1000, total_pnl: 150.5, total_pnl_percent: 15.05, win_rate: 65, trade_count: 45 },
-    { strategy_name: 'BB策略 30x逐仓', balance: 1200, initial_balance: 1000, total_pnl: 200.0, total_pnl_percent: 20.0, win_rate: 68, trade_count: 52 },
-    { strategy_name: 'RSI_14_35_65_L20', balance: 850, initial_balance: 1000, total_pnl: -150.0, total_pnl_percent: -15.0, win_rate: 45, trade_count: 38 },
-    { strategy_name: 'RSI_7_30_75_L20', balance: 1100, initial_balance: 1000, total_pnl: 100.0, total_pnl_percent: 10.0, win_rate: 55, trade_count: 42 },
-    { strategy_name: 'RSI_7_35_75_L20', balance: 950, initial_balance: 1000, total_pnl: -50.0, total_pnl_percent: -5.0, win_rate: 50, trade_count: 35 }
+    { strategy_name: '实盘账户', balance: 10000, initial_balance: 10000, total_pnl: 1500.5, total_pnl_percent: 15.0, win_rate: 65, trade_count: 45 },
+    { strategy_name: '测试账户', balance: 8500, initial_balance: 10000, total_pnl: -1500.0, total_pnl_percent: -15.0, win_rate: 45, trade_count: 38 }
 ];
 
 // 导出
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { API_CONFIG, fetchData, fetchFromSupabase, fetchFromLocal, formatNumber, formatPercent, getPnLClass, SAMPLE_BALANCES };
+    module.exports = { 
+        API_CONFIG, 
+        fetchData, 
+        fetchFromSupabase, 
+        fetchFromLocal,
+        fetchAllTrades,
+        fetchStrategyStats,
+        transformTradesData,
+        formatNumber, 
+        formatPercent, 
+        getPnLClass, 
+        SAMPLE_BALANCES 
+    };
 }
