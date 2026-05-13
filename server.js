@@ -33,8 +33,8 @@ app.use(express.static(ROOT_DIR));
 
 // API: get market data
 app.get('/data.json', (req, res) => {
-  const url = 'https://lpcrnbolifrzwrkxoli.supabase.co/storage/v1/object/public/virt-data/market_data.json';
-  https.get(url, { headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwY3Jub2JvbGlmcnp3cmt4b2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDUzMTQwMDAsImV4cCI6MTk2MDg5MDQwMH0.YOURCE_SUPABASE_SECRET' } }, (apiRes) => {
+  const url = 'https://lpcrnobolifrzwrkxoli.supabase.co/storage/v1/object/public/virt-data/virt_positions.json';
+  https.get(url, { headers: { 'apikey': 'sb_publishable_8gEsCRNRc7py6BmypYuRIw_sNtKooug' } }, (apiRes) => {
     let data = '';
     apiRes.on('data', chunk => data += chunk);
     apiRes.on('end', () => {
