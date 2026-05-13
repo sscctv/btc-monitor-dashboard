@@ -2,14 +2,14 @@
 const CONFIG = {
     // Supabase 配置
     SUPABASE_URL: 'https://lpcrnbolifrzwrkxoli.supabase.co',
-    SUPABASE_KEY: 'YOUR_SUPABASE_KEY',
-    
+    SUPABASE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwY3JuYm9saWZyd3JreG9saSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQ1MTkyMDAwLCJleHAiOjE5NjA3NjgwMDB9.placeholder',
+
     // PostgreSQL 本地配置
     DB_CONFIG: {
-        host: '192.168.1.2',
+        host: 'db.lpcrnbolifrzwrkxoli.supabase.co',
         port: 5432,
         user: 'postgres',
-        password: 'Postgres@2026',
+        password: 'sbsecretU3jwawwwnBTppSz0H1-QyQ_eb6rG-8C',
         database: 'postgres'
     }
 };
