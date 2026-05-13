@@ -19,6 +19,18 @@ const API_CONFIG = {
     }
 };
 
+// 获取市场信号数据
+async function fetchMarketSignals() {
+    try {
+        const response = await fetch('/data.json');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return await response.json();
+    } catch (error) {
+        console.error('获取市场数据错误:', error);
+        return null;
+    }
+}
+
 // 格式化数字
 function formatNumber(num, decimals = 2) {
     if (num === null || num === undefined || isNaN(num)) return '--';
