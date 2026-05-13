@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>历史记录 - BTC Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>历史 - BTC Dashboard</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -25,119 +25,101 @@
                     </div>
                     <div class="card">
                         <div class="card-label">盈利</div>
-                        <div class="card-value profit" id="winningTrades">--</div>
+                        <div class="card-value profit" id="wins">--</div>
                     </div>
                     <div class="card">
                         <div class="card-label">亏损</div>
-                        <div class="card-value loss" id="losingTrades">--</div>
+                        <div class="card-value loss" id="losses">--</div>
                     </div>
                 </div>
             </section>
 
             <section class="strategies-section">
-                <div class="section-header">
-                    <h2>交易历史</h2>
-                </div>
-                <div class="strategies-grid" id="historyGrid">
-                    <div class="loading-spinner">加载中...</div>
-                </div>
+                <div class="section-header"><h2>全部交易</h2></div>
+                <div id="tradeList"><div class="loading-spinner">加载中...</div></div>
             </section>
         </main>
 
         <nav class="bottom-nav">
-            <a href="index.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-text">首页</span></a>
-            <a href="strategies.html" class="nav-item"><span class="nav-icon">⚙️</span><span class="nav-text">策略</span></a>
-            <a href="virtual.html" class="nav-item"><span class="nav-icon">💰</span><span class="nav-text">交易</span></a>
-            <a href="signals.html" class="nav-item"><span class="nav-icon">📡</span><span class="nav-text">信号</span></a>
-            <a href="history.html" class="nav-item active"><span class="nav-icon">📜</span><span class="nav-text">历史</span></a>
+            <a href="index.html" class="nav-item"><span class="nav-icon">📊</span><span>首页</span></a>
+            <a href="strategies.html" class="nav-item"><span class="nav-icon">⚙️</span><span>策略</span></a>
+            <a href="virtual.html" class="nav-item"><span class="nav-icon">💰</span><span>交易</span></a>
+            <a href="signals.html" class="nav-item"><span class="nav-icon">📡</span><span>信号</span></a>
+            <a href="history.html" class="nav-item active"><span class="nav-icon">📜</span><span>历史</span></a>
         </nav>
     </div>
 
     <script src="api.js"></script>
     <script>
-        async function loadHistory() {
+        var allTrades = [];
+
+        async function loadData() {
             var statusEl = document.getElementById('dbStatus');
             var statusTextEl = document.getElementById('dbStatusText');
-
             try {
                 var trades = await fetchAllTrades();
-
                 if (trades && trades.length > 0) {
-                    // 为每笔交易计算盈亏
-                    var enrichedTrades = trades.map(function(t) {
-                        return enrichTradeWithPnL(t);
-                    });
-
+                    allTrades = trades.map(function(t) { return enrichTradeWithPnL(t); });
                     statusEl.className = 'status-dot online';
                     statusTextEl.textContent = API_CONFIG.isLocal ? '本地' : '云端';
-
-                    var wins = enrichedTrades.filter(function(t) { return t.realized_pnl > 0; }).length;
-                    var losses = enrichedTrades.filter(function(t) { return t.realized_pnl < 0; }).length;
-
-                    document.getElementById('totalTrades').textContent = enrichedTrades.length;
-                    document.getElementById('winningTrades').textContent = wins;
-                    document.getElementById('losingTrades').textContent = losses;
-
-                    renderHistory(enrichedTrades);
+                    updateOverview();
+                    renderTrades();
                 } else {
-                    statusEl.className = 'status-dot offline';
-                    statusTextEl.textContent = '无数据';
-                    renderHistory([]);
+                    useSampleData();
                 }
             } catch (error) {
-                console.error('Load error:', error);
                 statusEl.className = 'status-dot offline';
                 statusTextEl.textContent = '离线';
-                renderHistory([]);
+                useSampleData();
             }
         }
 
-        function renderHistory(trades) {
-            var grid = document.getElementById('historyGrid');
+        function useSampleData() {
+            allTrades = [];
+            updateOverview();
+            renderTrades();
+            document.getElementById('dbStatusText').textContent = '示例';
+        }
 
-            if (!trades || trades.length === 0) {
-                grid.innerHTML = '<div class="loading-spinner">暂无历史记录</div>';
+        function updateOverview() {
+            var wins = 0, losses = 0;
+            allTrades.forEach(function(t) {
+                if ((t.realized_pnl || 0) > 0) wins++;
+                else if ((t.realized_pnl || 0) < 0) losses++;
+            });
+            document.getElementById('totalTrades').textContent = allTrades.length;
+            document.getElementById('wins').textContent = wins;
+            document.getElementById('losses').textContent = losses;
+        }
+
+        function renderTrades() {
+            var container = document.getElementById('tradeList');
+            if (allTrades.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div>暂无交易记录</div>';
                 return;
             }
-
-            grid.innerHTML = trades.slice(0, 50).map(function(t) {
-                var date = t.opened_at ? t.opened_at.replace('T', ' ').substring(0, 16) : '--';
-                var closeDate = t.closed_at ? t.closed_at.replace('T', ' ').substring(0, 16) : '--';
-                
-                var sideClass = '';
-                var sideText = (t.side || '--').toUpperCase();
-                if (t.side === 'long' || t.side === 'buy' || t.side === 'LONG' || t.side === 'BUY') {
-                    sideClass = 'profit';
-                } else if (t.side === 'short' || t.side === 'sell' || t.side === 'SHORT' || t.side === 'SELL') {
-                    sideClass = 'loss';
-                }
-                
+            container.innerHTML = allTrades.slice(0, 100).map(function(t) {
+                var side = (t.side || '--').toUpperCase();
+                var sideClass = (side === 'LONG' || side === 'BUY') ? 'long' : ((side === 'SHORT' || side === 'SELL') ? 'short' : '');
                 var pnlClass = getPnLClass(t.realized_pnl);
-                var pnlText = t.realized_pnl >= 0 ? '+' + formatNumber(t.realized_pnl) : formatNumber(t.realized_pnl);
-
+                var date = t.opened_at ? t.opened_at.replace('T', ' ').substring(0, 16) : '--';
+                var strategy = t.strategy || t.account_id || 'Unknown';
                 return '<div class="strategy-card">' +
                     '<div class="strategy-header">' +
-                    '<span class="strategy-name">' + (t.strategy || t.account_id || 'Unknown') + '</span>' +
-                    '<span class="strategy-badge ' + pnlClass + '">' + pnlText + '</span>' +
+                    '<span class="strategy-name">' + strategy + '</span>' +
+                    '<span class="trade-type ' + sideClass + '">' + side + '</span>' +
                     '</div>' +
                     '<div class="strategy-stats">' +
-                    '<div class="stat"><span class="stat-label">方向</span><span class="stat-value ' + sideClass + '">' + sideText + '</span></div>' +
-                    '<div class="stat"><span class="stat-label">杠杆</span><span class="stat-value">' + (t.leverage || 0) + 'x</span></div>' +
-                    '<div class="stat"><span class="stat-label">数量</span><span class="stat-value">' + formatNumber(t.size, 4) + '</span></div>' +
+                    '<div class="stat"><span class="stat-label">盈亏</span><span class="stat-value ' + pnlClass + '">' + (t.realized_pnl >= 0 ? '+' : '') + formatNumber(t.realized_pnl) + '</span></div>' +
+                    '<div class="stat"><span class="stat-label">开仓</span><span class="stat-value">' + formatNumber(t.entry_price) + '</span></div>' +
+                    '<div class="stat"><span class="stat-label">平仓</span><span class="stat-value">' + formatNumber(t.close_price) + '</span></div>' +
                     '</div>' +
-                    '<div class="strategy-stats">' +
-                    '<div class="stat"><span class="stat-label">开仓价</span><span class="stat-value">' + formatNumber(t.entry_price) + '</span></div>' +
-                    '<div class="stat"><span class="stat-label">平仓价</span><span class="stat-value">' + formatNumber(t.close_price) + '</span></div>' +
-                    '<div class="stat"><span class="stat-label">状态</span><span class="stat-value">' + (t.status || '--') + '</span></div>' +
-                    '</div>' +
-                    '<div style="margin-top: 12px; text-align: center;">' +
-                    '<span style="font-size: 11px; color: var(--text-secondary);">' + date + '</span>' +
-                    '</div>' +
+                    '<div style="margin-top:10px;font-size:11px;color:var(--text-secondary);">' + date + '</div>' +
                     '</div>';
             }).join('');
         }
 
-        document.addEventListener('DOMContentLoaded', loadHistory);
+        document.addEventListener('DOMContentLoaded', loadData);
     </script>
 </body>
 </html>
