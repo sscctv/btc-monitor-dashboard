@@ -10,8 +10,8 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 # ============== Supabase 配置 ==============
-SUPABASE_URL = "https://lpcrnobolifrzwrkxoli.supabase.co"
-SUPABASE_KEY = "sb_publishable_8gEsCRNRc7py6BmypYuRIw_sNtKooug"
+SUPABASE_URL = "https://lpcrnbolifrzwrkxoli.supabase.co"
+SUPABASE_KEY = "YOUR_SUPABASE_KEY"  # 需要替换为实际key
 
 # ============== PostgreSQL 本地配置 ==============
 DB_CONFIG = {
@@ -19,7 +19,7 @@ DB_CONFIG = {
     'port': 5432,
     'user': 'postgres',
     'password': 'Postgres@2026',
-    'dbname': 'postgres'
+    'database': 'postgres'
 }
 
 # ============== 数据库连接函数 ==============
