@@ -2,435 +2,106 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>策略管理 - BTC Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.css">
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
 </head>
 <body>
-    <div class="top-bar">
-        <div class="brand">
-            <span class="brand-icon">⚙️</span>
-            <span>策略管理</span>
-        </div>
-        <div class="live-badge">
-            <span class="live-dot"></span>
-            <span id="updateTime">--</span>
-        </div>
-    </div>
-
     <div class="container">
-        <!-- 筛选器 -->
-        <div class="filter-bar">
-            <select id="filterType" class="filter-select">
-                <option value="">全部类型</option>
-                <option value="BB">BB策略</option>
-                <option value="RSI">RSI策略</option>
-            </select>
-            <select id="filterStatus" class="filter-select">
-                <option value="">全部状态</option>
-                <option value="open">有持仓</option>
-                <option value="closed">空闲</option>
-            </select>
-        </div>
-
-        <!-- 收益对比图表 -->
-        <div class="card">
-            <div class="card-header">
-                <span class="card-title">📊 收益对比</span>
+        <header class="header">
+            <h1>策略管理</h1>
+            <div class="connection-status">
+                <span id="dbStatus" class="status-dot offline"></span>
+                <span id="dbStatusText">连接中...</span>
             </div>
-            <div class="chart-container" id="compareChart"></div>
-        </div>
-
-        <!-- 策略列表 -->
-        <div class="card">
-            <div class="card-header">
-                <span class="card-title">🎯 策略列表 (<span id="strategyCount">0</span>)</span>
-            </div>
-            <div class="strategy-grid" id="strategyList">
-                <div class="loading-text">加载中...</div>
-            </div>
-        </div>
+        </header>
+        <main class="main-content">
+            <section class="strategies-section">
+                <div class="section-header"><h2>所有策略</h2></div>
+                <div class="strategies-grid" id="strategiesGrid"><div class="loading-spinner">加载中...</div></div>
+            </section>
+        </main>
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><span class="nav-icon">📊</span><span>首页</span></a>
+            <a href="strategies.html" class="nav-item active"><span class="nav-icon">⚙️</span><span>策略</span></a>
+            <a href="virtual.html" class="nav-item"><span class="nav-icon">💰</span><span>交易</span></a>
+            <a href="signals.html" class="nav-item"><span class="nav-icon">📡</span><span>信号</span></a>
+            <a href="history.html" class="nav-item"><span class="nav-icon">📜</span><span>历史</span></a>
+        </nav>
     </div>
-
-    <!-- 交易记录弹窗 -->
-    <div class="modal" id="tradeModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <span class="modal-title" id="modalTitle">交易记录</span>
-                <button class="modal-close" onclick="closeModal()">×</button>
-            </div>
-            <div class="modal-body" id="modalBody">
-                <div class="loading-text">加载中...</div>
-            </div>
-        </div>
-    </div>
-
-    <nav class="bottom-nav">
-        <a href="index.html" class="nav-item">
-            <span class="nav-icon">🏠</span>
-            <span class="nav-text">首页</span>
-        </a>
-        <a href="virtual.html" class="nav-item">
-            <span class="nav-icon">📊</span>
-            <span class="nav-text">交易</span>
-        </a>
-        <a href="signals.html" class="nav-item">
-            <span class="nav-icon">📡</span>
-            <span class="nav-text">信号</span>
-        </a>
-        <a href="strategies.html" class="nav-item active">
-            <span class="nav-icon">⚙️</span>
-            <span class="nav-text">策略</span>
-        </a>
-        <a href="history.html" class="nav-item">
-            <span class="nav-icon">📜</span>
-            <span class="nav-text">记录</span>
-        </a>
-    </nav>
-
+    <div id="tradeModal" class="modal"><div class="modal-content"><span class="close">&times;</span><h2>交易记录</h2><div id="tradeList"></div></div></div>
     <script>
-    // ==================== Supabase 配置 ====================
-    const SUPABASE_URL = 'https://lpcrnbolifrzwrkxoli.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwY3Jub2JvbGlmcnp3cmt4b2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDUzMTQwMDAsImV4cCI6MTk2MDg5MDQwMH0.YOURCE_SUPABASE_SECRET';
+        const SUPABASE_URL = 'https://lpcrnbolifrzwrkxoli.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_8gEsCRNRc7py6BmypYuRIw_sNtKooug';
 
-    // ==================== API 工具 ====================
-    async function fetchAPI(path) {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
-            headers: {
-                'apikey': SUPABASE_KEY,
-                'Authorization': `Bearer ${SUPABASE_KEY}`
+        async function fetchFromSupabase(table) {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=*`, {
+                    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' }
+                });
+                return response.ok ? await response.json() : null;
+            } catch (error) { console.error(error); return null; }
+        }
+
+        async function loadStrategies() {
+            const statusEl = document.getElementById('dbStatus');
+            const statusTextEl = document.getElementById('dbStatusText');
+            try {
+                const [balances, trades] = await Promise.all([
+                    fetchFromSupabase('virtual_balances'),
+                    fetchFromSupabase('virtual_trades')
+                ]);
+                statusEl.className = 'status-dot ' + (balances ? 'online' : 'offline');
+                statusTextEl.textContent = balances ? '已连接' : '离线';
+                renderStrategies(balances || [], trades || []);
+            } catch (error) {
+                statusEl.className = 'status-dot offline';
+                statusTextEl.textContent = '离线';
+                renderStrategies([], []);
             }
-        });
-        if (!res.ok) throw new Error(`API Error: ${res.status}`);
-        return res.json();
-    }
-
-    function fmt(n, d = 2) {
-        if (n == null || isNaN(n)) return '--';
-        return n.toFixed(d).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    }
-
-    function fmtPnl(n) {
-        if (n == null) return '--';
-        const sign = n >= 0 ? '+' : '';
-        return sign + '$' + fmt(Math.abs(n));
-    }
-
-    function fmtDate(d) {
-        if (!d) return '--';
-        return new Date(d).toLocaleString('zh-CN');
-    }
-
-    // ==================== 全局数据 ====================
-    let allBalances = [];
-    let allTrades = [];
-
-    // ==================== 加载策略数据 ====================
-    async function loadStrategies() {
-        try {
-            // 获取余额数据
-            allBalances = await fetchAPI('/virtual_balances?select=*&order=total_pnl.desc');
-            
-            // 获取交易记录
-            allTrades = await fetchAPI('/virtual_trades?select=*&order=created_at.desc&limit=500');
-
-            renderStrategies();
-            renderCompareChart();
-            
-            document.getElementById('updateTime').textContent = new Date().toLocaleTimeString('zh-CN');
-        } catch (e) {
-            console.error('Load error:', e);
-            document.getElementById('strategyList').innerHTML = 
-                '<div class="loading-text" style="color:var(--accent-danger)">数据加载失败: ' + e.message + '</div>';
-        }
-    }
-
-    // ==================== 渲染策略列表 ====================
-    function renderStrategies() {
-        const typeFilter = document.getElementById('filterType').value;
-        const statusFilter = document.getElementById('filterStatus').value;
-
-        let filtered = allBalances.filter(b => {
-            if (typeFilter && !b.strategy_name.includes(typeFilter)) return false;
-            return true;
-        });
-
-        document.getElementById('strategyCount').textContent = filtered.length;
-
-        const container = document.getElementById('strategyList');
-        container.innerHTML = filtered.map((b, i) => {
-            const hasPosition = b.current_position && b.current_position !== 'none';
-            const pnlColor = (b.total_pnl || 0) >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)';
-            const positionType = b.current_position_type || '';
-            const positionBg = positionType === 'long' ? 'rgba(46, 199, 113, 0.2)' : 
-                               positionType === 'short' ? 'rgba(231, 76, 60, 0.2)' : 'transparent';
-
-            return `
-            <div class="strategy-card" onclick="showTrades('${b.strategy_id}', '${b.strategy_name}')" style="border-left-color: ${pnlColor}">
-                <div class="strategy-card-header">
-                    <span class="strategy-rank rank-${i < 3 ? i + 1 : 0}">${i + 1}</span>
-                    <span class="strategy-name">${b.strategy_name || '策略' + (i + 1)}</span>
-                </div>
-                <div class="strategy-card-body">
-                    <div class="strategy-stats">
-                        <div class="stat-item">
-                            <span class="stat-label">初始</span>
-                            <span class="stat-value">$${fmt(b.initial_balance || 1000)}</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">余额</span>
-                            <span class="stat-value">$${fmt(b.current_balance || 1000)}</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">盈亏</span>
-                            <span class="stat-value" style="color: ${pnlColor}">${fmtPnl(b.total_pnl || 0)}</span>
-                        </div>
-                    </div>
-                    <div class="strategy-extra">
-                        <div class="extra-item">
-                            <span class="label">胜率</span>
-                            <span class="value">${b.win_rate ? fmt(b.win_rate, 1) + '%' : '--'}</span>
-                        </div>
-                        <div class="extra-item">
-                            <span class="label">交易</span>
-                            <span class="value">${b.trade_count || 0}笔</span>
-                        </div>
-                        <div class="extra-item position" style="background: ${positionBg}">
-                            <span class="label">持仓</span>
-                            <span class="value">${hasPosition ? (positionType === 'long' ? '📈做多' : '📉做空') : '空闲'}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            `;
-        }).join('');
-    }
-
-    // ==================== 渲染对比图表 ====================
-    function renderCompareChart() {
-        const chartEl = document.getElementById('compareChart');
-        if (!chartEl || allBalances.length === 0) return;
-
-        const chart = echarts.init(chartEl);
-        
-        const sorted = [...allBalances].sort((a, b) => (b.total_pnl || 0) - (a.total_pnl || 0));
-        const top15 = sorted.slice(0, 15);
-
-        const option = {
-            grid: { left: 60, right: 20, top: 10, bottom: 40 },
-            xAxis: {
-                type: 'category',
-                data: top15.map(b => b.strategy_name.substring(0, 12)),
-                axisLabel: { color: '#9ca3af', fontSize: 9, rotate: 45 }
-            },
-            yAxis: {
-                type: 'value',
-                axisLabel: { color: '#9ca3af', fontSize: 10, formatter: v => '$' + (v/1000).toFixed(0) + 'k' },
-                splitLine: { lineStyle: { color: '#2d3748' } }
-            },
-            series: [{
-                type: 'bar',
-                data: top15.map(b => ({
-                    value: b.total_pnl || 0,
-                    itemStyle: { color: (b.total_pnl || 0) >= 0 ? '#00d4aa' : '#ff6b6b' }
-                }))
-            }]
-        };
-
-        chart.setOption(option);
-    }
-
-    // ==================== 显示交易记录 ====================
-    function showTrades(strategyId, strategyName) {
-        document.getElementById('modalTitle').textContent = strategyName + ' 交易记录';
-        document.getElementById('modalBody').innerHTML = '<div class="loading-text">加载中...</div>';
-        document.getElementById('tradeModal').classList.add('active');
-
-        const trades = allTrades.filter(t => t.strategy_id === strategyId || t.strategy_name === strategyName);
-
-        if (trades.length === 0) {
-            document.getElementById('modalBody').innerHTML = '<div class="loading-text">暂无交易记录</div>';
-            return;
         }
 
-        document.getElementById('modalBody').innerHTML = `
-            <table class="trade-table">
-                <thead>
-                    <tr>
-                        <th>时间</th>
-                        <th>类型</th>
-                        <th>入场</th>
-                        <th>出场</th>
-                        <th>盈亏</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${trades.slice(0, 50).map(t => `
-                    <tr class="${(t.pnl || 0) >= 0 ? 'profit' : 'loss'}">
-                        <td>${fmtDate(t.created_at)}</td>
-                        <td>${t.position_type === 'long' ? '📈做多' : '📉做空'}</td>
-                        <td>$${fmt(t.entry_price)}</td>
-                        <td>${t.exit_price ? '$' + fmt(t.exit_price) : '--'}</td>
-                        <td style="color: ${(t.pnl || 0) >= 0 ? 'var(--accent-primary)' : 'var(--accent-danger)'}">
-                            ${t.pnl != null ? fmtPnl(t.pnl) : '--'}
-                        </td>
-                    </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        `;
-    }
+        function renderStrategies(balances, trades) {
+            const grid = document.getElementById('strategiesGrid');
+            const allStrategies = [
+                { name: 'BB策略 30x全仓', type: 'original' },
+                { name: 'BB策略 30x逐仓', type: 'original' },
+                { name: 'BB策略 25x全仓', type: 'original' },
+                { name: 'BB策略 25x逐仓', type: 'original' },
+                { name: 'BB策略 20x', type: 'original' },
+                { name: 'RSI_14_35_65_L20', type: 'new' },
+                { name: 'RSI_7_30_75_L20', type: 'new' },
+                { name: 'RSI_7_35_75_L20', type: 'new' },
+                { name: 'RSI_7_20_75_L20', type: 'new' },
+                { name: 'RSI_14_35_70_L20', type: 'new' },
+                { name: 'RSI_7_35_65_L20', type: 'new' },
+                { name: 'RSI_7_25_75_L20', type: 'new' },
+                { name: 'RSI_7_35_70_L20', type: 'new' },
+                { name: 'RSI_14_35_75_L20', type: 'new' },
+                { name: 'RSI_7_20_70_L20', type: 'new' }
+            ];
+            grid.innerHTML = allStrategies.map(s => {
+                const b = balances.find(x => x.strategy_name === s.name) || {};
+                const strategyTrades = trades.filter(t => t.strategy_name === s.name).slice(0, 5);
+                return '<div class="strategy-card"><div class="strategy-header"><span class="strategy-name">' + s.name + '</span><span class="type-badge ' + s.type + '">' + (s.type === 'original' ? 'BB' : 'RSI') + '</span></div><div class="strategy-stats"><div class="stat"><span class="stat-label">余额</span><span class="stat-value">' + (b.balance || '--') + '</span></div><div class="stat"><span class="stat-label">盈亏</span><span class="stat-value ' + (b.total_pnl >= 0 ? 'profit' : 'loss') + '">' + (b.total_pnl ? b.total_pnl.toFixed(2) : '--') + '</span></div><div class="stat"><span class="stat-label">胜率</span><span class="stat-value">' + (b.win_rate ? b.win_rate.toFixed(1) + '%' : '--') + '</span></div></div><button class="view-trades-btn" onclick=\"showTrades(\\'' + s.name + '\\')\">查看交易</button></div>';
+            }).join('');
+        }
 
-    function closeModal() {
-        document.getElementById('tradeModal').classList.remove('active');
-    }
+        function showTrades(strategyName) {
+            const modal = document.getElementById('tradeModal');
+            const list = document.getElementById('tradeList');
+            document.getElementById('tradeList').innerHTML = '<p>加载中...</p>';
+            modal.style.display = 'block';
+            fetchFromSupabase('virtual_trades').then(trades => {
+                const filtered = (trades || []).filter(t => t.strategy_name === strategyName);
+                list.innerHTML = filtered.length ? filtered.slice(0, 20).map(t => '<div class=\"trade-item\"><span>' + (t.created_at || '') + '</span><span>' + (t.action || '') + '</span><span>' + (t.pnl || '') + '</span></div>').join('') : '<p>暂无交易记录</p>';
+            });
+        }
 
-    // 筛选事件
-    document.getElementById('filterType').addEventListener('change', renderStrategies);
-    document.getElementById('filterStatus').addEventListener('change', renderStrategies);
-
-    // 点击弹窗背景关闭
-    document.getElementById('tradeModal').addEventListener('click', (e) => {
-        if (e.target.classList.contains('modal')) closeModal();
-    });
-
-    // 启动
-    loadStrategies();
-    setInterval(loadStrategies, 30000);
+        document.querySelector('.close').onclick = () => document.getElementById('tradeModal').style.display = 'none';
+        window.onclick = (e) => { if (e.target.id === 'tradeModal') document.getElementById('tradeModal').style.display = 'none'; };
+        document.addEventListener('DOMContentLoaded', loadStrategies);
     </script>
-
-    <style>
-    .filter-bar {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 15px;
-    }
-    .filter-select {
-        flex: 1;
-        padding: 10px;
-        border-radius: 8px;
-        border: 1px solid var(--border-color);
-        background: var(--bg-card);
-        color: var(--text-primary);
-        font-size: 14px;
-    }
-    .strategy-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, min-max(160px, 1fr));
-        gap: 12px;
-    }
-    .strategy-card {
-        background: var(--bg-card);
-        border-radius: 12px;
-        padding: 12px;
-        border-left: 3px solid var(--accent-primary);
-        cursor: pointer;
-        transition: transform 0.2s;
-    }
-    .strategy-card:active {
-        transform: scale(0.98);
-    }
-    .strategy-card-header {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 10px;
-    }
-    .strategy-card-body .strategy-stats {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 8px;
-    }
-    .strategy-card-body .stat-item {
-        text-align: center;
-    }
-    .strategy-card-body .stat-label {
-        font-size: 10px;
-        color: var(--text-secondary);
-    }
-    .strategy-card-body .stat-value {
-        font-size: 13px;
-        font-weight: 600;
-    }
-    .strategy-extra {
-        display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
-    }
-    .extra-item {
-        background: var(--bg-secondary);
-        padding: 4px 8px;
-        border-radius: 6px;
-        font-size: 11px;
-    }
-    .extra-item .label {
-        color: var(--text-secondary);
-    }
-    .modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.7);
-        z-index: 2000;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-    }
-    .modal.active {
-        display: flex;
-    }
-    .modal-content {
-        background: var(--bg-secondary);
-        border-radius: 16px;
-        width: 100%;
-        max-height: 80vh;
-        overflow: hidden;
-    }
-    .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 15px;
-        border-bottom: 1px solid var(--border-color);
-    }
-    .modal-title {
-        font-weight: 600;
-    }
-    .modal-close {
-        background: none;
-        border: none;
-        color: var(--text-secondary);
-        font-size: 24px;
-        cursor: pointer;
-    }
-    .modal-body {
-        padding: 15px;
-        max-height: calc(80vh - 60px);
-        overflow-y: auto;
-    }
-    .trade-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 12px;
-    }
-    .trade-table th, .trade-table td {
-        padding: 8px 4px;
-        text-align: left;
-        border-bottom: 1px solid var(--border-color);
-    }
-    .trade-table th {
-        color: var(--text-secondary);
-        font-weight: 500;
-    }
-    .loading-text {
-        text-align: center;
-        padding: 30px;
-        color: var(--text-secondary);
-    }
-    </style>
 </body>
 </html>
