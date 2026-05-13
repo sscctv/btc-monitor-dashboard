@@ -1,78 +1,58 @@
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
+/* BTC Dashboard - 移动端优先简洁设计 */
 :root {
-    --bg-primary: #0a0e17;
-    --bg-secondary: #111827;
-    --bg-card: #1a1f2e;
-    --text-primary: #ffffff;
-    --text-secondary: #9ca3af;
-    --accent-primary: #00d4aa;
-    --accent-secondary: #0096ff;
-    --accent-warning: #ff9800;
-    --accent-danger: #ff6b6b;
-    --border-color: #2d3748;
-    --nav-height: 70px;
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-card: #1e293b;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --accent: #10b981;
+    --profit: #22c55e;
+    --loss: #ef4444;
+    --border: #334155;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: var(--bg-primary);
     color: var(--text-primary);
     min-height: 100vh;
-    line-height: 1.5;
-    padding-bottom: calc(var(--nav-height) + 20px);
+    padding-bottom: 80px;
 }
 
-/* 底部导航 */
-.bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: var(--nav-height);
-    background: var(--bg-secondary);
-    border-top: 1px solid var(--border-color);
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    z-index: 1000;
-    padding-bottom: env(safe-area-inset-bottom);
+.container {
+    max-width: 100%;
+    padding: 0;
 }
 
-.nav-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    text-decoration: none;
-    color: var(--text-secondary);
-    padding: 8px 12px;
-    border-radius: 12px;
-    transition: all 0.3s;
-    min-width: 60px;
-}
-
-.nav-item .nav-icon { font-size: 24px; line-height: 1; }
-.nav-item .nav-text { font-size: 11px; font-weight: 500; }
-.nav-item.active { color: var(--accent-primary); }
-.nav-item:active { background: rgba(0, 212, 170, 0.1); }
-
-/* 头部 */
+/* Header */
 .header {
     background: var(--bg-secondary);
-    padding: 16px;
+    padding: 16px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 1px solid var(--border);
 }
 
-.header h1 { font-size: 20px; font-weight: 700; color: var(--accent-primary); }
+.header h1 {
+    font-size: 18px;
+    font-weight: 600;
+}
 
 .connection-status {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     font-size: 12px;
     color: var(--text-secondary);
 }
@@ -81,17 +61,15 @@ body {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    animation: pulse 2s infinite;
 }
 
-.status-dot.online { background: var(--accent-primary); }
-.status-dot.offline { background: var(--accent-danger); }
+.status-dot.online { background: var(--profit); }
+.status-dot.offline { background: var(--loss); }
 
-/* 容器 */
-.container { padding: 16px; max-width: 100%; }
-
-/* 概览卡片 */
-.overview-section { margin-bottom: 20px; }
+/* Overview Cards */
+.overview-section {
+    padding: 16px 16px 8px;
+}
 
 .overview-cards {
     display: grid;
@@ -101,113 +79,196 @@ body {
 
 .card {
     background: var(--bg-card);
-    border-radius: 16px;
-    padding: 16px;
-    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 14px 12px;
     text-align: center;
+    box-shadow: var(--shadow);
 }
 
-.card-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
-.card-value { font-size: 18px; font-weight: 700; }
-.card-change { font-size: 12px; margin-top: 4px; }
-.card-change.profit { color: var(--accent-primary); }
-.card-change.loss { color: var(--accent-danger); }
+.card-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
 
-/* 图表区域 */
-.chart-section { margin-bottom: 20px; }
+.card-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.card-value.profit { color: var(--profit); }
+.card-value.loss { color: var(--loss); }
+
+.card-change {
+    font-size: 11px;
+    margin-top: 4px;
+    color: var(--text-secondary);
+}
+
+.card-change.profit { color: var(--profit); }
+.card-change.loss { color: var(--loss); }
+
+/* Strategy Section */
+.strategies-section {
+    padding: 12px 16px;
+}
 
 .section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-}
-
-.section-header h2 { font-size: 16px; font-weight: 600; }
-
-.time-filters { display: flex; gap: 8px; }
-
-.time-btn {
-    padding: 6px 12px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: 20px;
-    color: var(--text-secondary);
-    font-size: 12px;
-    cursor: pointer;
-}
-
-.time-btn.active {
-    background: var(--accent-primary);
-    color: var(--bg-primary);
-    border-color: var(--accent-primary);
-}
-
-.chart-wrapper {
-    background: var(--bg-card);
-    border-radius: 16px;
-    padding: 16px;
-    border: 1px solid var(--border-color);
-}
-
-.chart { width: 100%; height: 250px; }
-
-/* 策略列表 */
-.strategies-section { margin-bottom: 20px; }
-
-.strategies-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.strategy-card {
-    background: var(--bg-card);
-    border-radius: 16px;
-    padding: 16px;
-    border: 1px solid var(--border-color);
-}
-
-.strategy-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 12px;
 }
 
-.strategy-name { font-size: 14px; font-weight: 600; }
-
-.strategy-badge {
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 12px;
+.section-header h2 {
+    font-size: 14px;
     font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
-.strategy-badge.profit { background: rgba(0, 212, 170, 0.15); color: var(--accent-primary); }
-.strategy-badge.loss { background: rgba(255, 107, 107, 0.15); color: var(--accent-danger); }
+/* Strategy Card */
+.strategy-card {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow);
+}
+
+.strategy-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.strategy-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.strategy-badge {
+    font-size: 14px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: var(--bg-primary);
+}
+
+.strategy-badge.profit { color: var(--profit); }
+.strategy-badge.loss { color: var(--loss); }
 
 .strategy-stats {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.stat {
+    text-align: center;
+    padding: 8px 4px;
+}
+
+.stat-label {
+    display: block;
+    font-size: 10px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+}
+
+.stat-value {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.stat-value.profit { color: var(--profit); }
+.stat-value.loss { color: var(--loss); }
+
+/* Action Button */
+.strategy-actions {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    display: flex;
     gap: 10px;
 }
 
-.stat { text-align: center; }
-
-.stat-label { font-size: 11px; color: var(--text-secondary); display: block; margin-bottom: 2px; }
-.stat-value { font-size: 14px; font-weight: 600; }
-.stat-value.profit { color: var(--accent-primary); }
-.stat-value.loss { color: var(--accent-danger); }
-
-/* 加载动画 */
-.loading-spinner {
-    text-align: center;
-    padding: 40px;
-    color: var(--text-secondary);
+.btn {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
-/* 弹窗 */
+.btn-primary {
+    background: var(--accent);
+    color: white;
+}
+
+.btn-primary:active {
+    background: #059669;
+}
+
+.btn-secondary {
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+}
+
+/* Bottom Nav */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg-secondary);
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    border-top: 1px solid var(--border);
+    z-index: 100;
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 10px;
+    padding: 4px 12px;
+    transition: color 0.2s;
+}
+
+.nav-item.active {
+    color: var(--accent);
+}
+
+.nav-item:active {
+    opacity: 0.7;
+}
+
+.nav-icon {
+    font-size: 20px;
+    margin-bottom: 2px;
+}
+
+/* Modal */
 .modal {
     display: none;
     position: fixed;
@@ -216,38 +277,148 @@ body {
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.8);
-    z-index: 2000;
-    align-items: center;
-    justify-content: center;
-}
-
-.modal-content {
-    background: var(--bg-card);
-    border-radius: 16px;
-    padding: 24px;
-    width: 90%;
-    max-width: 500px;
-    max-height: 80vh;
+    z-index: 200;
     overflow-y: auto;
 }
 
-.close {
-    float: right;
+.modal.active {
+    display: block;
+}
+
+.modal-content {
+    background: var(--bg-secondary);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.modal-header h2 {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
     font-size: 24px;
     cursor: pointer;
+    padding: 4px 8px;
+}
+
+/* Trade Item */
+.trade-item {
+    background: var(--bg-card);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 10px;
+}
+
+.trade-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.trade-type {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+}
+
+.trade-type.long, .trade-type.buy { 
+    background: rgba(34, 197, 94, 0.2); 
+    color: var(--profit);
+}
+.trade-type.short, .trade-type.sell { 
+    background: rgba(239, 68, 68, 0.2); 
+    color: var(--loss);
+}
+
+.trade-pnl {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.trade-pnl.profit { color: var(--profit); }
+.trade-pnl.loss { color: var(--loss); }
+
+.trade-details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    font-size: 12px;
     color: var(--text-secondary);
 }
 
-/* 响应式 */
-@media (max-width: 480px) {
-    .overview-cards { grid-template-columns: 1fr; }
-    .card { padding: 12px; }
-    .card-value { font-size: 16px; }
-    .chart { height: 200px; }
-    .strategy-stats { grid-template-columns: repeat(2, 1fr); }
+.trade-details span {
+    color: var(--text-primary);
 }
 
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+.trade-time {
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+/* Loading */
+.loading-spinner {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-secondary);
+}
+
+.loading-spinner::before {
+    content: '';
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-secondary);
+}
+
+.empty-state .empty-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+/* Back Button */
+.back-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 8px 0;
+}
+
+.back-btn:active {
+    opacity: 0.7;
 }
