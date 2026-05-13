@@ -7,9 +7,9 @@ const API_CONFIG = {
              window.location.hostname.startsWith('10.') ||
              window.location.hostname.startsWith('172.'),
     
-    // 本地数据库 (局域网)
+    // 本地数据库 API 服务
     local: {
-        baseUrl: 'http://192.168.1.2:5000/api'  // 修改为你的本地API地址
+        baseUrl: 'http://192.168.1.2:5000/api'  // 本地 Node.js API 服务地址
     },
     
     // Supabase 云端数据库
@@ -22,12 +22,6 @@ const API_CONFIG = {
 // 获取当前数据源
 function getDataSource() {
     return API_CONFIG.isLocal ? API_CONFIG.local : API_CONFIG.supabase;
-}
-
-// 获取API基础URL
-function getBaseUrl() {
-    const source = getDataSource();
-    return source.baseUrl || source.url;
 }
 
 // 格式化数字
@@ -51,43 +45,63 @@ function getPnLClass(value) {
     return value >= 0 ? 'profit' : 'loss';
 }
 
-// 从 Supabase 获取数据
-async function fetchFromSupabase(table, params = '') {
-    const source = API_CONFIG.supabase;
+// ============ 本地 API ============
+async function fetchFromLocal(endpoint) {
     try {
-        const response = await fetch(`${source.url}/rest/v1/${table}?select=*${params}`, {
+        const response = await fetch(`${API_CONFIG.local.baseUrl}/${endpoint}`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return await response.json();
+    } catch (error) {
+        console.error(`本地 API 错误 [${endpoint}]:`, error);
+        return null;
+    }
+}
+
+// ============ Supabase API ============
+async function fetchFromSupabase(table, params = '') {
+    try {
+        const response = await fetch(`${API_CONFIG.supabase.url}/rest/v1/${table}?select=*${params}`, {
             headers: {
-                'apikey': source.key,
-                'Authorization': `Bearer ${source.key}`,
+                'apikey': API_CONFIG.supabase.key,
+                'Authorization': `Bearer ${API_CONFIG.supabase.key}`,
                 'Content-Type': 'application/json'
             }
         });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         return await response.json();
     } catch (error) {
-        console.error(`Error fetching ${table}:`, error);
+        console.error(`Supabase 错误 [${table}]:`, error);
         return null;
     }
 }
 
-// 从本地API获取数据
-async function fetchFromLocal(table) {
-    try {
-        const response = await fetch(`${API_CONFIG.local.baseUrl}/${table}`);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return await response.json();
-    } catch (error) {
-        console.error(`Error fetching ${table} from local:`, error);
-        return null;
-    }
-}
+// ============ 统一数据获取 ============
 
-// 统一的数据获取接口
-async function fetchData(table, params = '') {
+// 获取所有交易记录
+async function fetchAllTrades() {
     if (API_CONFIG.isLocal) {
-        return await fetchFromLocal(table);
+        return await fetchFromLocal('btc_trades');
     } else {
-        return await fetchFromSupabase(table, params);
+        return await fetchFromSupabase('btc_trades', '&order=opened_at.desc&limit=500');
+    }
+}
+
+// 获取策略统计数据
+async function fetchStrategyStats() {
+    if (API_CONFIG.isLocal) {
+        return await fetchFromLocal('stats');
+    } else {
+        const data = await fetchFromSupabase('btc_trades');
+        return transformTradesData(data);
+    }
+}
+
+// 获取市场数据
+async function fetchMarketData() {
+    if (API_CONFIG.isLocal) {
+        return await fetchFromLocal('market');
+    } else {
+        return await fetchFromSupabase('market_data', '&order=created_at.desc&limit=1');
     }
 }
 
@@ -95,7 +109,6 @@ async function fetchData(table, params = '') {
 function transformTradesData(rawData) {
     if (!rawData || !Array.isArray(rawData)) return [];
     
-    // 按策略分组计算统计数据
     const strategyMap = {};
     
     rawData.forEach(trade => {
@@ -119,7 +132,6 @@ function transformTradesData(rawData) {
         if (pnl > 0) strategyMap[strategy].wins++;
     });
     
-    // 计算胜率和百分比
     Object.values(strategyMap).forEach(s => {
         s.win_rate = s.trade_count > 0 ? (s.wins / s.trade_count) * 100 : 0;
         s.balance = s.initial_balance + s.total_pnl;
@@ -127,18 +139,6 @@ function transformTradesData(rawData) {
     });
     
     return Object.values(strategyMap);
-}
-
-// 获取所有交易记录（按时间排序）
-async function fetchAllTrades() {
-    const data = await fetchData('btc_trades', '&order=opened_at.desc&limit=500');
-    return data || [];
-}
-
-// 获取策略统计数据
-async function fetchStrategyStats() {
-    const data = await fetchData('btc_trades');
-    return transformTradesData(data);
 }
 
 // 示例数据
@@ -152,10 +152,11 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = { 
         API_CONFIG, 
         fetchData, 
-        fetchFromSupabase, 
-        fetchFromLocal,
+        fetchFromLocal, 
+        fetchFromSupabase,
         fetchAllTrades,
         fetchStrategyStats,
+        fetchMarketData,
         transformTradesData,
         formatNumber, 
         formatPercent, 
