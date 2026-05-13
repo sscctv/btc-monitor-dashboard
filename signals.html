@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>信号 - BTC Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .market-overview {
+            background: linear-gradient(135deg, #1a1f2e 0%, #252b3d 100%);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+        .market-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .market-pair {
+            font-size: 18px;
+            font-weight: 700;
+            color: #f7931a;
+        }
+        .market-price {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .market-change {
+            font-size: 13px;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+        .market-change.up { background: rgba(0, 201, 130, 0.2); color: var(--profit); }
+        .market-change.down { background: rgba(255, 77, 79, 0.2); color: var(--loss); }
+
+        .signal-mini-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .signal-mini {
+            background: var(--bg-primary);
+            border-radius: 6px;
+            padding: 6px 8px;
+            text-align: center;
+        }
+        .signal-mini-label { font-size: 10px; color: var(--text-secondary); }
+        .signal-mini-value { font-size: 13px; font-weight: 600; margin-top: 2px; }
+
+        .signal-card {
+            background: var(--bg-card);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+        .signal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .signal-name { font-size: 14px; font-weight: 600; }
+        .signal-badge {
+            font-size: 12px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 4px;
+        }
+        .signal-badge.buy { background: rgba(34, 197, 94, 0.2); color: var(--profit); }
+        .signal-badge.sell { background: rgba(239, 68, 68, 0.2); color: var(--loss); }
+        .signal-badge.neutral { background: rgba(255, 193, 7, 0.2); color: #ffc107; }
+
+        .signal-info {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        .signal-info-item {
+            background: var(--bg-primary);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+        .signal-info-label { color: var(--text-secondary); font-size: 10px; }
+        .signal-info-value { font-weight: 600; margin-top: 2px; }
+
+        .signal-params {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+        .signal-param {
+            background: var(--bg-primary);
+            border-radius: 4px;
+            padding: 3px 8px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+        .signal-param span { color: var(--text-primary); font-weight: 500; }
+
+        .signal-indicators {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .indicator-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: var(--bg-primary);
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 11px;
+        }
+        .indicator-name { color: var(--text-secondary); }
+        .indicator-value { font-weight: 600; }
+        .indicator-chip.buy { border-left: 2px solid var(--profit); }
+        .indicator-chip.sell { border-left: 2px solid var(--loss); }
+        .indicator-chip.neutral { border-left: 2px solid #ffc107; }
+
+        .params-toggle {
+            color: var(--accent);
+            font-size: 11px;
+            cursor: pointer;
+            margin-top: 6px;
+        }
+        .params-toggle:active { opacity: 0.7; }
+
+        .data-error {
+            background: rgba(255, 77, 79, 0.1);
+            border: 1px solid var(--loss);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 16px;
+            color: var(--loss);
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>市场信号</h1>
+            <div class="connection-status">
+                <span id="dbStatus" class="status-dot offline"></span>
+                <span id="dbStatusText">连接中...</span>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <section class="strategies-section">
+                <div id="loadingState" class="loading-spinner">加载市场数据...</div>
+                <div id="errorState" class="data-error" style="display:none;">无法获取市场数据</div>
+
+                <div id="marketOverview" class="market-overview" style="display:none;">
+                    <div class="market-header">
+                        <span class="market-pair">BTC/USDT</span>
+                        <span id="priceChange" class="market-change up">--</span>
+                    </div>
+                    <div id="currentPrice" class="market-price">--</div>
+                    <div class="signal-mini-grid">
+                        <div class="signal-mini">
+                            <div class="signal-mini-label">24h高</div>
+                            <div id="high24h" class="signal-mini-value up">--</div>
+                        </div>
+                        <div class="signal-mini">
+                            <div class="signal-mini-label">24h低</div>
+                            <div id="low24h" class="signal-mini-value down">--</div>
+                        </div>
+                        <div class="signal-mini">
+                            <div class="signal-mini-label">24h量</div>
+                            <div id="volume24h" class="signal-mini-value">--</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="signalList"></div>
+
+                <div id="backtestSummary" style="display:none; margin-top: 16px;">
+                    <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px; color: var(--text-secondary);">回测汇总</div>
+                    <div class="backtest-summary" style="background: var(--bg-card); border-radius: 10px; padding: 12px;">
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                            <div class="signal-mini">
+                                <div class="signal-mini-label">总收益</div>
+                                <div id="totalReturn" class="signal-mini-value profit">--</div>
+                            </div>
+                            <div class="signal-mini">
+                                <div class="signal-mini-label">夏普比率</div>
+                                <div id="sharpeRatio" class="signal-mini-value">--</div>
+                            </div>
+                            <div class="signal-mini">
+                                <div class="signal-mini-label">最大回撤</div>
+                                <div id="maxDrawdown" class="signal-mini-value loss">--</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <nav class="bottom-nav">
+            <a href="index.html" class="nav-item"><span class="nav-icon">📊</span><span>首页</span></a>
+            <a href="virtual.html" class="nav-item"><span class="nav-icon">💰</span><span>交易</span></a>
+            <a href="signals.html" class="nav-item active"><span class="nav-icon">📡</span><span>信号</span></a>
+        </nav>
+    </div>
+
+    <script src="api.js"></script>
+    <script>
+        async function loadMarketData() {
+            var statusEl = document.getElementById('dbStatus');
+            var statusTextEl = document.getElementById('dbStatusText');
+            var loadingEl = document.getElementById('loadingState');
+            var errorEl = document.getElementById('errorState');
+            var marketEl = document.getElementById('marketOverview');
+
+            try {
+                var data = await fetchMarketSignals();
+                
+                if (data && (data.price || data.btc_price)) {
+                    statusEl.className = 'status-dot online';
+                    statusTextEl.textContent = '实时数据';
+                    loadingEl.style.display = 'none';
+                    marketEl.style.display = 'block';
+                    
+                    renderMarketData(data);
+                    renderSignals(data);
+                    renderBacktestSummary(data);
+                } else {
+                    showError();
+                }
+            } catch (error) {
+                console.error('加载失败:', error);
+                showError();
+            }
+
+            function showError() {
+                statusEl.className = 'status-dot offline';
+                statusTextEl.textContent = '离线';
+                loadingEl.style.display = 'none';
+                errorEl.style.display = 'block';
+            }
+        }
+
+        function renderMarketData(data) {
+            var price = data.price || data.btc_price || 0;
+            var change24h = data.change_24h || data.change || 0;
+            var high24h = data.high_24h || data.high || 0;
+            var low24h = data.low_24h || data.low || 0;
+            var volume24h = data.volume_24h || data.volume || 0;
+
+            document.getElementById('currentPrice').textContent = formatNumber(price);
+            
+            var changeEl = document.getElementById('priceChange');
+            changeEl.textContent = (change24h >= 0 ? '+' : '') + change24h.toFixed(2) + '%';
+            changeEl.className = 'market-change ' + (change24h >= 0 ? 'up' : 'down');
+
+            document.getElementById('high24h').textContent = formatNumber(high24h);
+            document.getElementById('low24h').textContent = formatNumber(low24h);
+            
+            if (volume24h > 1000) {
+                document.getElementById('volume24h').textContent = (volume24h / 1000).toFixed(1) + 'K';
+            } else {
+                document.getElementById('volume24h').textContent = volume24h.toFixed(0);
+            }
+        }
+
+        function renderSignals(data) {
+            var container = document.getElementById('signalList');
+            var signals = data.signals || calculateSignals(data);
+
+            if (signals.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div>暂无信号数据</div>';
+                return;
+            }
+
+            container.innerHTML = signals.map(function(s) {
+                var signalClass = s.signal === 'buy' ? 'buy' : (s.signal === 'sell' ? 'sell' : 'neutral');
+                var signalText = s.signal === 'buy' ? '做多' : (s.signal === 'sell' ? '做空' : '观望');
+                
+                // 信号时间和价格
+                var signalTime = s.signal_time || data.signal_time || new Date().toLocaleString('zh-CN', {month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'});
+                var signalPrice = s.signal_price || s.price || data.price || 0;
+                
+                // 参数展示
+                var paramsHtml = '';
+                if (s.params && Object.keys(s.params).length > 0) {
+                    var paramsArr = Object.entries(s.params).map(function(e) {
+                        return e[0] + ':<span>' + e[1] + '</span>';
+                    });
+                    paramsHtml = '<div class="signal-params">' + 
+                        '<span class="signal-param">' + paramsArr.join('</span><span class="signal-param">') + '</span>' +
+                        '</div>';
+                }
+                
+                // 指标一行一个，横向排列
+                var indicatorsHtml = '';
+                if (s.indicators) {
+                    indicatorsHtml = '<div class="signal-indicators">' + s.indicators.map(function(ind) {
+                        var indClass = ind.signal || 'neutral';
+                        return '<span class="indicator-chip ' + indClass + '">' +
+                            '<span class="indicator-name">' + ind.name + '</span>' +
+                            '<span class="indicator-value">' + ind.value + '</span>' +
+                            '</span>';
+                    }).join('') + '</div>';
+                }
+
+                return '<div class="signal-card">' +
+                    '<div class="signal-header">' +
+                    '<span class="signal-name">' + s.symbol + '</span>' +
+                    '<span class="signal-badge ' + signalClass + '">' + signalText + '</span>' +
+                    '</div>' +
+                    '<div class="signal-info">' +
+                    '<div class="signal-info-item">' +
+                    '<div class="signal-info-label">信号价格</div>' +
+                    '<div class="signal-info-value">' + formatNumber(signalPrice) + '</div>' +
+                    '</div>' +
+                    '<div class="signal-info-item">' +
+                    '<div class="signal-info-label">信号时间</div>' +
+                    '<div class="signal-info-value">' + signalTime + '</div>' +
+                    '</div>' +
+                    '</div>' +
+                    paramsHtml +
+                    indicatorsHtml +
+                    '</div>';
+            }).join('');
+        }
+
+        function calculateSignals(data) {
+            var signals = [];
+            var price = data.price || data.btc_price || 0;
+            var rsi = data.rsi || data.RSI || 50;
+            var macd = data.macd || data.MACD || 0;
+            var macdSignal = data.macd_signal || data.signal || 0;
+            var ma20 = data.ma20 || data.MA20 || price;
+            var kdj_k = data.kdj_k || data.K || 50;
+            var kdj_d = data.kdj_d || data.D || 50;
+            var bb_lower = data.bb_lower || price * 0.95;
+            var bb_upper = data.bb_upper || price * 1.05;
+
+            var btcIndicators = [];
+            
+            // RSI
+            var rsiSignal = rsi < 30 ? 'buy' : (rsi > 70 ? 'sell' : 'neutral');
+            var rsiLabel = rsi < 30 ? '超卖' : (rsi > 70 ? '超买' : '中性');
+            btcIndicators.push({ name: 'RSI', value: rsi.toFixed(1), signal: rsiSignal, label: rsiLabel });
+
+            // MA
+            var maSignal = price > ma20 ? 'buy' : 'sell';
+            var maLabel = price > ma20 ? '多头' : '空头';
+            btcIndicators.push({ name: 'MA20', value: price > ma20 ? '↑' : '↓', signal: maSignal, label: maLabel });
+
+            // MACD
+            var macdFinalSignal = macd > macdSignal ? 'buy' : 'sell';
+            var macdLabel = macd > macdSignal ? '金叉' : '死叉';
+            btcIndicators.push({ name: 'MACD', value: macd > macdSignal ? '金叉' : '死叉', signal: macdFinalSignal, label: macdLabel });
+
+            // 布林带
+            var bbSignal = 'neutral';
+            var bbLabel = '震荡';
+            if (price <= bb_lower * 1.02) {
+                bbSignal = 'buy';
+                bbLabel = '支撑';
+            } else if (price >= bb_upper * 0.98) {
+                bbSignal = 'sell';
+                bbLabel = '压力';
+            }
+            btcIndicators.push({ name: 'BB', value: bbLabel, signal: bbSignal, label: bbLabel });
+
+            // KDJ
+            var kdjSignal = kdj_k < 20 ? 'buy' : (kdj_k > 80 ? 'sell' : 'neutral');
+            var kdjLabel = kdj_k < 20 ? '超卖' : (kdj_k > 80 ? '超买' : '中性');
+            btcIndicators.push({ name: 'KDJ', value: kdj_k.toFixed(0), signal: kdjSignal, label: kdjLabel });
+
+            // 综合信号
+            var btcSignal = 'neutral';
+            var buyCount = btcIndicators.filter(function(i) { return i.signal === 'buy'; }).length;
+            var sellCount = btcIndicators.filter(function(i) { return i.signal === 'sell'; }).length;
+            if (buyCount >= 3) btcSignal = 'buy';
+            else if (sellCount >= 3) btcSignal = 'sell';
+
+            signals.push({
+                symbol: 'BTC/USDT',
+                signal: btcSignal,
+                signal_price: price,
+                signal_time: new Date().toLocaleString('zh-CN', {month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'}),
+                indicators: btcIndicators,
+                params: data.strategy_params || {}
+            });
+
+            return signals;
+        }
+
+        function renderBacktestSummary(data) {
+            var summaryEl = document.getElementById('backtestSummary');
+            
+            var totalReturn = data.total_return || data.total_pnl_percent || 0;
+            var sharpe = data.sharpe_ratio || data.sharpe || 0;
+            var maxDrawdown = data.max_drawdown || data.max_dd || 0;
+
+            if (totalReturn !== 0 || sharpe !== 0) {
+                summaryEl.style.display = 'block';
+                document.getElementById('totalReturn').textContent = (totalReturn >= 0 ? '+' : '') + totalReturn.toFixed(1) + '%';
+                document.getElementById('sharpeRatio').textContent = sharpe.toFixed(2);
+                document.getElementById('maxDrawdown').textContent = maxDrawdown.toFixed(1) + '%';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadMarketData);
+    </script>
+</body>
+</html>
