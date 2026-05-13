@@ -2,12 +2,7 @@
   "name": "btc-monitor-dashboard",
   "version": "2.0.0",
   "description": "BTC Monitor Dashboard - Multi-page mobile-first design",
-  "static": {
-    "directory": ".",
-    "clean_urls": true,
-    "fallback": "index.html"
-  },
   "scripts": {
-    "start": "npx serve -l 3000"
+    "start": "npx serve -s . -l 3000"
   }
 }
