@@ -1,12 +1,12 @@
 // 数据库配置
 const CONFIG = {
     // Supabase 配置
-    SUPABASE_URL: 'https://lpcrnbolifrzwrkxoli.supabase.co',
+    SUPABASE_URL: 'https://lpcrnobolifrzwrkxoli.supabase.co',
     SUPABASE_KEY: 'sb_publishable_8gEsCRNRc7py6BmypYuRIw_sNtKooug',
 
     // PostgreSQL 配置
     DB_CONFIG: {
-        host: 'db.lpcrnbolifrzwrkxoli.supabase.co',
+        host: 'db.lpcrnobolifrzwrkxoli.supabase.co',
         port: 5432,
         user: 'postgres',
         password: 'sbsecretU3jwawwwnBTppSz0H1-QyQ_eb6rG-8C',
