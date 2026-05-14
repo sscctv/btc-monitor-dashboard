@@ -27,7 +27,7 @@ console.log('ROOT_DIR:', ROOT_DIR);
 
 // Supabase 配置
 const SUPABASE_URL = 'https://lpcrnobolifrzwrkxoli.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwY3Jub2JvbGlmcnp3cmt4b2xpIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDUzMTQwMDAsImV4cCI6MTk2MDg5MDQwMH0.YOURCE_SUPABASE_SECRET';
+const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_8gEsCRNRc7py6BmypYuRIw_sNtKooug';
 
 // Static files
 app.use(express.static(ROOT_DIR));
