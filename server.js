@@ -66,7 +66,8 @@ app.get('/data.json', async (req, res) => {
     // 获取策略数据
     const strategies = await supabaseRequest('virtual_balances', {
       'select': '*',
-      'order': 'strategy_id.asc'
+      'order': 'strategy_id.asc',
+      'limit': '100'
     });
     
     // 获取市场数据
