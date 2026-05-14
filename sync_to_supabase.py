@@ -357,14 +357,19 @@ def sync_all():
     return total
 
 if __name__ == "__main__":
-    # 单次同步
-    if len(sys.argv) > 1 and sys.argv[1] == "--api":
-        # 输出 API JSON
+    if len(sys.argv) > 1 and sys.argv[1] == "--loop":
+        # 循环模式：每 N 秒执行一次，默认 5 秒
+        interval = int(sys.argv[2]) if len(sys.argv) > 2 else 5
+        print(f"循环模式: 每 {interval} 秒同步一次，按 Ctrl+C 停止")
+        while True:
+            sync_all()
+            time.sleep(interval)
+    elif len(sys.argv) > 1 and sys.argv[1] == "--api":
         data = get_api_data()
         if data:
             print(json.dumps(data, ensure_ascii=False, indent=2))
         else:
             print("{}")
     else:
-        # 同步到 Supabase
+        # 单次同步
         sync_all()
