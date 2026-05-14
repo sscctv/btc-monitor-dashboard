@@ -1,7 +1,6 @@
 const express = require('express');
 const path = require('path');
-const fs = require('fs');
-const https = require('https');
+const { Client } = require('pg');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,7 +16,7 @@ const POSSIBLE_ROOTS = [
 
 let ROOT_DIR = POSSIBLE_ROOTS.find(dir => {
   try {
-    return fs.existsSync(path.join(dir, 'index.html'));
+    return require('fs').existsSync(path.join(dir, 'index.html'));
   } catch { return false; }
 }) || process.cwd();
 
@@ -25,146 +24,104 @@ console.log('=== BTC Dashboard Server ===');
 console.log('PORT:', PORT);
 console.log('ROOT_DIR:', ROOT_DIR);
 
-// Supabase 配置
-const SUPABASE_URL = 'https://lpcrnobolifrzwrkxoli.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_8gEsCRNRc7py6BmypYuRIw_sNtKooug';
+// PostgreSQL 配置 (本地)
+const PG_CONFIG = {
+  host: process.env.PG_HOST || '192.168.1.2',
+  port: process.env.PG_PORT || 5432,
+  user: process.env.PG_USER || 'postgres',
+  password: process.env.PG_PASSWORD || 'Postgres@2026',
+  database: process.env.PG_DB || 'postgres'
+};
+
+async function queryPg(sql) {
+  const client = new Client(PG_CONFIG);
+  try {
+    await client.connect();
+    const result = await client.query(sql);
+    await client.end();
+    return result.rows;
+  } catch (e) {
+    await client.end();
+    throw e;
+  }
+}
 
 // Static files
 app.use(express.static(ROOT_DIR));
 
-// Helper: 发送 Supabase REST 请求
-function supabaseRequest(endpoint, params = {}) {
-  return new Promise((resolve, reject) => {
-    const queryParams = new URLSearchParams(params).toString();
-    const url = `${SUPABASE_URL}/rest/v1/${endpoint}${queryParams ? '?' + queryParams : ''}`;
-    
-    const options = {
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'Content-Type': 'application/json'
-      }
-    };
-    
-    https.get(url, options, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        try {
-          resolve(JSON.parse(data));
-        } catch {
-          resolve(null);
-        }
-      });
-    }).on('error', reject);
-  });
-}
-
-// API: 获取市场数据和策略数据
+// API: 获取所有数据
 app.get('/data.json', async (req, res) => {
   try {
-    // 获取策略数据
-    const strategies = await supabaseRequest('virtual_balances', {
-      'select': '*',
-      'order': 'strategy_id.asc',
-      'limit': '100'
-    });
-    
     // 获取市场数据
-    const marketData = await supabaseRequest('market_data', {
-      'inst_id': 'eq.BTC-USDT-SWAP',
-      'select': '*',
-      'limit': 1,
-      'order': 'ts.desc'
+    const marketRows = await queryPg(`
+      SELECT price, change_24h, volume_24h, high_24h, low_24h 
+      FROM market_data 
+      WHERE inst_id = 'BTC-USDT-SWAP' 
+      ORDER BY ts DESC LIMIT 1
+    `);
+    const market = marketRows[0] || {};
+    
+    // 获取策略数据
+    const strategyRows = await queryPg(`
+      SELECT v.strategy_id, v.strategy_name, v.strategy_type, v.balance, 
+             v.initial_balance, v.position_type, v.position_entry, 
+             v.position_size, v.leverage, v.last_update,
+             COUNT(t.id) as total_trades,
+             SUM(CASE WHEN t.pnl > 0 THEN 1 ELSE 0 END) as winning_trades
+      FROM virtual_balances v
+      LEFT JOIN btc_trades t ON t.account = v.strategy_name
+      GROUP BY v.strategy_id, v.strategy_name, v.strategy_type, 
+               v.balance, v.initial_balance, v.position_type,
+               v.position_entry, v.position_size, v.leverage, v.last_update
+      ORDER BY v.strategy_id
+    `);
+    
+    const strategies = strategyRows.map(row => {
+      const total = parseInt(row.total_trades) || 0;
+      const wins = parseInt(row.winning_trades) || 0;
+      return {
+        id: row.strategy_id,
+        name: row.strategy_name,
+        type: row.strategy_type,
+        balance: parseFloat(row.balance) || 1000,
+        initial: parseFloat(row.initial_balance) || 1000,
+        pnl: (parseFloat(row.balance) || 1000) - (parseFloat(row.initial_balance) || 1000),
+        leverage: row.leverage,
+        trades: total,
+        win_rate: total > 0 ? Math.round(wins / total * 100) : 0,
+        position: row.position_type ? {
+          type: row.position_type,
+          entry: parseFloat(row.position_entry),
+          size: parseFloat(row.position_size)
+        } : null,
+        last_update: row.last_update
+      };
     });
     
-    // 获取交易统计
-    const trades = await supabaseRequest('btc_trades', {
-      'select': 'strategy,pnl',
-      'order': 'ts.desc',
-      'limit': 1000
-    });
-    
-    // 计算每个策略的交易统计
-    const statsMap = {};
-    if (trades && Array.isArray(trades)) {
-      trades.forEach(t => {
-        if (t.strategy) {
-          if (!statsMap[t.strategy]) {
-            statsMap[t.strategy] = { total: 0, wins: 0 };
-          }
-          statsMap[t.strategy].total++;
-          if (t.pnl > 0) statsMap[t.strategy].wins++;
-        }
-      });
-    }
-    
-    // 构建响应
-    const market = marketData && marketData[0] ? {
-      price: marketData[0].price || 0,
-      change_24h: marketData[0].change_24h || 0,
-      volume: marketData[0].volume_24h || 0,
-      high: marketData[0].high_24h || 0,
-      low: marketData[0].low_24h || 0
-    } : {
-      price: 100000 + Math.random() * 5000,
-      change_24h: (Math.random() - 0.5) * 10,
-      volume: 25000000000,
-      high: 105000,
-      low: 98000
-    };
-    
-    // 构建策略列表
-    const strategyList = [];
-    if (strategies && Array.isArray(strategies)) {
-      strategies.forEach(s => {
-        const stats = statsMap[s.strategy_name] || { total: 0, wins: 0 };
-        strategyList.push({
-          id: s.strategy_id,
-          name: s.strategy_name,
-          type: s.strategy_type,
-          balance: s.balance || 1000,
-          initial: s.initial_balance || 1000,
-          pnl: (s.balance || 1000) - (s.initial_balance || 1000),
-          leverage: s.leverage || 20,
-          trades: stats.total,
-          win_rate: stats.total > 0 ? Math.round(stats.wins / stats.total * 100) : 0,
-          position: s.position_type ? {
-            type: s.position_type,
-            entry: s.position_entry,
-            size: s.position_size
-          } : null,
-          last_update: s.last_update
-        });
-      });
-    }
-    
-    // 如果没有数据，使用默认数据
-    if (strategyList.length === 0) {
-      strategyList.push(
-        { id: 1, name: 'BB策略 30x全仓', type: 'bb', balance: 4523, initial: 1000, pnl: 3523, trades: 89, win_rate: 65.2, position: { type: '做多', entry: 104500, size: 0.019 } },
-        { id: 2, name: 'BB策略 30x逐仓', type: 'bb', balance: 4156, initial: 1000, pnl: 3156, trades: 82, win_rate: 63.4, position: null },
-        { id: 3, name: 'BB策略 25x全仓', type: 'bb', balance: 3892, initial: 1000, pnl: 2892, trades: 78, win_rate: 62.8, position: { type: '做空', entry: 105100, size: 0.019 } },
-        { id: 4, name: 'BB策略 25x逐仓', type: 'bb', balance: 3456, initial: 1000, pnl: 2456, trades: 72, win_rate: 62.5, position: null },
-        { id: 5, name: 'BB策略 20x', type: 'bb', balance: 3124, initial: 1000, pnl: 2124, trades: 68, win_rate: 61.8, position: { type: '做多', entry: 103890, size: 0.019 } },
-        { id: 6, name: 'RSI_14_35_65_L20', type: 'rsi', balance: 72398, initial: 1000, pnl: 71398, trades: 420, win_rate: 66.8, position: { type: '做多', entry: 103890, size: 0.019 } },
-        { id: 7, name: 'RSI_7_30_75_L20', type: 'rsi', balance: 68920, initial: 1000, pnl: 67920, trades: 380, win_rate: 65.2, position: null },
-        { id: 8, name: 'RSI_7_35_75_L20', type: 'rsi', balance: 67410, initial: 1000, pnl: 66410, trades: 350, win_rate: 64.5, position: { type: '做多', entry: 103200, size: 0.019 } },
-        { id: 9, name: 'RSI_7_20_75_L20', type: 'rsi', balance: 65340, initial: 1000, pnl: 64340, trades: 320, win_rate: 63.8, position: null },
-        { id: 10, name: 'RSI_14_35_70_L20', type: 'rsi', balance: 64230, initial: 1000, pnl: 63230, trades: 310, win_rate: 63.5, position: { type: '做空', entry: 104890, size: 0.019 } }
-      );
-    }
+    // 获取最近交易
+    const recentTrades = await queryPg(`
+      SELECT strategy, action, pnl, reason, dt
+      FROM btc_trades 
+      ORDER BY ts DESC LIMIT 20
+    `);
     
     const response = {
-      btc: market,
-      signals: strategyList.slice(0, 3).map(s => ({
+      btc: {
+        price: parseFloat(market.price) || 0,
+        change_24h: parseFloat(market.change_24h) || 0,
+        volume: parseFloat(market.volume_24h) || 0,
+        high: parseFloat(market.high_24h) || 0,
+        low: parseFloat(market.low_24h) || 0
+      },
+      signals: strategies.slice(0, 3).map(s => ({
         name: s.name,
         signal: s.position ? (s.position.type === '做多' ? '做多' : '做空') : '观望',
         rsi: 40 + Math.random() * 30,
         strength: s.win_rate || 50,
         action: s.position ? (s.position.type === '做多' ? '持有' : '做空') : '观望'
       })),
-      strategies: strategyList,
+      strategies: strategies,
+      recent_trades: recentTrades,
       updated: new Date().toISOString()
     };
     
@@ -174,23 +131,21 @@ app.get('/data.json', async (req, res) => {
     res.json(response);
     
   } catch (e) {
-    console.error('Supabase error:', e.message);
+    console.error('Database error:', e.message);
     
-    // Fallback: 生成实时数据
-    const btcPrice = 100000 + Math.random() * 5000;
+    // Fallback: 示例数据
     res.json({
       btc: {
-        price: btcPrice,
-        change_24h: (Math.random() - 0.5) * 10,
-        volume: 25000000000,
-        high: btcPrice * 1.02,
-        low: btcPrice * 0.98
+        price: 79843,
+        change_24h: -1.37,
+        volume: 38851,
+        high: 79882,
+        low: 79782
       },
       signals: [
-        { name: 'RSI_14_35_65_L20', signal: 'neutral', rsi: 45, strength: 52, action: '观望' },
-        { name: 'RSI_7_30_75_L20', signal: 'neutral', rsi: 50, strength: 48, action: '观望' },
-        { name: 'BB_Squeeze', signal: 'neutral', rsi: 48, strength: 55, action: '观望' }
+        { name: 'RSI策略', signal: 'neutral', rsi: 45, strength: 52, action: '观望' }
       ],
+      strategies: [],
       updated: new Date().toISOString()
     });
   }
@@ -199,13 +154,9 @@ app.get('/data.json', async (req, res) => {
 // API: 获取策略列表
 app.get('/api/strategies', async (req, res) => {
   try {
-    const strategies = await supabaseRequest('virtual_balances', {
-      'select': '*',
-      'order': 'strategy_id.asc'
-    });
-    
+    const rows = await queryPg('SELECT * FROM virtual_balances ORDER BY strategy_id');
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.json(strategies || []);
+    res.json(rows);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -214,15 +165,9 @@ app.get('/api/strategies', async (req, res) => {
 // API: 获取交易记录
 app.get('/api/trades', async (req, res) => {
   try {
-    const limit = req.query.limit || 100;
-    const trades = await supabaseRequest('btc_trades', {
-      'select': '*',
-      'order': 'ts.desc',
-      'limit': limit
-    });
-    
+    const rows = await queryPg('SELECT * FROM btc_trades ORDER BY ts DESC LIMIT 100');
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.json(trades || []);
+    res.json(rows);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
