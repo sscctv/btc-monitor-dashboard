@@ -159,24 +159,35 @@ def update_virtual_balance(strategy_name, position_type, entry_price, size):
     cur.close()
     conn.close()
 
-# ============== OKX API ==============
+# ============== 市场数据 (从本地 PG 读取) ==============
 
-def get_kline_data(inst_id=SYMBOL, bar=INTERVAL, limit=100):
+def get_kline_data(inst_id=SYMBOL, limit=100):
+    """从本地 PostgreSQL 读取 K线数据用于交易决策"""
     try:
-        url = f"{OKX_API}/api/v5/market/history-candles"
-        params = {"instId": inst_id, "bar": bar, "limit": limit}
-        resp = requests.get(url, params=params, timeout=10)
-        data = resp.json()
-        if data.get("code") == "0":
-            candles = data["data"]
-            prices = []
-            for c in reversed(candles):
-                prices.append({"ts": int(c[0]), "open": float(c[1]), "high": float(c[2]),
-                               "low": float(c[3]), "close": float(c[4]), "volume": float(c[5])})
-            return prices
+        conn = get_db_conn()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT ts, price, volume_24h, high_24h, low_24h
+            FROM market_data
+            WHERE inst_id = %s
+            ORDER BY ts ASC
+            LIMIT %s
+        """, (inst_id, limit))
+        rows = cur.fetchall()
+        cur.close()
+        conn.close()
+        if not rows:
+            return None
+        prices = []
+        for r in rows:
+            prices.append({
+                "ts": r[0], "close": float(r[1]),
+                "volume": float(r[2]), "high": float(r[3]), "low": float(r[4])
+            })
+        return prices
     except Exception as e:
-        print(f"获取K线数据失败: {e}")
-    return None
+        print(f"从本地PG读取K线失败: {e}")
+        return None
 
 def calculate_rsi(prices, period=14):
     if len(prices) < period + 1:
