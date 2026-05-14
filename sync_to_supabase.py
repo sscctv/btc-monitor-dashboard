@@ -25,7 +25,7 @@ PG_CONFIG = {
 
 # Supabase 配置 (请替换为你的实际 key)
 SUPABASE_URL = "https://lpcrnobolifrzwrkxoli.supabase.co"
-SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY"  # 替换为你的 anon key
+SUPABASE_KEY = "sb_publishable_8gEsCRNRc7py6BmypYuRIw_sNtKooug"
 
 # ============== 工具函数 ==============
 
