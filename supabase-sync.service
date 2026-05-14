@@ -1,0 +1,14 @@
+[Unit]
+Description=BTC Monitor - Sync to Supabase
+After=network.target postgresql.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/vol1/@apphome/trim.openclaw/data/workspace/btc-monitor-dashboard
+ExecStart=/usr/bin/python3 /vol1/@apphome/trim.openclaw/data/workspace/btc-monitor-dashboard/sync_to_supabase.py
+StandardOutput=journal
+StandardError=journal
+User=root
+
+[Install]
+WantedBy=multi-user.target
